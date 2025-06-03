@@ -61,6 +61,12 @@
             <artifactId>dorm-generator</artifactId>
         </dependency>
 
+        <!-- 宿舍管理-->
+        <dependency>
+            <groupId>dorm</groupId>
+            <artifactId>dorm-manage</artifactId>
+        </dependency>
+
         <!-- web 容器使用 undertow -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
