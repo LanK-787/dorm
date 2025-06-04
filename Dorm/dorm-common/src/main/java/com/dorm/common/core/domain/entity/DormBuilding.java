@@ -5,13 +5,16 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import com.dorm.common.annotation.Excel;
 import com.dorm.common.core.domain.TreeEntity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 宿舍管理对象 dorm_building
  * 
  * @author 王新瑜
  * @date 2025-06-03
  */
-public class DormBuilding extends TreeEntity
+public class DormBuilding extends TreeEntity<DormBuilding>
 {
     private static final long serialVersionUID = 1L;
 
@@ -40,6 +43,9 @@ public class DormBuilding extends TreeEntity
 
     /** 删除标志（0存在 2删除） */
     private String delFlag;
+
+    /** 子部门 */
+    private List<DormBuilding> children = new ArrayList<DormBuilding>();
 
     public void setDormId(Long dormId) 
     {
@@ -110,6 +116,7 @@ public class DormBuilding extends TreeEntity
     {
         return delFlag;
     }
+
 
     @Override
     public String toString() {

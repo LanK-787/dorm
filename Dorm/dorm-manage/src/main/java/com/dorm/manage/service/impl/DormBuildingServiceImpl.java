@@ -64,6 +64,7 @@ public class DormBuildingServiceImpl implements IDormBuildingService
     public List<TreeSelect> selectDormTreeList(DormBuilding dormBuilding)
     {
         List<DormBuilding> dorms = SpringUtils.getAopProxy(this).selectDormBuildingList(dormBuilding);
+        System.out.println(dorms);
         return buildDormTreeSelect(dorms);
     }
 
@@ -104,6 +105,7 @@ public class DormBuildingServiceImpl implements IDormBuildingService
     public List<TreeSelect> buildDormTreeSelect(List<DormBuilding> dorms)
     {
         List<DormBuilding> dormTrees = buildDormTree(dorms);
+        System.out.println(dorms);
         return dormTrees.stream().map(TreeSelect::new).collect(Collectors.toList());
     }
 
