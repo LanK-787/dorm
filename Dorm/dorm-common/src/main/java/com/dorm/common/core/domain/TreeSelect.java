@@ -3,6 +3,8 @@ package com.dorm.common.core.domain;
 import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.dorm.common.core.domain.entity.DormBuilding;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.dorm.common.constant.UserConstants;
 import com.dorm.common.core.domain.entity.SysDept;
@@ -35,7 +37,13 @@ public class TreeSelect implements Serializable
     {
 
     }
-
+    public TreeSelect (DormBuilding building)
+    {
+        this.id = building.getDormId();
+        this.label = building.getBuildingName();
+        this.disabled = StringUtils.equals(UserConstants.DEPT_DISABLE, building.getStatus());
+        this.children = building.getChildren().stream().map(TreeSelect::new).collect(Collectors.toList());
+    }
     public TreeSelect(SysDept dept)
     {
         this.id = dept.getDeptId();
@@ -50,6 +58,10 @@ public class TreeSelect implements Serializable
         this.label = menu.getMenuName();
         this.children = menu.getChildren().stream().map(TreeSelect::new).collect(Collectors.toList());
     }
+
+    public TreeSelect(Object o) {
+    }
+
 
     public Long getId()
     {

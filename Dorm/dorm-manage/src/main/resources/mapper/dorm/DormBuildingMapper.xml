@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dorm.manage.mapper.DormBuildingMapper">
+    
+    <resultMap type="DormBuilding" id="DormBuildingResult">
+        <id     property="dormId"     column="dorm_id"     />
+        <result property="parentId"   column="parent_id"   />
+        <result property="ancestors"  column="ancestors"   />
+        <result property="buildingName"   column="building_name"   />
+        <result property="orderNum"   column="order_num"   />
+        <result property="dormManager"     column="dorm_manager"      />
+        <result property="phone"      column="phone"       />
+        <result property="email"      column="email"       />
+        <result property="status"     column="status"      />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="parentName" column="parent_name" />
+        <result property="createBy"   column="create_by"   />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy"   column="update_by"   />
+        <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="selectDormBuildingVo">
+        select d.dorm_id, d.parent_id, d.ancestors, d.building_name, d.order_num, d.dorm_manager, d.phone, d.email, d.status, d.del_flag, d.create_by, d.create_time 
+        from dorm_building d
+    </sql>
+
+    <select id="selectDormBuildingList" parameterType="DormBuilding" resultMap="DormBuildingResult">
+        <include refid="selectDormBuildingVo"/>
+        where d.del_flag = '0'
+        <if test="dormId != null and dormId != 0">
+            AND dorm_id = #{dormId}
+        </if>
+        <if test="parentId != null and parentId != 0">
+            AND parent_id = #{parentId}
+        </if>
+        <if test="buildingName != null and buildingName != ''">
+            AND building_name like concat('%', #{buildingName}, '%')
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        order by d.parent_id, d.order_num
+    </select>
+    
+    <select id="selectDormBuildingByDormId" parameterType="Long" resultMap="DormBuildingResult">
+        select d.dorm_id, d.parent_id, d.ancestors, d.building_name, d.order_num, d.dorm_manager, d.phone, d.email, d.status,
+            (select building_name from dorm_building where dorm_id = d.parent_id) parent_name
+        from dorm_building d
+        where d.dorm_id = #{dormId}
+    </select>
+    
+    <select id="checkDormExistUser" parameterType="Long" resultType="int">
+        select count(1) from dorm_student where dorm_id = #{dormId} and del_flag = '0'
+    </select>
+    
+    <select id="hasChildByDormId" parameterType="Long" resultType="int">
+        select count(1) from dorm_building
+        where del_flag = '0' and parent_id = #{dormId} limit 1
+    </select>
+    
+    <select id="selectChildrenDormById" parameterType="Long" resultMap="DormBuildingResult">
+        select * from dorm_building where find_in_set(#{dormId}, ancestors)
+    </select>
+    
+    <select id="selectNormalChildrenDormById" parameterType="Long" resultType="int">
+        select count(*) from dorm_building where status = 0 and del_flag = '0' and find_in_set(#{dormId}, ancestors)
+    </select>
+    
+    <select id="checkDormNameUnique" resultMap="DormBuildingResult">
+        <include refid="selectDormBuildingVo"/>
+        where building_name=#{buildingName} and parent_id = #{parentId} and del_flag = '0' limit 1
+    </select>
+    
+    <insert id="insertDormBuilding" parameterType="DormBuilding">
+        insert into dorm_building(
+            <if test="dormId != null and dormId != 0">dorm_id,</if>
+            <if test="parentId != null and parentId != 0">parent_id,</if>
+            <if test="buildingName != null and buildingName != ''">building_name,</if>
+            <if test="ancestors != null and ancestors != ''">ancestors,</if>
+            <if test="orderNum != null">order_num,</if>
+            <if test="dormManager != null and dormManager != ''">dorm_manager,</if>
+            <if test="phone != null and phone != ''">phone,</if>
+            <if test="email != null and email != ''">email,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time
+        )values(
+            <if test="dormId != null and dormId != 0">#{dormId},</if>
+            <if test="parentId != null and parentId != 0">#{parentId},</if>
+            <if test="buildingName != null and buildingName != ''">#{buildingName},</if>
+            <if test="ancestors != null and ancestors != ''">#{ancestors},</if>
+            <if test="orderNum != null">#{orderNum},</if>
+            <if test="dormManager != null and dormManager != ''">#{dormManager},</if>
+            <if test="phone != null and phone != ''">#{phone},</if>
+            <if test="email != null and email != ''">#{email},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            sysdate()
+        )
+    </insert>
+    
+    <update id="updateDormBuilding" parameterType="DormBuilding">
+        update dorm_building
+        <set>
+            <if test="parentId != null and parentId != 0">parent_id = #{parentId},</if>
+            <if test="buildingName != null and buildingName != ''">building_name = #{buildingName},</if>
+            <if test="ancestors != null and ancestors != ''">ancestors = #{ancestors},</if>
+            <if test="orderNum != null">order_num = #{orderNum},</if>
+            <if test="dormManager != null">dorm_manager = #{dormManager},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where dorm_id = #{dormId}
+    </update>
+    
+    <update id="updateDormChildren" parameterType="java.util.List">
+        update dorm_building set ancestors =
+        <foreach collection="dorms" item="item" index="index"
+            separator=" " open="case dorm_id" close="end">
+            when #{item.dormId} then #{item.ancestors}
+        </foreach>
+        where dorm_id in
+        <foreach collection="dorms" item="item" index="index"
+            separator="," open="(" close=")">
+            #{item.dormId}
+        </foreach>
+    </update>
+     
+    <update id="updateDormStatusNormal" parameterType="Long">
+        update dorm_building set status = '0' where dorm_id in 
+        <foreach collection="array" item="dormId" open="(" separator="," close=")">
+            #{dormId}
+        </foreach>
+    </update>
+    
+    <delete id="deleteDormBuildingByDormId" parameterType="Long">
+        update dorm_building set del_flag = '2' where dorm_id = #{dormId}
+    </delete>
+
+    <delete id="deleteDormBuildingByDormIds" parameterType="Long">
+        update dorm_building set del_flag = '2' where dorm_id in 
+        <foreach item="dormId" collection="array" open="(" separator="," close=")">
+            #{dormId}
+        </foreach>
+    </delete>
+</mapper>
