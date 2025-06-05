@@ -27,6 +27,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select student_id, user_id, student_no, name, gender, class_name, phone, status, email, del_flag, dorm_id, create_by, create_time, update_by, update_time, remark from dorm_student
     </sql>
 
+    <!-- 宿舍子树查询片段 -->
+    <sql id="dormIdSubtree">
+        SELECT d.dorm_id FROM dorm_building d
+        WHERE d.del_flag = '0' AND d.status = '0'
+        AND (
+            d.dorm_id = #{dormId}
+            OR d.ancestors LIKE CONCAT('%,', #{dormId}, ',%')
+            OR d.ancestors LIKE CONCAT(#{dormId}, ',%')
+            OR d.ancestors LIKE CONCAT('%,', #{dormId})
+        )
+    </sql>
+
     <select id="selectDormStudentList" parameterType="DormStudent" resultMap="DormStudentResult">
         <include refid="selectDormStudentVo"/>
         <where>  
@@ -38,7 +50,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="phone != null  and phone != ''"> and phone = #{phone}</if>
             <if test="status != null  and status != ''"> and status = #{status}</if>
             <if test="email != null  and email != ''"> and email = #{email}</if>
-            <if test="dormId != null "> and dorm_id = #{dormId}</if>
+            <if test="dormId != null">
+                and dorm_id IN (
+                    <include refid="dormIdSubtree"/>
+                )
+            </if>
+            and del_flag = '0'
         </where>
     </select>
     
@@ -58,7 +75,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="phone != null">phone,</if>
             <if test="status != null and status != ''">status,</if>
             <if test="email != null">email,</if>
-            <if test="delFlag != null">del_flag,</if>
             <if test="dormId != null">dorm_id,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
@@ -75,7 +91,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="phone != null">#{phone},</if>
             <if test="status != null and status != ''">#{status},</if>
             <if test="email != null">#{email},</if>
-            <if test="delFlag != null">#{delFlag},</if>
             <if test="dormId != null">#{dormId},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
@@ -96,7 +111,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="phone != null">phone = #{phone},</if>
             <if test="status != null and status != ''">status = #{status},</if>
             <if test="email != null">email = #{email},</if>
-            <if test="delFlag != null">del_flag = #{delFlag},</if>
             <if test="dormId != null">dorm_id = #{dormId},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
