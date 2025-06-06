@@ -79,8 +79,14 @@
 
     <el-table v-loading="loading" :data="noticesList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="公告ID" align="center" prop="noticeId" />
-      <el-table-column label="公告标题" align="center" prop="noticeTitle" />
+      <el-table-column label="序号" align="center" prop="noticeId" />
+      <el-table-column label="公告标题" align="center" prop="noticeTitle" min-width="200" show-overflow-tooltip>
+            <template #default="scope">
+               <router-link :to="'/dorm/notices-detail/index/' + scope.row.noticeId" class="link-type">
+                  <span>{{ scope.row.noticeTitle }}</span>
+               </router-link>
+            </template>
+      </el-table-column>
       <el-table-column label="公告类型" align="center" prop="noticeType">
         <template #default="scope">
           <dict-tag :options="dorm_notice_type" :value="scope.row.noticeType"/>
@@ -97,10 +103,11 @@
           <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" class-name="small-padding">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['dorm:notices:edit']">修改</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['dorm:notices:remove']">删除</el-button>
+          <el-button link type="primary" icon="Delete" @click="handleView(scope.row)" v-hasPermi="['dorm:notices:list']">查看</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -154,6 +161,7 @@
 
 <script setup name="Notices">
 import { listNotices, getNotices, delNotices, addNotices, updateNotices } from "@/api/dorm/notices"
+import { useRouter } from 'vue-router'
 
 const { proxy } = getCurrentInstance()
 const { sys_notice_status, dorm_notice_type } = proxy.useDict('sys_notice_status', 'dorm_notice_type')
@@ -167,6 +175,7 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
+const router = useRouter()
 
 const data = reactive({
   form: {},
@@ -277,6 +286,13 @@ function handleUpdate(row) {
   })
 }
 
+/** 查看按钮操作 */
+function handleView(row) {
+  router.push({
+    path: `/dorm/notices-detail/index/${row.noticeId}`
+  });
+}
+
 /** 提交按钮 */
 function submitForm() {
   proxy.$refs["noticesRef"].validate(valid => {
@@ -318,3 +334,43 @@ function handleExport() {
 
 getList()
 </script>
+
+<style lang="scss" scoped>
+/* 公告标题样式 */
+.notice-title {
+  color: #303133;
+  font-weight: 500;
+  cursor: default;
+  display: inline-block;
+  max-width: 100%;
+
+  &:hover {
+    color: #409eff;
+    cursor: pointer;
+  }
+}
+
+/* 表格样式优化 */
+:deep(.el-table) {
+  .el-table__header-wrapper {
+    th {
+      background: #f8f9fa !important;
+      color: #495057 !important;
+      font-weight: 600 !important;
+      border-bottom: 2px solid #dee2e6 !important;
+    }
+  }
+
+  .el-table__body-wrapper {
+    .el-table__row {
+      transition: all 0.3s ease;
+
+      &:hover {
+        background-color: #f8f9fa !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+}
+</style>

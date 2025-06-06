@@ -130,6 +130,20 @@ export const dynamicRoutes = [
       }
     ]
   },
+    {
+    path: '/dorm/notices-detail',
+    component: Layout,
+    hidden: true,
+    permissions: ['dorm:notices:list'],
+    children: [
+      {
+        path: 'index/:noticesId(\\d+)',
+        component: () => import('@/views/dorm/notices/detail'),
+        name: 'NoticeDetail',
+        meta: { title: '通知详情', activeMenu: '/dorm/notices' }
+      }
+    ]
+  },
   {
     path: '/monitor/job-log',
     component: Layout,
