@@ -119,4 +119,14 @@ public class DormStudentController extends BaseController
         return success(dormBuildingService.selectDormTreeList(dormBuilding));
     }
 
+    /**
+     * 查询是否为学生账号
+     */
+    @GetMapping("/isStudent/{username}")
+    public AjaxResult isStudent(@PathVariable("username") String username)
+    {
+        boolean isStudent = dormStudentService.isStudentByUserName(username);
+        return success(isStudent);
+    }
+
 }

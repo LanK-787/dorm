@@ -196,11 +196,19 @@ public interface ISysUserService
 
     /**
      * 导入用户数据
-     * 
+     *
      * @param userList 用户数据列表
      * @param isUpdateSupport 是否更新支持，如果已存在，则进行更新数据
      * @param operName 操作用户
      * @return 结果
      */
     public String importUser(List<SysUser> userList, Boolean isUpdateSupport, String operName);
+
+    /**
+     * 通过用户名查询角色ID列表
+     *
+     * @param userName 用户名
+     * @return 角色ID列表
+     */
+    public List<Long> selectRoleIdsByUserName(String userName);
 }

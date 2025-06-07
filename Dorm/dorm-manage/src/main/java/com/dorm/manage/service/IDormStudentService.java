@@ -53,9 +53,17 @@ public interface IDormStudentService
 
     /**
      * 删除学生管理信息
-     * 
+     *
      * @param studentId 学生管理主键
      * @return 结果
      */
     public int deleteDormStudentByStudentId(Long studentId);
+
+    /**
+     * 根据用户名判断是否为学生
+     *
+     * @param userName 用户名
+     * @return 是否为学生
+     */
+    public boolean isStudentByUserName(String userName);
 }

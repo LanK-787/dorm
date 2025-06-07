@@ -22,6 +22,10 @@
             <groupId>dorm</groupId>
             <artifactId>dorm-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>dorm</groupId>
+            <artifactId>dorm-system</artifactId>
+        </dependency>
 
     </dependencies>
 

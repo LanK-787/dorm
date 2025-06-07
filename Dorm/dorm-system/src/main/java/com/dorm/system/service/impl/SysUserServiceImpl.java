@@ -547,4 +547,16 @@ public class SysUserServiceImpl implements ISysUserService
         }
         return successMsg.toString();
     }
+
+    /**
+     * 通过用户名查询角色ID列表
+     *
+     * @param userName 用户名
+     * @return 角色ID列表
+     */
+    @Override
+    public List<Long> selectRoleIdsByUserName(String userName)
+    {
+        return userRoleMapper.selectRoleIdsByUserName(userName);
+    }
 }

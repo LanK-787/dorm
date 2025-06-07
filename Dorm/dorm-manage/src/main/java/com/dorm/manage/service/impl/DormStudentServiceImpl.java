@@ -2,6 +2,8 @@ package com.dorm.manage.service.impl;
 
 import java.util.List;
 import com.dorm.common.utils.DateUtils;
+import com.dorm.system.mapper.SysUserMapper;
+import com.dorm.system.mapper.SysUserRoleMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.dorm.manage.mapper.DormStudentMapper;
@@ -19,6 +21,9 @@ public class DormStudentServiceImpl implements IDormStudentService
 {
     @Autowired
     private DormStudentMapper dormStudentMapper;
+
+    @Autowired
+    private SysUserRoleMapper sysUserRoleMapper;
 
     /**
      * 查询学生管理
@@ -84,7 +89,7 @@ public class DormStudentServiceImpl implements IDormStudentService
 
     /**
      * 删除学生管理信息
-     * 
+     *
      * @param studentId 学生管理主键
      * @return 结果
      */
@@ -92,5 +97,18 @@ public class DormStudentServiceImpl implements IDormStudentService
     public int deleteDormStudentByStudentId(Long studentId)
     {
         return dormStudentMapper.deleteDormStudentByStudentId(studentId);
+    }
+
+    /**
+     * 根据用户名判断是否为学生
+     *
+     * @param userName 用户名
+     * @return 是否为学生
+     */
+    @Override
+    public boolean isStudentByUserName(String userName)
+    {
+        List<Long> longs = sysUserRoleMapper.selectRoleIdsByUserName(userName);
+        return longs.get(0) == 100;
     }
 }

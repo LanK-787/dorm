@@ -38,92 +38,158 @@
   </view>
 </template>
 
-<script>
+<script setup>
+  import { ref, reactive, getCurrentInstance, onMounted } from 'vue'
   import { getCodeImg } from '@/api/login'
   import useUserStore from '@/store/modules/user'
+  import { isStudent } from '@/api/dorm/student'
 
-  export default {
-    data() {
-      return {
-        codeUrl: "",
-        captchaEnabled: true,
-        // 用户注册开关
-        register: false,
-        globalConfig: getApp().globalData.config,
-        loginForm: {
-          username: "admin",
-          password: "admin123",
-          code: "",
-          uuid: ""
-        },
-        userStore: useUserStore()
+  // 获取当前实例以访问全局属性
+  const { proxy } = getCurrentInstance()
+
+  // 响应式数据
+  const codeUrl = ref("")
+  const captchaEnabled = ref(true)
+  // 用户注册开关
+  const register = ref(false)
+  // 学生账号状态
+  const isStudentAccount = ref(false)
+  const globalConfig = ref(getApp().globalData.config)
+  const loginForm = reactive({
+    username: "admin",
+    password: "admin123",
+    code: "",
+    uuid: ""
+  })
+
+  // Pinia store
+  const userStore = useUserStore()
+
+  // 生命周期钩子
+  onMounted(() => {
+    getCode()
+  })
+
+  // 用户注册
+  const handleUserRegister = () => {
+    proxy.$tab.redirectTo(`/pages/register`)
+  }
+
+  // 隐私协议
+  const handlePrivacy = () => {
+    let site = globalConfig.value.appInfo.agreements[0]
+    proxy.$tab.navigateTo(`/pages/common/webview/index?title=${site.title}&url=${site.url}`)
+  }
+
+  // 用户协议
+  const handleUserAgrement = () => {
+    let site = globalConfig.value.appInfo.agreements[1]
+    proxy.$tab.navigateTo(`/pages/common/webview/index?title=${site.title}&url=${site.url}`)
+  }
+
+  // 获取图形验证码
+  const getCode = () => {
+    getCodeImg().then(res => {
+      captchaEnabled.value = res.captchaEnabled === undefined ? true : res.captchaEnabled
+      if (captchaEnabled.value) {
+        codeUrl.value = 'data:image/gif;base64,' + res.img
+        loginForm.uuid = res.uuid
       }
-    },
-    created() {
-      this.getCode()
-    },
-    methods: {
-      // 用户注册
-      handleUserRegister() {
-        this.$tab.redirectTo(`/pages/register`)
-      },
-      // 隐私协议
-      handlePrivacy() {
-        let site = this.globalConfig.appInfo.agreements[0]
-        this.$tab.navigateTo(`/pages/common/webview/index?title=${site.title}&url=${site.url}`)
-      },
-      // 用户协议
-      handleUserAgrement() {
-        let site = this.globalConfig.appInfo.agreements[1]
-        this.$tab.navigateTo(`/pages/common/webview/index?title=${site.title}&url=${site.url}`)
-      },
-      // 获取图形验证码
-      getCode() {
-        getCodeImg().then(res => {
-          this.captchaEnabled = res.captchaEnabled === undefined ? true : res.captchaEnabled
-          if (this.captchaEnabled) {
-            this.codeUrl = 'data:image/gif;base64,' + res.img
-            this.loginForm.uuid = res.uuid
-          }
-        })
-      },
-      // 登录方法
-      async handleLogin() {
-        if (this.loginForm.username === "") {
-          this.$modal.msgError("请输入账号")
-        } else if (this.loginForm.password === "") {
-          this.$modal.msgError("请输入密码")
-        } else if (this.loginForm.code === "" && this.captchaEnabled) {
-          this.$modal.msgError("请输入验证码")
+    })
+  }
+
+  // 检测是否为学生账号
+  const checkIsStudent = async (username) => {
+    try {
+      const response = await isStudent(username)
+      // 处理API响应格式：{ "msg": "操作成功", "code": 200, "data": true/false }
+      if (response.code === 200) {
+        isStudentAccount.value = response.data
+        return response.data
+      } else {
+        console.error('检测学生账号失败:', response.msg)
+        isStudentAccount.value = false
+        return false
+      }
+    } catch (error) {
+      console.error('检测学生账号出错:', error)
+      isStudentAccount.value = false
+      return false
+    }
+  }
+
+  // 登录成功后，处理函数
+  const loginSuccess = async (result) => {
+    try {
+      // 在获取用户信息之前进行学生账号检测
+      const studentStatus = await checkIsStudent(loginForm.username)
+
+      // 根据检测结果显示不同的成功提示消息
+      if (studentStatus) {
+        proxy.$modal.msgSuccess('学生账号登录成功')
+      } else {
+        proxy.$modal.msgSuccess('管理员账号登录成功')
+      }
+
+      // 设置用户信息
+      userStore.getInfo().then(res => {
+        // 基于用户类型的差异化处理逻辑
+        if (isStudentAccount.value) {
+          // 学生账号的处理逻辑
+          proxy.$tab.reLaunch('/pages/index')
         } else {
-          this.$modal.loading("登录中，请耐心等待...")
-          this.pwdLogin()
+          // 非学生账号（管理员等）的处理逻辑
+          proxy.$tab.reLaunch('/pages/index')
         }
-      },
-      // 密码登录
-      async pwdLogin() {
-        this.userStore.login(this.loginForm).then(() => {
-          this.$modal.closeLoading()
-          this.loginSuccess()
-        }).catch(() => {
-          this.$modal.closeLoading()
-          if (this.captchaEnabled) {
-            this.getCode()
-          }
-        })
-      },
-      // 登录成功后，处理函数
-      loginSuccess(result) {
-        // 设置用户信息
-        this.userStore.getInfo().then(res => {
-          this.$tab.reLaunch('/pages/index')
-        }).catch(error => {
-          console.error('获取用户信息失败:', error)
-          this.$modal.msgError('获取用户信息失败')
-        })
+      }).catch(error => {
+        console.error('获取用户信息失败:', error)
+        proxy.$modal.msgError('获取用户信息失败')
+      })
+
+    } catch (error) {
+      console.error('登录后处理失败:', error)
+      // 确保即使检测失败也不影响正常登录流程
+      proxy.$modal.msgSuccess('登录成功')
+
+      userStore.getInfo().then(res => {
+        proxy.$tab.reLaunch('/pages/index')
+      }).catch(error => {
+        console.error('获取用户信息失败:', error)
+        proxy.$modal.msgError('获取用户信息失败')
+      })
+    }
+  }
+
+  // 登录方法
+  const handleLogin = async () => {
+    if (loginForm.username === "") {
+      proxy.$modal.msgError("请输入账号")
+    } else if (loginForm.password === "") {
+      proxy.$modal.msgError("请输入密码")
+    } else if (loginForm.code === "" && captchaEnabled.value) {
+      proxy.$modal.msgError("请输入验证码")
+    } else {
+      proxy.$modal.loading("登录中，请耐心等待...")
+      await pwdLogin()
+    }
+  }
+
+  // 密码登录
+  const pwdLogin = async () => {
+    try {
+      await userStore.login(loginForm)
+      proxy.$modal.closeLoading()
+      await loginSuccess()
+    } catch (error) {
+      console.error('登录失败:', error)
+      proxy.$modal.closeLoading()
+      if (captchaEnabled.value) {
+        getCode()
       }
     }
   }
+
+
 </script>
 
 <style lang="scss" scoped>

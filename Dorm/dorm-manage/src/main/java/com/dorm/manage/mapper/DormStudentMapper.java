@@ -53,9 +53,17 @@ public interface DormStudentMapper
 
     /**
      * 批量删除学生管理
-     * 
+     *
      * @param studentIds 需要删除的数据主键集合
      * @return 结果
      */
     public int deleteDormStudentByStudentIds(Long[] studentIds);
+
+    /**
+     * 根据用户名查询学生信息
+     *
+     * @param userName 用户名
+     * @return 学生信息
+     */
+    public DormStudent selectDormStudentByUserName(String userName);
 }

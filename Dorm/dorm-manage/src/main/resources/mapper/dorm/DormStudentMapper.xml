@@ -64,6 +64,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where student_id = #{studentId}
     </select>
 
+    <select id="selectDormStudentByUserName" parameterType="String" resultMap="DormStudentResult">
+        select ds.student_id, ds.user_id, ds.student_no, ds.name, ds.gender, ds.class_name, ds.phone, ds.status, ds.email, ds.del_flag, ds.dorm_id, ds.create_by, ds.create_time, ds.update_by, ds.update_time, ds.remark
+        from dorm_student ds
+        inner join sys_user su on ds.user_id = su.user_id
+        where su.user_name = #{userName} and ds.del_flag = '0' and su.del_flag = '0'
+    </select>
+
     <insert id="insertDormStudent" parameterType="DormStudent" useGeneratedKeys="true" keyProperty="studentId">
         insert into dorm_student
         <trim prefix="(" suffix=")" suffixOverrides=",">

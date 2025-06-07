@@ -253,4 +253,14 @@ public class SysUserController extends BaseController
     {
         return success(deptService.selectDeptTreeList(dept));
     }
+
+    /**
+     * 通过用户名查询角色ID列表
+     */
+    @GetMapping("/roleIds/{userName}")
+    public AjaxResult getRoleIdsByUserName(@PathVariable("userName") String userName)
+    {
+        List<Long> roleIds = userService.selectRoleIdsByUserName(userName);
+        return success(roleIds);
+    }
 }
