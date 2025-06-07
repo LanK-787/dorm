@@ -75,38 +75,38 @@
 </template>
 
 <script>
-export default {
-  data() {
-    return {
-      current: 0,
-      swiperDotIndex: 0,
-      data: [{
-          image: '/static/images/banner/banner01.jpg'
-        },
-        {
-          image: '/static/images/banner/banner02.jpg'
-        },
-        {
-          image: '/static/images/banner/banner03.jpg'
-        }
-      ]
-    }
-  },
-  methods: {
-    clickBannerItem(item) {
-      console.info(item)
+  export default {
+    data() {
+      return {
+        current: 0,
+        swiperDotIndex: 0,
+        data: [{
+            image: '/static/images/banner/banner01.jpg'
+          },
+          {
+            image: '/static/images/banner/banner02.jpg'
+          },
+          {
+            image: '/static/images/banner/banner03.jpg'
+          }
+        ]
+      }
     },
-    changeSwiper(e) {
-      this.current = e.detail.current
-    },
-    changeGrid(e) {
-      this.$modal.showToast('模块建设中~')
+    methods: {
+      clickBannerItem(item) {
+        console.info(item)
+      },
+      changeSwiper(e) {
+        this.current = e.detail.current
+      },
+      changeGrid(e) {
+        this.$modal.showToast('模块建设中~')
+      }
     }
   }
-}
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
   /* #ifndef APP-NVUE */
   page {
     display: flex;
@@ -121,7 +121,6 @@ export default {
     font-size: 14px;
     line-height: inherit;
   }
-
   /* #endif */
 
   .text {

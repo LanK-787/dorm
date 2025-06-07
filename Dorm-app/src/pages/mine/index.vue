@@ -77,63 +77,58 @@
 </template>
 
 <script>
-import storage from '@/utils/storage'
+  import useUserStore from '@/store/modules/user'
 
-export default {
-  data() {
-    return {
-      name: this.$store.state.user.name,
-      version: getApp().globalData.config.appInfo.version
-    }
-  },
-  computed: {
-    avatar() {
-      return this.$store.state.user.avatar
+  export default {
+    data() {
+      return {
+        userStore: useUserStore()
+      }
     },
-    windowHeight() {
-      return uni.getSystemInfoSync().windowHeight - 50
-    }
-  },
-  methods: {
-    handleToInfo() {
-      this.$tab.navigateTo('/pages/mine/info/index')
+    computed: {
+      name() {
+        return this.userStore.name
+      },
+      avatar() {
+        return this.userStore.avatar
+      },
+      windowHeight() {
+        return uni.getSystemInfoSync().windowHeight - 50
+      }
     },
-    handleToEditInfo() {
-      this.$tab.navigateTo('/pages/mine/info/edit')
-    },
-    handleToSetting() {
-      this.$tab.navigateTo('/pages/mine/setting/index')
-    },
-    handleToLogin() {
-      this.$tab.reLaunch('/pages/login')
-    },
-    handleToAvatar() {
-      this.$tab.navigateTo('/pages/mine/avatar/index')
-    },
-    handleLogout() {
-      this.$modal.confirm('确定注销并退出系统吗？').then(() => {
-        this.$store.dispatch('LogOut').then(() => {
-          this.$tab.reLaunch('/pages/index')
-        })
-      })
-    },
-    handleHelp() {
-      this.$tab.navigateTo('/pages/mine/help/index')
-    },
-    handleAbout() {
-      this.$tab.navigateTo('/pages/mine/about/index')
-    },
-    handleJiaoLiuQun() {
-      this.$modal.showToast('QQ群：①133713780、②146013835')
-    },
-    handleBuilding() {
-      this.$modal.showToast('模块建设中~')
+    methods: {
+      handleToInfo() {
+        this.$tab.navigateTo('/pages/mine/info/index')
+      },
+      handleToEditInfo() {
+        this.$tab.navigateTo('/pages/mine/info/edit')
+      },
+      handleToSetting() {
+        this.$tab.navigateTo('/pages/mine/setting/index')
+      },
+      handleToLogin() {
+        this.$tab.reLaunch('/pages/login')
+      },
+      handleToAvatar() {
+        this.$tab.navigateTo('/pages/mine/avatar/index')
+      },
+      handleHelp() {
+        this.$tab.navigateTo('/pages/mine/help/index')
+      },
+      handleAbout() {
+        this.$tab.navigateTo('/pages/mine/about/index')
+      },
+      handleJiaoLiuQun() {
+        this.$modal.showToast('QQ群：①133713780(满)、②146013835(满)、③189091635')
+      },
+      handleBuilding() {
+        this.$modal.showToast('模块建设中~')
+      }
     }
   }
-}
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
   page {
     background-color: #f5f6f7;
   }

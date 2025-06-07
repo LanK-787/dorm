@@ -2,7 +2,7 @@ import { getToken } from '@/utils/auth'
 
 // 登录页面
 const loginPage = "/pages/login"
-  
+
 // 页面白名单
 const whiteList = [
   '/pages/login', '/pages/register', '/pages/common/webview/index'

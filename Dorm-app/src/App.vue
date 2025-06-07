@@ -1,36 +1,34 @@
-<script>
-  import config from './config'
-  import { getToken } from '@/utils/auth'
+<script setup>
+import {getCurrentInstance} from "vue"
+import { onLaunch } from '@dcloudio/uni-app'
+import './permission'
+import pagesJson from './pages.json'
+import config from "@/config";
+import {getToken} from "@/utils/auth"; // permission
 
-  export default {
-    onLaunch: function() {
-      this.initApp()
-    },
-    methods: {
-      // 初始化应用
-      initApp() {
-        // 初始化应用配置
-        this.initConfig()
-        // 检查用户登录状态
-        //#ifdef H5
-        this.checkLogin()
-        //#endif
-      },
-      initConfig() {
-        const app = getApp()
-        if (app && app.globalData) {
-          app.globalData.config = config
-        }
-      },
-      checkLogin() {
-        if (!getToken()) {
-          this.$tab.reLaunch('/pages/login')
-        }
-      }
-    }
+const {proxy} = getCurrentInstance()
+
+onLaunch(() => {
+  initApp()
+})
+function initApp(){
+  initConfig()
+  //#ifdef H5
+  checkLogin()
+  //#endif
+}
+function initConfig(){
+  proxy.globalData.config = config
+  proxy.globalData.pages = pagesJson
+}
+function checkLogin() {
+  if (!getToken()) {
+    proxy.$tab.reLaunch('/pages/login')
   }
+}
 </script>
 
 <style lang="scss">
-  @import '@/static/scss/index.scss'
+@import "uview-plus/index.scss";
+@import '@/static/scss/index.scss';
 </style>

@@ -38,7 +38,7 @@
 
 <script>
   import config from '@/config'
-  import store from "@/store"
+  import useUserStore from '@/store/modules/user'
   import { uploadAvatar } from "@/api/system/user"
   
   const baseUrl = config.baseUrl
@@ -67,8 +67,10 @@
 		 * 页面的初始数据
 		 */
 		data() {
+			const userStore = useUserStore()
 			return {
-				imageSrc: store.getters.avatar,
+				userStore: userStore,
+				imageSrc: userStore.avatar,
 				isShowImg: false,
 				// 初始化的宽高
 				cropperInitW: SCREEN_WIDTH,
@@ -257,7 +259,7 @@
 							uni.hideLoading()
 							let data = {name: 'avatarfile', filePath: res.tempFilePath}
 							uploadAvatar(data).then(response => {
-								store.commit('SET_AVATAR', baseUrl + response.imgUrl)
+								this.userStore.setAvatar(baseUrl + response.imgUrl)
 								uni.showToast({ title: "修改成功", icon: 'success' })
 								uni.navigateBack()
 							})
@@ -332,20 +334,7 @@
 	}
 </script>
 
-<style>
-	/* pages/uni-cropper/index.wxss */
-
-	.uni-content-info {
-		/* position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		display: block;
-		align-items: center;
-		flex-direction: column; */
-	}
-
+<style scoped>
 	.cropper-config {
 		padding: 20rpx 40rpx;
 	}
@@ -382,8 +371,8 @@
 		image-orientation: 0deg !important;
 		margin: 0 auto;
 	}
-	/* 移动图片效果 */
 
+	/* 移动图片效果 */
 	.uni-cropper-drag-box {
 		position: absolute;
 		top: 0;
@@ -394,8 +383,8 @@
 		background: rgba(0, 0, 0, 0.6);
 		z-index: 1;
 	}
-	/* 内部的信息 */
 
+	/* 内部的信息 */
 	.uni-corpper-crop-box {
 		position: absolute;
 		background: rgba(255, 255, 255, 0.3);
@@ -411,8 +400,8 @@
 		outline: 1rpx solid #69f;
 		outline-color: rgba(102, 153, 255, .75)
 	}
-	/* 横向虚线 */
 
+	/* 横向虚线 */
 	.uni-cropper-dashed-h {
 		position: absolute;
 		top: 33.33333333%;
@@ -422,8 +411,8 @@
 		border-top: 1rpx dashed rgba(255, 255, 255, 0.5);
 		border-bottom: 1rpx dashed rgba(255, 255, 255, 0.5);
 	}
-	/* 纵向虚线 */
 
+	/* 纵向虚线 */
 	.uni-cropper-dashed-v {
 		position: absolute;
 		left: 33.33333333%;
@@ -433,8 +422,8 @@
 		border-left: 1rpx dashed rgba(255, 255, 255, 0.5);
 		border-right: 1rpx dashed rgba(255, 255, 255, 0.5);
 	}
-	/* 四个方向的线  为了之后的拖动事件*/
 
+	/* 四个方向的线  为了之后的拖动事件*/
 	.uni-cropper-line-t {
 		position: absolute;
 		display: block;
@@ -615,8 +604,8 @@
 		margin-top: -3rpx;
 		cursor: n-resize;
 	}
-	/* 裁剪框预览内容 */
 
+	/* 裁剪框预览内容 */
 	.uni-cropper-viewer {
 		position: relative;
 		width: 100%;

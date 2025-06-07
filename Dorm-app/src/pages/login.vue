@@ -39,87 +39,94 @@
 </template>
 
 <script>
-import { getCodeImg } from '@/api/login'
+  import { getCodeImg } from '@/api/login'
+  import useUserStore from '@/store/modules/user'
 
-export default {
-  data() {
-    return {
-      codeUrl: "",
-      captchaEnabled: true,
-      register: false,
-      globalConfig: getApp().globalData.config,
-      loginForm: {
-        username: "admin",
-        password: "admin123",
-        code: "",
-        uuid: ''
-      }
-    }
-  },
-  created() {
-    this.getCode()
-  },
-  methods: {
-    // 用户注册
-    handleUserRegister() {
-      this.$tab.redirectTo(`/pages/register`)
-    },
-    // 隐私协议
-    handlePrivacy() {
-      let site = this.globalConfig.appInfo.agreements[0]
-      this.$tab.navigateTo(`/pages/common/webview/index?title=${site.title}&url=${site.url}`)
-    },
-    // 用户协议
-    handleUserAgrement() {
-      let site = this.globalConfig.appInfo.agreements[1]
-      this.$tab.navigateTo(`/pages/common/webview/index?title=${site.title}&url=${site.url}`)
-    },
-    // 获取图形验证码
-    getCode() {
-      getCodeImg().then(res => {
-        this.captchaEnabled = res.captchaEnabled === undefined ? true : res.captchaEnabled
-        if (this.captchaEnabled) {
-          this.codeUrl = 'data:image/gif;base64,' + res.img
-          this.loginForm.uuid = res.uuid
-        }
-      })
-    },
-    // 登录方法
-    async handleLogin() {
-      if (this.loginForm.username === "") {
-        this.$modal.msgError("请输入您的账号")
-      } else if (this.loginForm.password === "") {
-        this.$modal.msgError("请输入您的密码")
-      } else if (this.loginForm.code === "" && this.captchaEnabled) {
-        this.$modal.msgError("请输入验证码")
-      } else {
-        this.$modal.loading("登录中，请耐心等待...")
-        this.pwdLogin()
+  export default {
+    data() {
+      return {
+        codeUrl: "",
+        captchaEnabled: true,
+        // 用户注册开关
+        register: false,
+        globalConfig: getApp().globalData.config,
+        loginForm: {
+          username: "admin",
+          password: "admin123",
+          code: "",
+          uuid: ""
+        },
+        userStore: useUserStore()
       }
     },
-    // 密码登录
-    async pwdLogin() {
-      this.$store.dispatch('Login', this.loginForm).then(() => {
-        this.$modal.closeLoading()
-        this.loginSuccess()
-      }).catch(() => {
-        if (this.captchaEnabled) {
-          this.getCode()
-        }
-      })
+    created() {
+      this.getCode()
     },
-    // 登录成功后，处理函数
-    loginSuccess() {
-      // 设置用户信息
-      this.$store.dispatch('GetInfo').then(() => {
-        this.$tab.reLaunch('/pages/index')
-      })
+    methods: {
+      // 用户注册
+      handleUserRegister() {
+        this.$tab.redirectTo(`/pages/register`)
+      },
+      // 隐私协议
+      handlePrivacy() {
+        let site = this.globalConfig.appInfo.agreements[0]
+        this.$tab.navigateTo(`/pages/common/webview/index?title=${site.title}&url=${site.url}`)
+      },
+      // 用户协议
+      handleUserAgrement() {
+        let site = this.globalConfig.appInfo.agreements[1]
+        this.$tab.navigateTo(`/pages/common/webview/index?title=${site.title}&url=${site.url}`)
+      },
+      // 获取图形验证码
+      getCode() {
+        getCodeImg().then(res => {
+          this.captchaEnabled = res.captchaEnabled === undefined ? true : res.captchaEnabled
+          if (this.captchaEnabled) {
+            this.codeUrl = 'data:image/gif;base64,' + res.img
+            this.loginForm.uuid = res.uuid
+          }
+        })
+      },
+      // 登录方法
+      async handleLogin() {
+        if (this.loginForm.username === "") {
+          this.$modal.msgError("请输入账号")
+        } else if (this.loginForm.password === "") {
+          this.$modal.msgError("请输入密码")
+        } else if (this.loginForm.code === "" && this.captchaEnabled) {
+          this.$modal.msgError("请输入验证码")
+        } else {
+          this.$modal.loading("登录中，请耐心等待...")
+          this.pwdLogin()
+        }
+      },
+      // 密码登录
+      async pwdLogin() {
+        this.userStore.login(this.loginForm).then(() => {
+          this.$modal.closeLoading()
+          this.loginSuccess()
+        }).catch(() => {
+          this.$modal.closeLoading()
+          if (this.captchaEnabled) {
+            this.getCode()
+          }
+        })
+      },
+      // 登录成功后，处理函数
+      loginSuccess(result) {
+        // 设置用户信息
+        this.userStore.getInfo().then(res => {
+          this.$tab.reLaunch('/pages/index')
+        }).catch(error => {
+          console.error('获取用户信息失败:', error)
+          this.$modal.msgError('获取用户信息失败')
+        })
+      }
     }
   }
-}
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
   page {
     background-color: #ffffff;
   }

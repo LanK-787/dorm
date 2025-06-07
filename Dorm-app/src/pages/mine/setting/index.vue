@@ -31,10 +31,13 @@
 </template>
 
 <script>
+  import useUserStore from '@/store/modules/user'
+
   export default {
     data() {
       return {
-        windowHeight: uni.getSystemInfoSync().windowHeight
+        windowHeight: uni.getSystemInfoSync().windowHeight,
+        userStore: useUserStore()
       }
     },
     methods: {
@@ -49,7 +52,7 @@
       },
       handleLogout() {
         this.$modal.confirm('确定注销并退出系统吗？').then(() => {
-          this.$store.dispatch('LogOut').then(() => {
+          this.userStore.logOut().then(() => {}).finally(()=>{
             this.$tab.reLaunch('/pages/index')
           })
         })

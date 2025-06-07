@@ -1,16 +1,17 @@
-import store from '@/store'
 import config from '@/config'
 import { getToken } from '@/utils/auth'
 import errorCode from '@/utils/errorCode'
-import { toast, showConfirm, tansParams } from '@/utils/common'
+import {toast, showConfirm, tansParams, uniToastErr, sprintf} from '@/utils/common'
+import useUserStore from "@/store/modules/user";
 
 let timeout = 10000
 const baseUrl = config.baseUrl
 
 const request = config => {
+  const userStore = useUserStore()
   // 是否需要设置 token
-  const isToken = (config.headers || {}).isToken === false
-  config.header = config.header || {}
+  config.header = config?.header || {}
+  const isToken = config.headers?.isToken === false
   if (getToken() && !isToken) {
     config.header['Authorization'] = 'Bearer ' + getToken()
   }
@@ -29,22 +30,28 @@ const request = config => {
         header: config.header,
         dataType: 'json'
       }).then(response => {
-        let [error, res] = response
-        if (error) {
-          toast('后端接口连接异常')
-          reject('后端接口连接异常')
-          return
+        // console.log(response, 1111, config)
+        if(response.statusCode !== 200){
+          toast(response.data + '')
+          reject(new Error(config.url + ': ' + response.data))
+          return;
         }
-        const code = res.data.code || 200
-        const msg = errorCode[code] || res.data.msg || errorCode['default']
+        const res = response.data
+        const code = res?.code || 200
+        const msg = errorCode[code] || res?.msg || errorCode['default']
         if (code === 401) {
-          showConfirm('登录状态已过期，您可以继续留在该页面，或者重新登录?').then(res => {
-            if (res.confirm) {
-              store.dispatch('LogOut').then(res => {
-                uni.reLaunch({ url: '/pages/login' })
-              })
-            }
-          })
+          const pages = getCurrentPages()
+          const currentPage = pages[pages.length - 1]
+          if(currentPage.route !== 'pages/login'){
+            showConfirm('登录状态已过期，您可以继续留在该页面，或者重新登录?').then(res => {
+              if (res.confirm) {
+                userStore.logOut().then(res => {
+                  uni.reLaunch({ url: '/pages/login' })
+                })
+              }
+            })
+          }
+
           reject('无效的会话，或者会话已过期，请重新登录。')
         } else if (code === 500) {
           toast(msg)
@@ -53,19 +60,29 @@ const request = config => {
           toast(msg)
           reject(code)
         }
-        resolve(res.data)
+        resolve(res)
       })
       .catch(error => {
-        let { message } = error
-        if (message === 'Network Error') {
-          message = '后端接口连接异常'
+        console.log('err: ', error)
+        let message = error?.message || error?.errMsg || error?.toString() || error + ''
+        let errMsg
+        if (message.includes('Network Error')) {
+          errMsg = '网络错误'
+        }else if (message.includes('request:fail')) {
+          errMsg = '请求异常'
         } else if (message.includes('timeout')) {
-          message = '系统接口请求超时'
+          errMsg = '请求超时'
         } else if (message.includes('Request failed with status code')) {
-          message = '系统接口' + message.substr(message.length - 3) + '异常'
+          errMsg = '接口异常'
+        } else{
+          errMsg = '未知错误'
         }
-        toast(message)
-        reject(error)
+        uniToastErr(errMsg)
+        if(error instanceof Error){
+          reject(error)
+          return
+        }
+        reject(new Error(sprintf('url: %s, msg: %s', config.url, message)))
       })
   })
 }

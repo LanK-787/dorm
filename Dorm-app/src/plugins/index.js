@@ -3,12 +3,10 @@ import auth from './auth'
 import modal from './modal'
 
 export default {
-  install(Vue) {
-    // 页签操作
-    Vue.prototype.$tab = tab
-    // 认证对象
-    Vue.prototype.$auth = auth
-    // 模态框对象
-    Vue.prototype.$modal = modal
+  install(app) {  // 参数改为 app（Vue 3 的实例）
+    // 挂载全局属性
+    app.config.globalProperties.$tab = tab
+    app.config.globalProperties.$auth = auth
+    app.config.globalProperties.$modal = modal
   }
 }
