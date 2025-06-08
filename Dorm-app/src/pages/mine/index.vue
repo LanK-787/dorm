@@ -14,7 +14,7 @@
           </view>
           <view v-if="name" @click="handleToInfo" class="user-info">
             <view class="u_title">
-              用户名：{{ name }}
+              姓名：{{ name }}
             </view>
           </view>
         </view>
@@ -76,55 +76,56 @@
   </view>
 </template>
 
-<script>
+<script setup>
+  import { computed, getCurrentInstance } from 'vue'
   import useUserStore from '@/store/modules/user'
 
-  export default {
-    data() {
-      return {
-        userStore: useUserStore()
-      }
-    },
-    computed: {
-      name() {
-        return this.userStore.name
-      },
-      avatar() {
-        return this.userStore.avatar
-      },
-      windowHeight() {
-        return uni.getSystemInfoSync().windowHeight - 50
-      }
-    },
-    methods: {
-      handleToInfo() {
-        this.$tab.navigateTo('/pages/mine/info/index')
-      },
-      handleToEditInfo() {
-        this.$tab.navigateTo('/pages/mine/info/edit')
-      },
-      handleToSetting() {
-        this.$tab.navigateTo('/pages/mine/setting/index')
-      },
-      handleToLogin() {
-        this.$tab.reLaunch('/pages/login')
-      },
-      handleToAvatar() {
-        this.$tab.navigateTo('/pages/mine/avatar/index')
-      },
-      handleHelp() {
-        this.$tab.navigateTo('/pages/mine/help/index')
-      },
-      handleAbout() {
-        this.$tab.navigateTo('/pages/mine/about/index')
-      },
-      handleJiaoLiuQun() {
-        this.$modal.showToast('QQ群：①133713780(满)、②146013835(满)、③189091635')
-      },
-      handleBuilding() {
-        this.$modal.showToast('模块建设中~')
-      }
-    }
+  // 获取当前实例以访问全局属性
+  const { proxy } = getCurrentInstance()
+
+  // 获取用户store实例
+  const userStore = useUserStore()
+
+  // 计算属性
+  const name = computed(() => userStore.name)
+  const avatar = computed(() => userStore.avatar)
+  const windowHeight = computed(() => uni.getSystemInfoSync().windowHeight - 50)
+
+  // 方法定义
+  const handleToInfo = () => {
+    proxy.$tab.navigateTo('/pages/mine/info/index')
+  }
+
+  const handleToEditInfo = () => {
+    proxy.$tab.navigateTo('/pages/mine/info/edit')
+  }
+
+  const handleToSetting = () => {
+    proxy.$tab.navigateTo('/pages/mine/setting/index')
+  }
+
+  const handleToLogin = () => {
+    proxy.$tab.reLaunch('/pages/login')
+  }
+
+  const handleToAvatar = () => {
+    proxy.$tab.navigateTo('/pages/mine/avatar/index')
+  }
+
+  const handleHelp = () => {
+    proxy.$tab.navigateTo('/pages/mine/help/index')
+  }
+
+  const handleAbout = () => {
+    proxy.$tab.navigateTo('/pages/mine/about/index')
+  }
+
+  const handleJiaoLiuQun = () => {
+    proxy.$modal.showToast('QQ群：①133713780(满)、②146013835(满)、③189091635')
+  }
+
+  const handleBuilding = () => {
+    proxy.$modal.showToast('模块建设中~')
   }
 </script>
 
