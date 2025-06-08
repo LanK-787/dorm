@@ -42,7 +42,11 @@
   import { ref, reactive, getCurrentInstance, onMounted } from 'vue'
   import { getCodeImg } from '@/api/login'
   import useUserStore from '@/store/modules/user'
-  import { isStudent } from '@/api/dorm/student'
+  import useStudentStore from '@/store/modules/student'
+  import { isStudent, isStudentInfoFilled } from '@/api/dorm/student'
+
+  // 获取student store实例
+const studentStore = useStudentStore()
 
   // 获取当前实例以访问全局属性
   const { proxy } = getCurrentInstance()
@@ -118,27 +122,51 @@
     }
   }
 
+
+
   // 登录成功后，处理函数
-  const loginSuccess = async (result) => {
+  const loginSuccess = async () => {
     try {
-      // 在获取用户信息之前进行学生账号检测
-      const studentStatus = await checkIsStudent(loginForm.username)
-
-      // 根据检测结果显示不同的成功提示消息
-      if (studentStatus) {
-        proxy.$modal.msgSuccess('学生账号登录成功')
-      } else {
-        proxy.$modal.msgSuccess('管理员账号登录成功')
-      }
-
       // 设置用户信息
-      userStore.getInfo().then(res => {
-        // 基于用户类型的差异化处理逻辑
-        if (isStudentAccount.value) {
-          // 学生账号的处理逻辑
-          proxy.$tab.reLaunch('/pages/index')
-        } else {
-          // 非学生账号（管理员等）的处理逻辑
+      userStore.getInfo().then(async () => {
+        try {
+          // 在获取用户信息成功后进行学生账号检测
+          const studentStatus = await checkIsStudent(loginForm.username)
+
+          // 根据检测结果显示不同的成功提示消息
+          if (studentStatus) {
+            // 是学生账号，检查学生信息是否完整
+            const studentInfo = await isStudentInfoFilled(loginForm.username)
+            if(studentInfo.data){
+              // 学生信息已完善
+              proxy.$modal.msgSuccess('学生账号登录成功')
+
+              // 基于用户类型的差异化处理逻辑
+              if (isStudentAccount.value) {
+                // 学生账号的处理逻辑
+                proxy.$tab.reLaunch('/pages/index')
+              }
+            } else {
+              // 学生信息未完善，引导用户完善信息
+              proxy.$modal.msgError('学生信息未完善，请先完善个人信息')
+
+              // 跳转到学生信息完善页面
+              setTimeout(() => {
+                proxy.$tab.reLaunch('/pages/student/complete-info')
+              }, 1500)
+              return // 提前返回，不执行后续的首页跳转逻辑
+            }
+          } else {
+            // 非学生账号（管理员等）
+            proxy.$modal.msgSuccess('管理员账号登录成功')
+
+            // 非学生账号（管理员等）的处理逻辑
+            proxy.$tab.reLaunch('/pages/index')
+          }
+        } catch (detectionError) {
+          console.error('学生账号检测失败:', detectionError)
+          // 如果检测失败，默认按普通用户处理
+          proxy.$modal.msgSuccess('登录成功')
           proxy.$tab.reLaunch('/pages/index')
         }
       }).catch(error => {
@@ -151,7 +179,7 @@
       // 确保即使检测失败也不影响正常登录流程
       proxy.$modal.msgSuccess('登录成功')
 
-      userStore.getInfo().then(res => {
+      userStore.getInfo().then(() => {
         proxy.$tab.reLaunch('/pages/index')
       }).catch(error => {
         console.error('获取用户信息失败:', error)

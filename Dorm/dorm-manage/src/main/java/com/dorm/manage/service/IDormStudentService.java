@@ -74,4 +74,11 @@ public interface IDormStudentService
      * @return user_id是否存在
      */
     public boolean isUserIdExistsByUserName(String userName);
+
+    /**
+     * 根据用户id查询学生信息
+     *
+     * @return 学生信息
+     */
+    public DormStudent selectDormStudentByUserId();
 }

@@ -66,4 +66,12 @@ public interface DormStudentMapper
      * @return 学生信息
      */
     public DormStudent selectDormStudentByUserName(String userName);
+
+    /**
+     * 根据用户名id查询学生信息
+     *
+     * @param userId 用户名
+     * @return 学生信息
+     */
+    DormStudent selectDormStudentbyUserId(Long userId);
 }

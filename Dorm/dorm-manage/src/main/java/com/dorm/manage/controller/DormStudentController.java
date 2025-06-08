@@ -139,4 +139,14 @@ public class DormStudentController extends BaseController
         return success(exists);
     }
 
+    /**
+     * 根据用户名查询学生信息
+     */
+    @GetMapping("/getStudentInfo")
+    public AjaxResult getStudentInfo()
+    {
+        DormStudent student = dormStudentService.selectDormStudentByUserId();
+        return success(student);
+    }
+
 }
