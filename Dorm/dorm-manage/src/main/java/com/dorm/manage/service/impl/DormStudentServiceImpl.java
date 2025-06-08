@@ -111,4 +111,16 @@ public class DormStudentServiceImpl implements IDormStudentService
         List<Long> longs = sysUserRoleMapper.selectRoleIdsByUserName(userName);
         return longs.get(0) == 100;
     }
+    /**
+     * 根据用户名判断user_id是否存在
+     *
+     * @param userName 用户名
+     * @return user_id是否存在
+     */
+    @Override
+    public boolean isUserIdExistsByUserName(String userName)
+    {
+        DormStudent student = dormStudentMapper.selectDormStudentByUserName(userName);
+        return student != null && student.getUserId() != null;
+    }
 }

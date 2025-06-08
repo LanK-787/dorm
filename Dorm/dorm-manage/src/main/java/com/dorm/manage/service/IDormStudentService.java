@@ -66,4 +66,12 @@ public interface IDormStudentService
      * @return 是否为学生
      */
     public boolean isStudentByUserName(String userName);
+
+    /**
+     * 根据用户名判断user_id是否存在
+     *
+     * @param userName 用户名
+     * @return user_id是否存在
+     */
+    public boolean isUserIdExistsByUserName(String userName);
 }

@@ -129,4 +129,14 @@ public class DormStudentController extends BaseController
         return success(isStudent);
     }
 
+    /**
+     * 根据用户名判断user_id是否存在
+     */
+    @GetMapping("/isStudentInfoFilled/{username}")
+    public AjaxResult checkUserIdExists(@PathVariable("username") String username)
+    {
+        boolean exists = dormStudentService.isUserIdExistsByUserName(username);
+        return success(exists);
+    }
+
 }
