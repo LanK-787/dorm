@@ -74,3 +74,13 @@ export function getStudentInfo() {
     method: 'get'
   })
 }
+
+
+// 用户端修改学生信息（仅学生信息）
+export function updateStudentInfo(data) {
+  return request({
+    url: '/dorm/student/updateStudentInfo',
+    method: 'put',
+    data: data
+  })
+}

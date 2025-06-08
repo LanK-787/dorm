@@ -149,4 +149,13 @@ public class DormStudentController extends BaseController
         return success(student);
     }
 
+    /**
+     * 用户端更新学生信息
+     */
+    @GetMapping("/updateStudentInfo")
+    public AjaxResult updateStudentInfo(@RequestBody DormStudent dormStudent)
+    {
+        return toAjax(dormStudentService.UpdateDormStudentInfo(dormStudent));
+    }
+
 }

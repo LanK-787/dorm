@@ -30,34 +30,45 @@
   </view>
 </template>
 
-<script>
+<script setup>
+  import { ref, getCurrentInstance } from 'vue'
   import useUserStore from '@/store/modules/user'
+  import useStudentStore from '@/store/modules/student'
 
-  export default {
-    data() {
-      return {
-        windowHeight: uni.getSystemInfoSync().windowHeight,
-        userStore: useUserStore()
-      }
-    },
-    methods: {
-      handleToPwd() {
-        this.$tab.navigateTo('/pages/mine/pwd/index')
-      },
-      handleToUpgrade() {
-        this.$modal.showToast('模块建设中~')
-      },
-      handleCleanTmp() {
-        this.$modal.showToast('模块建设中~')
-      },
-      handleLogout() {
-        this.$modal.confirm('确定注销并退出系统吗？').then(() => {
-          this.userStore.logOut().then(() => {}).finally(()=>{
-            this.$tab.reLaunch('/pages/index')
-          })
-        })
-      }
-    }
+  // 获取当前实例以访问全局属性
+  const { proxy } = getCurrentInstance()
+
+  // 获取用户store实例
+  const userStore = useUserStore()
+
+  // 获取学生store实例
+  const studentStore = useStudentStore()
+
+  // 响应式数据
+  const windowHeight = ref(uni.getSystemInfoSync().windowHeight)
+
+  // 方法定义
+  const handleToPwd = () => {
+    proxy.$tab.navigateTo('/pages/mine/pwd/index')
+  }
+
+  const handleToUpgrade = () => {
+    proxy.$modal.showToast('模块建设中~')
+  }
+
+  const handleCleanTmp = () => {
+    proxy.$modal.showToast('模块建设中~')
+  }
+
+  const handleLogout = () => {
+    proxy.$modal.confirm('确定注销并退出系统吗？').then(() => {
+      userStore.logOut().then(() => {
+        // 清空当前学生信息
+        studentStore.clearCurrentStudent()
+      }).finally(() => {
+        proxy.$tab.reLaunch('/pages/index')
+      })
+    })
   }
 </script>
 

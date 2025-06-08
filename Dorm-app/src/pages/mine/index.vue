@@ -77,8 +77,33 @@
 </template>
 
 <script setup>
-  import { computed, getCurrentInstance } from 'vue'
+  import { computed, getCurrentInstance, onMounted } from 'vue'
   import useUserStore from '@/store/modules/user'
+  import useStudentStore from '@/store/modules/student'
+
+  // 获取student store实例
+  const studentStore = useStudentStore()
+
+
+// 检查用户是否已登录且学生信息是否存在
+onMounted(async () => {
+  const userStore = useUserStore()
+  
+  // 检查用户是否已登录
+  if (userStore.token) {
+    try {
+      // 检查是否已有学生信息，没有则获取
+      if (!studentStore.currentStudent) {
+        await studentStore.fetchStudentDetail()
+      } else {
+        console.log('已有学生信息，无需重新获取')
+      }
+    } catch (error) {
+      console.error('获取学生信息失败:', error)
+      // 可以添加错误处理逻辑
+    }
+  }
+})
 
   // 获取当前实例以访问全局属性
   const { proxy } = getCurrentInstance()
@@ -86,8 +111,15 @@
   // 获取用户store实例
   const userStore = useUserStore()
 
-  // 计算属性
-  const name = computed(() => userStore.name)
+  // 计算属性 - 优先使用学生信息中的姓名
+  const name = computed(() => {
+    // 如果学生信息存在且姓名不为空，使用学生姓名
+    if (studentStore.currentStudent && studentStore.currentStudent.name) {
+      return studentStore.currentStudent.name
+    }
+    // 否则使用用户store中的姓名
+    return userStore.name
+  })
   const avatar = computed(() => userStore.avatar)
   const windowHeight = computed(() => uni.getSystemInfoSync().windowHeight - 50)
 

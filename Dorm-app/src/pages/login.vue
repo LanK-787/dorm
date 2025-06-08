@@ -42,11 +42,8 @@
   import { ref, reactive, getCurrentInstance, onMounted } from 'vue'
   import { getCodeImg } from '@/api/login'
   import useUserStore from '@/store/modules/user'
-  import useStudentStore from '@/store/modules/student'
   import { isStudent, isStudentInfoFilled } from '@/api/dorm/student'
 
-  // 获取student store实例
-const studentStore = useStudentStore()
 
   // 获取当前实例以访问全局属性
   const { proxy } = getCurrentInstance()

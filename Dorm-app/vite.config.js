@@ -19,7 +19,7 @@ export default defineConfig(({mode, command})=>{
     // vite 相关配置
     server: {
       port: port,
-      host: true,
+      host: '0.0.0.0',
       open: true,
     },
     plugins: [

@@ -81,4 +81,11 @@ public interface IDormStudentService
      * @return 学生信息
      */
     public DormStudent selectDormStudentByUserId();
+
+    /**
+     * 用户端修改学生信息
+     *
+     * @return 学生信息
+     */
+    public int UpdateDormStudentInfo(DormStudent dormStudent);
 }

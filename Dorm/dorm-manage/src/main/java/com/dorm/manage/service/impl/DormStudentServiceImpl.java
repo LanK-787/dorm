@@ -6,7 +6,6 @@ import com.dorm.common.utils.SecurityUtils;
 import com.dorm.system.mapper.SysUserMapper;
 import com.dorm.system.mapper.SysUserRoleMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.dorm.framework.web.service.TokenService;
 import org.springframework.stereotype.Service;
 import com.dorm.manage.mapper.DormStudentMapper;
 import com.dorm.manage.domain.DormStudent;
@@ -29,9 +28,6 @@ public class DormStudentServiceImpl implements IDormStudentService
 
     @Autowired
     private SysUserMapper sysUserMapper;
-
-    @Autowired
-    private TokenService tokenService;
 
     /**
      * 查询学生管理
@@ -155,5 +151,21 @@ public class DormStudentServiceImpl implements IDormStudentService
         dormStudent.setUpdateBy(null);
         dormStudent.setRemark(null);
         return dormStudent;
+    }
+
+
+    /**
+     * 用户端修改学生信息
+     *
+     * @return 学生信息
+     */
+    @Override
+    public int UpdateDormStudentInfo(DormStudent dormStudent) {
+        Long userId = SecurityUtils.getUserId();
+        dormStudent.setUserId(userId);
+        List<DormStudent> dormStudents = dormStudentMapper.selectDormStudentList(dormStudent);
+        dormStudent.setStudentId(dormStudents.get(0).getStudentId());
+        dormStudent.setUpdateTime(DateUtils.getNowDate());
+        return dormStudentMapper.updateDormStudent(dormStudent);
     }
 }
