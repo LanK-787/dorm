@@ -9,6 +9,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="parentId"   column="parent_id"   />
         <result property="ancestors"  column="ancestors"   />
         <result property="buildingName"   column="building_name"   />
+        <result property="fullName"   column="full_name"   />
         <result property="orderNum"   column="order_num"   />
         <result property="dormManager"     column="dorm_manager"      />
         <result property="phone"      column="phone"       />
@@ -23,7 +24,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectDormBuildingVo">
-        select d.dorm_id, d.parent_id, d.ancestors, d.building_name, d.order_num, d.dorm_manager, d.phone, d.email, d.status, d.del_flag, d.create_by, d.create_time 
+        select d.dorm_id, d.parent_id, d.ancestors, d.building_name, d.full_name, d.order_num, d.dorm_manager, d.phone, d.email, d.status, d.del_flag, d.create_by, d.create_time
         from dorm_building d
     </sql>
 
@@ -39,6 +40,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <if test="buildingName != null and buildingName != ''">
             AND building_name like concat('%', #{buildingName}, '%')
         </if>
+        <if test="fullName != null and fullName != ''">
+            AND full_name like concat('%', #{fullName}, '%')
+        </if>
         <if test="status != null and status != ''">
             AND status = #{status}
         </if>
@@ -46,7 +50,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
     
     <select id="selectDormBuildingByDormId" parameterType="Long" resultMap="DormBuildingResult">
-        select d.dorm_id, d.parent_id, d.ancestors, d.building_name, d.order_num, d.dorm_manager, d.phone, d.email, d.status,
+        select d.dorm_id, d.parent_id, d.ancestors, d.building_name, d.full_name, d.order_num, d.dorm_manager, d.phone, d.email, d.status,
             (select building_name from dorm_building where dorm_id = d.parent_id) parent_name
         from dorm_building d
         where d.dorm_id = #{dormId}
@@ -79,6 +83,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="dormId != null and dormId != 0">dorm_id,</if>
             <if test="parentId != null and parentId != 0">parent_id,</if>
             <if test="buildingName != null and buildingName != ''">building_name,</if>
+            <if test="fullName != null and fullName != ''">full_name,</if>
             <if test="ancestors != null and ancestors != ''">ancestors,</if>
             <if test="orderNum != null">order_num,</if>
             <if test="dormManager != null and dormManager != ''">dorm_manager,</if>
@@ -91,6 +96,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="dormId != null and dormId != 0">#{dormId},</if>
             <if test="parentId != null and parentId != 0">#{parentId},</if>
             <if test="buildingName != null and buildingName != ''">#{buildingName},</if>
+            <if test="fullName != null and fullName != ''">#{fullName},</if>
             <if test="ancestors != null and ancestors != ''">#{ancestors},</if>
             <if test="orderNum != null">#{orderNum},</if>
             <if test="dormManager != null and dormManager != ''">#{dormManager},</if>
@@ -107,6 +113,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <set>
             <if test="parentId != null and parentId != 0">parent_id = #{parentId},</if>
             <if test="buildingName != null and buildingName != ''">building_name = #{buildingName},</if>
+            <if test="fullName != null">full_name = #{fullName},</if>
             <if test="ancestors != null and ancestors != ''">ancestors = #{ancestors},</if>
             <if test="orderNum != null">order_num = #{orderNum},</if>
             <if test="dormManager != null">dorm_manager = #{dormManager},</if>

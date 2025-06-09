@@ -25,6 +25,10 @@ public class DormBuilding extends TreeEntity<DormBuilding>
     @Excel(name = "宿舍名称")
     private String buildingName;
 
+    /** 宿舍全称 */
+    @Excel(name = "宿舍全称")
+    private String fullName;
+
     /** 宿管 */
     @Excel(name = "宿管")
     private String dormManager;
@@ -62,12 +66,22 @@ public class DormBuilding extends TreeEntity<DormBuilding>
         this.buildingName = buildingName;
     }
 
-    public String getBuildingName() 
+    public String getBuildingName()
     {
         return buildingName;
     }
 
-    public void setDormManager(String dormManager) 
+    public void setFullName(String fullName)
+    {
+        this.fullName = fullName;
+    }
+
+    public String getFullName()
+    {
+        return fullName;
+    }
+
+    public void setDormManager(String dormManager)
     {
         this.dormManager = dormManager;
     }
@@ -125,6 +139,7 @@ public class DormBuilding extends TreeEntity<DormBuilding>
             .append("parentId", getParentId())
             .append("ancestors", getAncestors())
             .append("buildingName", getBuildingName())
+            .append("fullName", getFullName())
             .append("orderNum", getOrderNum())
             .append("dormManager", getDormManager())
             .append("phone", getPhone())

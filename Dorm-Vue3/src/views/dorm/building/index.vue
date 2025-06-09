@@ -9,6 +9,14 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
+      <el-form-item label="宿舍全称" prop="fullName" style="width: 200px;">
+        <el-input
+          v-model="queryParams.fullName"
+          placeholder="请输入宿舍全称"
+          clearable
+          @keyup.enter="handleQuery"
+        />
+      </el-form-item>
       <el-form-item label="显示顺序" prop="orderNum" style="width: 200px;">
         <el-input
           v-model="queryParams.orderNum"
@@ -79,6 +87,7 @@
       :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
     >
       <el-table-column label="名称" align="left" prop="buildingName"/>
+      <el-table-column label="全称" align="left" prop="fullName"/>
       <el-table-column label="显示顺序" align="center" prop="orderNum" />
       <el-table-column label="宿管" align="center" prop="dormManager" />
       <el-table-column label="联系电话" align="center" prop="phone" />
@@ -112,6 +121,9 @@
         </el-form-item>
         <el-form-item label="宿舍名称" prop="buildingName">
           <el-input v-model="form.buildingName" placeholder="请输入宿舍名称" />
+        </el-form-item>
+        <el-form-item label="宿舍全称" prop="fullName">
+          <el-input v-model="form.fullName" placeholder="请输入宿舍全称" />
         </el-form-item>
         <el-form-item label="显示顺序" prop="orderNum">
           <el-input v-model="form.orderNum" placeholder="请输入显示顺序" />
@@ -165,6 +177,7 @@ const data = reactive({
   form: {},
   queryParams: {
     buildingName: null,
+    fullName: null,
     orderNum: null,
     dormManager: null,
     phone: null,
@@ -217,6 +230,7 @@ function reset() {
     parentId: null,
     ancestors: null,
     buildingName: null,
+    fullName: null,
     orderNum: null,
     dormManager: null,
     phone: null,
