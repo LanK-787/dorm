@@ -114,7 +114,7 @@
         <el-form-item label="宿舍名称" prop="buildingName">
           <el-input v-model="form.buildingName" placeholder="请输入宿舍名称" />
         </el-form-item>
-        <el-form-item label="宿舍全称" prop="fullName">
+        <el-form-item label="宿舍全称" prop="fullName" v-if="form.dormId != null">
           <el-input v-model="form.fullName" placeholder="请输入宿舍全称" />
         </el-form-item>
         <el-form-item label="显示顺序" prop="orderNum">
@@ -189,6 +189,60 @@ const data = reactive({
 })
 
 const { queryParams, form, rules } = toRefs(data)
+
+/**
+ * 根据父节点ID和宿舍名称生成宿舍全称
+ * @param {Number} parentId 父节点ID
+ * @param {String} buildingName 宿舍名称
+ * @returns {Promise<String>} 生成的宿舍全称
+ */
+async function generateFullName(parentId, buildingName) {
+  if (!buildingName) {
+    return ''
+  }
+
+  // 如果是顶级节点（parentId为0），全称就是宿舍名称本身
+  if (!parentId || parentId === 0) {
+    return buildingName
+  }
+
+  try {
+    // 递归查找父节点的完整路径
+    const getParentPath = async (nodeId) => {
+      if (!nodeId || nodeId === 0) {
+        return []
+      }
+
+      try {
+        const response = await getBuilding(nodeId)
+        if (response && response.data) {
+          const node = response.data
+          const parentPath = await getParentPath(node.parentId)
+          return [...parentPath, node.buildingName]
+        }
+      } catch (error) {
+        console.error(`获取节点${nodeId}信息失败:`, error)
+      }
+
+      return []
+    }
+
+    // 获取父节点的完整路径
+    const parentPath = await getParentPath(parentId)
+
+    if (parentPath.length > 0) {
+      // 生成全称：完整路径 + " - " + 宿舍名称
+      return `${parentPath.join(' - ')} - ${buildingName}`
+    } else {
+      // 如果找不到父节点路径，返回宿舍名称本身
+      return buildingName
+    }
+  } catch (error) {
+    console.error('生成宿舍全称失败:', error)
+    // 出错时返回宿舍名称本身
+    return buildingName
+  }
+}
 
 /**
  * 补充父节点，确保搜索结果包含完整的树形结构
@@ -367,21 +421,34 @@ async function handleUpdate(row) {
 }
 
 /** 提交按钮 */
-function submitForm() {
-  proxy.$refs["buildingRef"].validate(valid => {
+async function submitForm() {
+  proxy.$refs["buildingRef"].validate(async (valid) => {
     if (valid) {
-      if (form.value.dormId != null) {
-        updateBuilding(form.value).then(response => {
+      try {
+        if (form.value.dormId != null) {
+          // 编辑模式：直接提交，保持用户输入的fullName
+          const response = await updateBuilding(form.value)
           proxy.$modal.msgSuccess("修改成功")
           open.value = false
           getList()
-        })
-      } else {
-        addBuilding(form.value).then(response => {
+        } else {
+          // 新增模式：自动生成fullName
+          const generatedFullName = await generateFullName(form.value.parentId, form.value.buildingName)
+
+          // 创建提交数据，包含自动生成的fullName
+          const submitData = {
+            ...form.value,
+            fullName: generatedFullName
+          }
+
+          const response = await addBuilding(submitData)
           proxy.$modal.msgSuccess("新增成功")
           open.value = false
           getList()
-        })
+        }
+      } catch (error) {
+        console.error('提交失败:', error)
+        proxy.$modal.msgError("操作失败，请重试")
       }
     }
   })
