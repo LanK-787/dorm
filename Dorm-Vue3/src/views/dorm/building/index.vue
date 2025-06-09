@@ -17,14 +17,6 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="显示顺序" prop="orderNum" style="width: 200px;">
-        <el-input
-          v-model="queryParams.orderNum"
-          placeholder="请输入显示顺序"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
       <el-form-item label="宿管" prop="dormManager" style="width: 200px;">
         <el-input
           v-model="queryParams.dormManager"
@@ -198,13 +190,95 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data)
 
+/**
+ * 补充父节点，确保搜索结果包含完整的树形结构
+ * @param {Array} searchResults 搜索返回的节点列表
+ * @returns {Promise<Array>} 包含父节点的完整节点列表
+ */
+async function addParentNodes(searchResults) {
+  if (!searchResults || searchResults.length === 0) {
+    return []
+  }
+
+  try {
+    // 获取所有节点（不带搜索条件）
+    const allResponse = await listBuilding({})
+    const allNodes = allResponse.data || []
+
+    // 创建节点映射，便于快速查找
+    const nodeMap = new Map()
+    allNodes.forEach(node => {
+      nodeMap.set(node.dormId, node)
+    })
+
+    // 创建一个Set来存储需要包含的节点ID
+    const requiredNodeIds = new Set()
+
+    // 递归添加节点及其所有祖先节点
+    function addNodeAndAncestors(nodeId) {
+      if (!nodeId || nodeId === 0 || requiredNodeIds.has(nodeId)) {
+        return
+      }
+
+      const node = nodeMap.get(nodeId)
+      if (!node) {
+        return
+      }
+
+      requiredNodeIds.add(nodeId)
+
+      // 递归添加父节点
+      if (node.parentId && node.parentId !== 0) {
+        addNodeAndAncestors(node.parentId)
+      }
+    }
+
+    // 为每个搜索结果节点添加其祖先节点
+    searchResults.forEach(node => {
+      addNodeAndAncestors(node.dormId)
+    })
+
+    // 过滤出需要的节点
+    const filteredNodes = allNodes.filter(node =>
+      requiredNodeIds.has(node.dormId)
+    )
+
+    return filteredNodes
+  } catch (error) {
+    console.error('获取完整节点列表失败:', error)
+    // 如果获取失败，返回原始搜索结果
+    return searchResults
+  }
+}
+
 /** 查询宿舍管理列表 */
-function getList() {
+async function getList() {
   loading.value = true
-  listBuilding(queryParams.value).then(response => {
-    buildingList.value = proxy.handleTree(response.data, "dormId", "parentId")
+  try {
+    const response = await listBuilding(queryParams.value)
+
+    // 检查是否有搜索条件
+    const hasSearchCondition = queryParams.value.buildingName ||
+                               queryParams.value.fullName ||
+                               queryParams.value.orderNum ||
+                               queryParams.value.dormManager ||
+                               queryParams.value.phone ||
+                               queryParams.value.status
+
+    if (hasSearchCondition) {
+      // 如果有搜索条件，需要补充父节点
+      const completeData = await addParentNodes(response.data)
+      buildingList.value = proxy.handleTree(completeData, "dormId", "parentId")
+    } else {
+      // 如果没有搜索条件，直接构建树
+      buildingList.value = proxy.handleTree(response.data, "dormId", "parentId")
+    }
+  } catch (error) {
+    console.error('获取宿舍列表失败:', error)
+    buildingList.value = []
+  } finally {
     loading.value = false
-  })
+  }
 }
 
 /** 查询宿舍管理下拉树结构 */
