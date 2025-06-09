@@ -57,56 +57,61 @@
 <script setup>
   import { ref, reactive, computed, onMounted } from 'vue'
   import { getUserProfile } from "@/api/system/user"
-  import useStudentStore from '@/store/modules/student'
+  import { getStudentInfo } from "@/api/dorm/student"
+  import useUserStore from '@/store/modules/user'
 
-  // 获取学生store实例
-  const studentStore = useStudentStore()
+  // 获取用户store实例
+  const userStore = useUserStore()
 
   // 响应式数据
   const user = reactive({})
+  const student = reactive({})
   const roleGroup = ref("")
   const postGroup = ref("")
 
-  // 计算属性 - 判断是否显示学生信息
+  // 计算属性 - 判断是否为学生模式
+  const isStudentMode = computed(() => {
+    return userStore.roles && userStore.roles.includes('student')
+  })
+
+  // 计算属性 - 判断是否有学生数据
   const hasStudentData = computed(() => {
-    return studentStore.currentStudent &&
-           Object.keys(studentStore.currentStudent).length > 0 &&
-           studentStore.currentStudent.name
+    return isStudentMode.value && student.name
   })
 
   // 计算属性 - 动态显示数据
   const displayName = computed(() => {
-    return hasStudentData.value ? studentStore.currentStudent.name : user.nickName
+    return hasStudentData.value ? student.name : user.nickName
   })
 
   const displayPhone = computed(() => {
-    return hasStudentData.value ? studentStore.currentStudent.phone : user.phonenumber
+    return hasStudentData.value ? student.phone : user.phonenumber
   })
 
   const displayEmail = computed(() => {
-    return hasStudentData.value ? studentStore.currentStudent.email : user.email
+    return hasStudentData.value ? student.email : user.email
   })
 
   // 学生专用字段
   const studentNo = computed(() => {
-    return hasStudentData.value ? studentStore.currentStudent.studentNo : ''
+    return hasStudentData.value ? student.studentNo : ''
   })
 
   const className = computed(() => {
-    return hasStudentData.value ? studentStore.currentStudent.className : postGroup.value
+    return hasStudentData.value ? student.className : postGroup.value
   })
 
   // 性别文本转换
   const genderText = computed(() => {
     if (!hasStudentData.value) return roleGroup.value
-    const gender = studentStore.currentStudent.gender
+    const gender = student.gender
     return gender === '0' ? '男' : gender === '1' ? '女' : '未知'
   })
 
   // 状态文本转换
   const statusText = computed(() => {
     if (!hasStudentData.value) return user.createTime
-    const status = studentStore.currentStudent.status
+    const status = student.status
     // 根据实际业务需求定义状态文本
     switch(status) {
       case '0': return '正常'
@@ -141,9 +146,36 @@
     })
   }
 
+  const getStudentData = () => {
+    getStudentInfo().then(response => {
+      if (response.code === 200 && response.data) {
+        // 清空并重新赋值student对象
+        Object.keys(student).forEach(key => delete student[key])
+        Object.assign(student, {
+          studentNo: response.data.studentNo || '',
+          name: response.data.name || '',
+          gender: response.data.gender || '',
+          className: response.data.className || '',
+          phone: response.data.phone || '',
+          status: response.data.status || '0',
+          email: response.data.email || ''
+        })
+      } else {
+        console.error('获取学生信息失败:', response.msg)
+      }
+    }).catch(error => {
+      console.error('获取学生信息出错:', error)
+    })
+  }
+
   // 生命周期钩子
   onMounted(() => {
     getUser()
+
+    // 如果是学生模式，获取学生信息
+    if (isStudentMode.value) {
+      getStudentData()
+    }
   })
 </script>
 

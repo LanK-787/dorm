@@ -53,20 +53,19 @@
   import { ref, reactive, computed, onMounted, getCurrentInstance, nextTick } from 'vue'
   import { getUserProfile } from "@/api/system/user"
   import { updateUserProfile } from "@/api/system/user"
-  import { updateStudentInfo } from "@/api/dorm/student"
-  import useStudentStore from '@/store/modules/student'
+  import { updateStudentInfo, getStudentInfo } from "@/api/dorm/student"
+
+  import useUserStore from '@/store/modules/user'
 
   // 获取当前实例以访问全局属性
   const { proxy } = getCurrentInstance()
 
-  // 获取学生store实例
-  const studentStore = useStudentStore()
+  // 获取用户store实例
+  const userStore = useUserStore()
 
   // 计算属性 - 判断是否为学生模式
   const isStudentMode = computed(() => {
-    return studentStore.currentStudent &&
-           Object.keys(studentStore.currentStudent).length > 0 &&
-           studentStore.currentStudent.name
+    return userStore.roles && userStore.roles.includes('student')
   })
 
   // 响应式数据 - 用户信息
@@ -208,19 +207,27 @@
   }
 
   const getStudentData = () => {
-    if (studentStore.currentStudent) {
-      // 清空并重新赋值student对象
-      Object.keys(student).forEach(key => delete student[key])
-      Object.assign(student, {
-        studentNo: studentStore.currentStudent.studentNo || '',
-        name: studentStore.currentStudent.name || '',
-        gender: studentStore.currentStudent.gender || '',
-        className: studentStore.currentStudent.className || '',
-        phone: studentStore.currentStudent.phone || '',
-        status: studentStore.currentStudent.status || '0',
-        email: studentStore.currentStudent.email || ''
-      })
-    }
+    getStudentInfo().then(response => {
+      if (response.code === 200 && response.data) {
+        // 清空并重新赋值student对象
+        Object.keys(student).forEach(key => delete student[key])
+        Object.assign(student, {
+          studentNo: response.data.studentNo || '',
+          name: response.data.name || '',
+          gender: response.data.gender || '',
+          className: response.data.className || '',
+          phone: response.data.phone || '',
+          status: response.data.status || '0',
+          email: response.data.email || ''
+        })
+      } else {
+        console.error('获取学生信息失败:', response.msg)
+        proxy.$modal.msgError(response.msg || '获取学生信息失败')
+      }
+    }).catch(error => {
+      console.error('获取学生信息出错:', error)
+      proxy.$modal.msgError('获取学生信息失败，请检查网络连接')
+    })
   }
 
   const submit = () => {
@@ -230,8 +237,8 @@
         updateStudentInfo(student).then(response => {
           if (response.code === 200) {
             proxy.$modal.msgSuccess("学生信息修改成功")
-            // 更新store中的学生信息
-            Object.assign(studentStore.currentStudent, student)
+            // 重新获取最新的学生信息
+            getStudentData()
           } else {
             proxy.$modal.msgError(response.msg || "修改失败")
           }
