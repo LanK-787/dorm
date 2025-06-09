@@ -80,10 +80,8 @@
     >
       <el-table-column label="名称" align="left" prop="buildingName"/>
       <el-table-column label="全称" align="left" prop="fullName"/>
-      <el-table-column label="显示顺序" align="center" prop="orderNum" />
       <el-table-column label="宿管" align="center" prop="dormManager" />
       <el-table-column label="联系电话" align="center" prop="phone" />
-      <el-table-column label="邮箱" align="center" prop="email" />
       <el-table-column label="宿舍状态" align="center" prop="status">
         <template #default="scope">
           <dict-tag :options="dorm_status" :value="scope.row.status"/>
@@ -109,6 +107,7 @@
             value-key="dormId"
             placeholder="请选择上级名称"
             check-strictly
+            @change="handleParentChange"
           />
         </el-form-item>
         <el-form-item label="宿舍名称" prop="buildingName">
@@ -118,7 +117,10 @@
           <el-input v-model="form.fullName" placeholder="请输入宿舍全称" />
         </el-form-item>
         <el-form-item label="显示顺序" prop="orderNum">
-          <el-input v-model="form.orderNum" placeholder="请输入显示顺序" />
+          <el-input
+            v-model="form.orderNum"
+            :placeholder="form.dormId == null ? '自动计算，可手动修改' : '请输入显示顺序'"
+          />
         </el-form-item>
         <el-form-item label="宿管" prop="dormManager">
           <el-input v-model="form.dormManager" placeholder="请输入宿管" />
@@ -189,6 +191,67 @@ const data = reactive({
 })
 
 const { queryParams, form, rules } = toRefs(data)
+
+/**
+ * 获取指定父节点下所有子节点的最大显示顺序
+ * @param {Number} parentId 父节点ID
+ * @returns {Promise<Number>} 最大显示顺序值
+ */
+async function getMaxOrderNumByParentId(parentId) {
+  try {
+    // 构建查询参数
+    const queryParams = {}
+    if (parentId !== undefined && parentId !== null) {
+      queryParams.parentId = parentId
+    }
+
+    // 获取指定父节点下的所有子节点
+    const response = await listBuilding(queryParams)
+    const children = response.data || []
+
+    if (children.length === 0) {
+      return 0 // 如果没有子节点，返回0
+    }
+
+    // 过滤出真正的子节点（直接子节点）
+    const directChildren = children.filter(child => child.parentId === parentId)
+
+    if (directChildren.length === 0) {
+      return 0
+    }
+
+    // 找出最大的显示顺序值，确保orderNum是数字类型
+    const orderNums = directChildren.map(child => {
+      const orderNum = parseInt(child.orderNum) || 0
+      return orderNum
+    })
+
+    const maxOrderNum = Math.max(...orderNums)
+    return maxOrderNum
+  } catch (error) {
+    console.error('获取最大显示顺序失败:', error)
+    return 0 // 出错时返回默认值0
+  }
+}
+
+/**
+ * 自动计算并设置显示顺序
+ * @param {Number} parentId 父节点ID
+ */
+async function autoSetOrderNum(parentId) {
+  // 只在新增模式下自动设置显示顺序
+  if (form.value.dormId != null) {
+    return
+  }
+
+  try {
+    const maxOrderNum = await getMaxOrderNumByParentId(parentId)
+    form.value.orderNum = maxOrderNum + 1
+  } catch (error) {
+    console.error('自动设置显示顺序失败:', error)
+    form.value.orderNum = 1 // 设置默认值
+  }
+}
 
 /**
  * 根据父节点ID和宿舍名称生成宿舍全称
@@ -344,6 +407,20 @@ function getTreeselect() {
     buildingOptions.value.push(data)
   })
 }
+
+/**
+ * 处理父节点选择变化事件
+ * @param {Number} parentId 选中的父节点ID
+ */
+async function handleParentChange(parentId) {
+  // 只在新增模式下自动设置显示顺序
+  if (form.value.dormId != null) {
+    return
+  }
+
+  // 自动计算并设置显示顺序
+  await autoSetOrderNum(parentId)
+}
 	
 // 取消按钮
 function cancel() {
@@ -385,14 +462,21 @@ function resetQuery() {
 }
 
 /** 新增按钮操作 */
-function handleAdd(row) {
+async function handleAdd(row) {
   reset()
   getTreeselect()
+
+  let parentId = 0
   if (row != null && row.dormId) {
-    form.value.parentId = row.dormId
+    parentId = row.dormId
+    form.value.parentId = parentId
   } else {
     form.value.parentId = 0
   }
+
+  // 自动设置显示顺序
+  await autoSetOrderNum(parentId)
+
   open.value = true
   title.value = "添加宿舍管理"
 }
