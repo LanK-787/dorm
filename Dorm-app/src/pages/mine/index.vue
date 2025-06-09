@@ -93,7 +93,7 @@ onMounted(async () => {
   if (userStore.token) {
     try {
       // 检查是否已有学生信息，没有则获取
-      if (!studentStore.currentStudent) {
+      if (userStore.roles && userStore.roles.includes('student')) {
         await studentStore.fetchStudentDetail()
       } else {
         console.log('已有学生信息，无需重新获取')

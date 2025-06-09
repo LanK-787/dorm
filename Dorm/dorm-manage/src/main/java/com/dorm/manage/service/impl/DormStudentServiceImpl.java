@@ -161,9 +161,15 @@ public class DormStudentServiceImpl implements IDormStudentService
      */
     @Override
     public int UpdateDormStudentInfo(DormStudent dormStudent) {
+
+        // 获取当前用户ID
         Long userId = SecurityUtils.getUserId();
-        dormStudent.setUserId(userId);
-        List<DormStudent> dormStudents = dormStudentMapper.selectDormStudentList(dormStudent);
+
+        DormStudent student = new DormStudent();
+        student.setUserId(userId);
+
+        List<DormStudent> dormStudents = dormStudentMapper.selectDormStudentList(student);
+
         dormStudent.setStudentId(dormStudents.get(0).getStudentId());
         dormStudent.setUpdateTime(DateUtils.getNowDate());
         return dormStudentMapper.updateDormStudent(dormStudent);
