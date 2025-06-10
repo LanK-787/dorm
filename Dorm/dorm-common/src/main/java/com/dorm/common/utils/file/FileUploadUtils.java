@@ -4,8 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Objects;
-import org.apache.commons.io.FilenameUtils;
-import org.springframework.web.multipart.MultipartFile;
+
 import com.dorm.common.config.RuoYiConfig;
 import com.dorm.common.constant.Constants;
 import com.dorm.common.exception.file.FileNameLengthLimitExceededException;
@@ -14,6 +13,10 @@ import com.dorm.common.exception.file.InvalidExtensionException;
 import com.dorm.common.utils.DateUtils;
 import com.dorm.common.utils.StringUtils;
 import com.dorm.common.utils.uuid.Seq;
+import org.apache.commons.io.FilenameUtils;
+import org.springframework.web.multipart.MultipartFile;
+import com.dorm.common.config.MinioConfig;
+
 
 /**
  * 文件上传工具类
@@ -25,7 +28,7 @@ public class FileUploadUtils
     /**
      * 默认大小 50M
      */
-    public static final long DEFAULT_MAX_SIZE = 50 * 1024 * 1024L;
+    public static final long DEFAULT_MAX_SIZE = 50 * 1024 * 1024;
 
     /**
      * 默认的文件名最大长度 100
@@ -33,9 +36,14 @@ public class FileUploadUtils
     public static final int DEFAULT_FILE_NAME_LENGTH = 100;
 
     /**
-     * 默认上传的地址
+     * 本地默认上传的地址
      */
     private static String defaultBaseDir = RuoYiConfig.getProfile();
+
+    /**
+     * Minio默认上传的地址
+     */
+    private static String bucketName = MinioConfig.getBucketName();
 
     public static void setDefaultBaseDir(String defaultBaseDir)
     {
@@ -45,6 +53,11 @@ public class FileUploadUtils
     public static String getDefaultBaseDir()
     {
         return defaultBaseDir;
+    }
+
+    public static String getBucketName()
+    {
+        return bucketName;
     }
 
     /**
@@ -118,6 +131,66 @@ public class FileUploadUtils
     }
 
     /**
+     * 以默认BucketName配置上传到Minio服务器
+     *
+     * @param file 上传的文件
+     * @return 文件名称
+     * @throws Exception
+     */
+    public static final String uploadMinio(MultipartFile file) throws IOException
+    {
+        try
+        {
+            return uploadMinino(getBucketName(), file, MimeTypeUtils.DEFAULT_ALLOWED_EXTENSION);
+        }
+        catch (Exception e)
+        {
+            throw new IOException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 自定义bucketName配置上传到Minio服务器
+     *
+     * @param file 上传的文件
+     * @return 文件名称
+     * @throws Exception
+     */
+    public static final String uploadMinio(MultipartFile file, String bucketName) throws IOException
+    {
+        try
+        {
+            return uploadMinino(bucketName, file, MimeTypeUtils.DEFAULT_ALLOWED_EXTENSION);
+        }
+        catch (Exception e)
+        {
+            throw new IOException(e.getMessage(), e);
+        }
+    }
+
+    private static final String uploadMinino(String bucketName, MultipartFile file, String[] allowedExtension)
+            throws FileSizeLimitExceededException, IOException, FileNameLengthLimitExceededException,
+            InvalidExtensionException
+    {
+        int fileNamelength = file.getOriginalFilename().length();
+        if (fileNamelength > FileUploadUtils.DEFAULT_FILE_NAME_LENGTH)
+        {
+            throw new FileNameLengthLimitExceededException(FileUploadUtils.DEFAULT_FILE_NAME_LENGTH);
+        }
+        assertAllowed(file, allowedExtension);
+        try
+        {
+            String fileName = extractFilename(file);
+            String pathFileName = MinioUtil.uploadFile(bucketName, fileName, file);
+            return pathFileName;
+        }
+        catch (Exception e)
+        {
+            throw new IOException(e.getMessage(), e);
+        }
+    }
+
+    /**
      * 编码文件名
      */
     public static final String extractFilename(MultipartFile file)
@@ -132,11 +205,10 @@ public class FileUploadUtils
 
         if (!desc.exists())
         {
-            // undertow文件上传，因底层实现不同,无需创建新文件
-//             if (!desc.exists())
-//             {
-//                desc.createNewFile();
-//             }
+            if (!desc.getParentFile().exists())
+            {
+                desc.getParentFile().mkdirs();
+            }
         }
         return desc;
     }

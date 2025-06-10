@@ -131,3 +131,11 @@ xss:
   excludes: /system/notice
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
+
+
+# Minio配置
+minio:
+  url: http://172.18.34.104:9005
+  accessKey: root
+  secretKey: 12345678
+  bucketName: test
