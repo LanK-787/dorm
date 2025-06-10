@@ -82,6 +82,8 @@
       <el-table-column label="全称" align="left" prop="fullName"/>
       <el-table-column label="宿管" align="center" prop="dormManager" />
       <el-table-column label="联系电话" align="center" prop="phone" />
+      <el-table-column label="最大入住人数" align="center" prop="maxCapacity" />
+      <el-table-column label="当前入住人数" align="center" prop="currentCount" />
       <el-table-column label="宿舍状态" align="center" prop="status">
         <template #default="scope">
           <dict-tag :options="dorm_status" :value="scope.row.status"/>
@@ -130,6 +132,26 @@
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="form.email" placeholder="请输入邮箱" />
+        </el-form-item>
+        <el-form-item label="最大入住人数" prop="maxCapacity">
+          <el-input-number
+            v-model="form.maxCapacity"
+            placeholder="请输入最大入住人数"
+            :min="0"
+            :max="20"
+            controls-position="right"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="当前入住人数" prop="currentCount">
+          <el-input-number
+            v-model="form.currentCount"
+            placeholder="请输入当前入住人数"
+            :min="0"
+            :max="form.maxCapacity || 20"
+            controls-position="right"
+            style="width: 100%"
+          />
         </el-form-item>
         <el-form-item label="宿舍状态" prop="status">
           <el-select v-model="form.status" placeholder="请选择宿舍状态">
@@ -186,6 +208,24 @@ const data = reactive({
     ],
     orderNum: [
       { required: true, message: "显示顺序不能为空", trigger: "blur" }
+    ],
+    maxCapacity: [
+      { type: 'number', message: "最大入住人数必须为数字", trigger: "blur" },
+      { min: 0, message: "最大入住人数不能小于0", trigger: "blur" }
+    ],
+    currentCount: [
+      { type: 'number', message: "当前入住人数必须为数字", trigger: "blur" },
+      { min: 0, message: "当前入住人数不能小于0", trigger: "blur" },
+      {
+        validator: (rule, value, callback) => {
+          if (value != null && form.value.maxCapacity != null && value > form.value.maxCapacity) {
+            callback(new Error('当前入住人数不能超过最大入住人数'))
+          } else {
+            callback()
+          }
+        },
+        trigger: "blur"
+      }
     ],
   }
 })
@@ -441,6 +481,8 @@ function reset() {
     phone: null,
     email: null,
     status: null,
+    maxCapacity: null,
+    currentCount: null,
     delFlag: null,
     createBy: null,
     createTime: null,

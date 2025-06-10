@@ -48,6 +48,14 @@ public class DormBuilding extends TreeEntity<DormBuilding>
     /** 删除标志（0存在 2删除） */
     private String delFlag;
 
+    /** 最大入住人数（仅房间级有效） */
+    @Excel(name = "最大入住人数")
+    private Integer maxCapacity;
+
+    /** 当前入住人数（仅房间级有效） */
+    @Excel(name = "当前入住人数")
+    private Integer currentCount;
+
     /** 子部门 */
     private List<DormBuilding> children = new ArrayList<DormBuilding>();
 
@@ -126,11 +134,30 @@ public class DormBuilding extends TreeEntity<DormBuilding>
         this.delFlag = delFlag;
     }
 
-    public String getDelFlag() 
+    public String getDelFlag()
     {
         return delFlag;
     }
 
+    public void setMaxCapacity(Integer maxCapacity)
+    {
+        this.maxCapacity = maxCapacity;
+    }
+
+    public Integer getMaxCapacity()
+    {
+        return maxCapacity;
+    }
+
+    public void setCurrentCount(Integer currentCount)
+    {
+        this.currentCount = currentCount;
+    }
+
+    public Integer getCurrentCount()
+    {
+        return currentCount;
+    }
 
     @Override
     public String toString() {
@@ -146,6 +173,8 @@ public class DormBuilding extends TreeEntity<DormBuilding>
             .append("email", getEmail())
             .append("status", getStatus())
             .append("delFlag", getDelFlag())
+            .append("maxCapacity", getMaxCapacity())
+            .append("currentCount", getCurrentCount())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

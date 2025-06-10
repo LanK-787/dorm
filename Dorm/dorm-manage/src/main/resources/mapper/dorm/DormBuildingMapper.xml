@@ -16,6 +16,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="email"      column="email"       />
         <result property="status"     column="status"      />
         <result property="delFlag"    column="del_flag"    />
+        <result property="maxCapacity" column="max_capacity" />
+        <result property="currentCount" column="current_count" />
         <result property="parentName" column="parent_name" />
         <result property="createBy"   column="create_by"   />
         <result property="createTime" column="create_time" />
@@ -24,7 +26,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectDormBuildingVo">
-        select d.dorm_id, d.parent_id, d.ancestors, d.building_name, d.full_name, d.order_num, d.dorm_manager, d.phone, d.email, d.status, d.del_flag, d.create_by, d.create_time
+        select d.dorm_id, d.parent_id, d.ancestors, d.building_name, d.full_name, d.order_num, d.dorm_manager, d.phone, d.email, d.status, d.del_flag, d.max_capacity, d.current_count, d.create_by, d.create_time
         from dorm_building d
     </sql>
 
@@ -50,7 +52,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
     
     <select id="selectDormBuildingByDormId" parameterType="Long" resultMap="DormBuildingResult">
-        select d.dorm_id, d.parent_id, d.ancestors, d.building_name, d.full_name, d.order_num, d.dorm_manager, d.phone, d.email, d.status,
+        select d.dorm_id, d.parent_id, d.ancestors, d.building_name, d.full_name, d.order_num, d.dorm_manager, d.phone, d.email, d.status, d.max_capacity, d.current_count,
             (select building_name from dorm_building where dorm_id = d.parent_id) parent_name
         from dorm_building d
         where d.dorm_id = #{dormId}
@@ -90,6 +92,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="phone != null and phone != ''">phone,</if>
             <if test="email != null and email != ''">email,</if>
             <if test="status != null">status,</if>
+            <if test="maxCapacity != null">max_capacity,</if>
+            <if test="currentCount != null">current_count,</if>
             <if test="createBy != null and createBy != ''">create_by,</if>
             create_time
         )values(
@@ -103,6 +107,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="phone != null and phone != ''">#{phone},</if>
             <if test="email != null and email != ''">#{email},</if>
             <if test="status != null">#{status},</if>
+            <if test="maxCapacity != null">#{maxCapacity},</if>
+            <if test="currentCount != null">#{currentCount},</if>
             <if test="createBy != null and createBy != ''">#{createBy},</if>
             sysdate()
         )
@@ -120,6 +126,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="phone != null">phone = #{phone},</if>
             <if test="email != null">email = #{email},</if>
             <if test="status != null and status != ''">status = #{status},</if>
+            <if test="maxCapacity != null">max_capacity = #{maxCapacity},</if>
+            <if test="currentCount != null">current_count = #{currentCount},</if>
             <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
             update_time = sysdate()
         </set>
