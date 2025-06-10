@@ -29,19 +29,35 @@ public interface IDormStudentService
 
     /**
      * 新增学生管理
-     * 
+     *
      * @param dormStudent 学生管理
      * @return 结果
      */
     public int insertDormStudent(DormStudent dormStudent);
 
     /**
+     * 新增学生管理（带容量检查）
+     *
+     * @param dormStudent 学生管理
+     * @return 结果
+     */
+    public int insertDormStudentWithCapacityCheck(DormStudent dormStudent);
+
+    /**
      * 修改学生管理
-     * 
+     *
      * @param dormStudent 学生管理
      * @return 结果
      */
     public int updateDormStudent(DormStudent dormStudent);
+
+    /**
+     * 修改学生管理（带容量检查）
+     *
+     * @param dormStudent 学生管理
+     * @return 结果
+     */
+    public int updateDormStudentWithCapacityCheck(DormStudent dormStudent);
 
     /**
      * 批量删除学生管理

@@ -310,4 +310,114 @@ public class DormBuildingServiceImpl implements IDormBuildingService
     {
         return getChildList(list, t).size() > 0;
     }
+
+    /**
+     * 检查宿舍容量是否允许分配新学生
+     *
+     * @param dormId 宿舍ID
+     * @return 是否允许分配
+     */
+    @Override
+    public boolean checkDormCapacityAvailable(Long dormId)
+    {
+        if (dormId == null) {
+            return false;
+        }
+        int isFull = dormBuildingMapper.checkDormCapacityFull(dormId);
+        return isFull == 0;
+    }
+
+    /**
+     * 增加宿舍当前入住人数
+     *
+     * @param dormId 宿舍ID
+     * @return 结果
+     */
+    @Override
+    public int incrementDormCurrentCount(Long dormId)
+    {
+        if (dormId == null) {
+            return 0;
+        }
+        return dormBuildingMapper.incrementCurrentCount(dormId);
+    }
+
+    /**
+     * 减少宿舍当前入住人数
+     *
+     * @param dormId 宿舍ID
+     * @return 结果
+     */
+    @Override
+    public int decrementDormCurrentCount(Long dormId)
+    {
+        if (dormId == null) {
+            return 0;
+        }
+        return dormBuildingMapper.decrementCurrentCount(dormId);
+    }
+
+    /**
+     * 获取宿舍容量信息
+     *
+     * @param dormId 宿舍ID
+     * @return 宿舍容量信息
+     */
+    @Override
+    public DormBuilding getDormCapacityInfo(Long dormId)
+    {
+        if (dormId == null) {
+            return null;
+        }
+        return dormBuildingMapper.selectDormCapacityInfo(dormId);
+    }
+
+    /**
+     * 自动更新宿舍状态（基于当前容量）
+     *
+     * @param dormId 宿舍ID
+     * @return 结果
+     */
+    @Override
+    public int updateDormStatusByCapacity(Long dormId)
+    {
+        if (dormId == null) {
+            return 0;
+        }
+        return dormBuildingMapper.updateDormStatusByCapacity(dormId);
+    }
+
+    /**
+     * 批量修复所有宿舍状态（基于当前容量）
+     *
+     * @return 修复的宿舍数量
+     */
+    @Override
+    public int batchFixDormStatus()
+    {
+        return dormBuildingMapper.batchUpdateDormStatusByCapacity();
+    }
+
+    /**
+     * 检查并获取状态与容量不一致的宿舍
+     *
+     * @return 不一致的宿舍列表
+     */
+    @Override
+    public List<DormBuilding> getInconsistentStatusDorms()
+    {
+        return dormBuildingMapper.selectInconsistentStatusDorms();
+    }
+
+    /**
+     * 验证宿舍状态数据一致性
+     *
+     * @return 是否一致
+     */
+    @Override
+    public boolean validateDormStatusConsistency()
+    {
+        int inconsistentCount = dormBuildingMapper.checkStatusCapacityConsistency();
+        return inconsistentCount == 0;
+    }
 }

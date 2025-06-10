@@ -139,8 +139,10 @@
             placeholder="请输入最大入住人数"
             :min="0"
             :max="20"
+            :precision="0"
             controls-position="right"
             style="width: 100%"
+            @change="handleMaxCapacityChange"
           />
         </el-form-item>
         <el-form-item label="当前入住人数" prop="currentCount">
@@ -149,6 +151,7 @@
             placeholder="请输入当前入住人数"
             :min="0"
             :max="form.maxCapacity || 20"
+            :precision="0"
             controls-position="right"
             style="width: 100%"
           />
@@ -210,21 +213,43 @@ const data = reactive({
       { required: true, message: "显示顺序不能为空", trigger: "blur" }
     ],
     maxCapacity: [
-      { type: 'number', message: "最大入住人数必须为数字", trigger: "blur" },
-      { min: 0, message: "最大入住人数不能小于0", trigger: "blur" }
-    ],
-    currentCount: [
-      { type: 'number', message: "当前入住人数必须为数字", trigger: "blur" },
-      { min: 0, message: "当前入住人数不能小于0", trigger: "blur" },
       {
         validator: (rule, value, callback) => {
-          if (value != null && form.value.maxCapacity != null && value > form.value.maxCapacity) {
-            callback(new Error('当前入住人数不能超过最大入住人数'))
+          if (value !== null && value !== undefined) {
+            if (!Number.isInteger(value) || value < 0) {
+              callback(new Error('最大入住人数必须为大于等于0的整数'))
+            } else if (value > 20) {
+              callback(new Error('最大入住人数不能超过20'))
+            } else {
+              // 当最大容量改变时，重新验证当前入住人数
+              if (form.value.currentCount !== null && form.value.currentCount !== undefined) {
+                proxy.$refs["buildingRef"]?.validateField('currentCount')
+              }
+              callback()
+            }
           } else {
             callback()
           }
         },
-        trigger: "blur"
+        trigger: ["blur", "change"]
+      }
+    ],
+    currentCount: [
+      {
+        validator: (rule, value, callback) => {
+          if (value !== null && value !== undefined) {
+            if (!Number.isInteger(value) || value < 0) {
+              callback(new Error('当前入住人数必须为大于等于0的整数'))
+            } else if (form.value.maxCapacity !== null && form.value.maxCapacity !== undefined && value > form.value.maxCapacity) {
+              callback(new Error('当前入住人数不能超过最大入住人数'))
+            } else {
+              callback()
+            }
+          } else {
+            callback()
+          }
+        },
+        trigger: ["blur", "change"]
       }
     ],
   }
@@ -460,6 +485,23 @@ async function handleParentChange(parentId) {
 
   // 自动计算并设置显示顺序
   await autoSetOrderNum(parentId)
+}
+
+/**
+ * 处理最大容量变化事件
+ * @param {Number} value 新的最大容量值
+ */
+function handleMaxCapacityChange(value) {
+  // 如果当前入住人数超过了新的最大容量，自动调整当前入住人数
+  if (form.value.currentCount !== null && form.value.currentCount !== undefined &&
+      value !== null && value !== undefined && form.value.currentCount > value) {
+    form.value.currentCount = value
+  }
+
+  // 触发当前入住人数的重新验证
+  nextTick(() => {
+    proxy.$refs["buildingRef"]?.validateField('currentCount')
+  })
 }
 	
 // 取消按钮

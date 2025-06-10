@@ -110,9 +110,70 @@ public interface DormBuildingMapper
 
     /**
      * 批量删除宿舍管理
-     * 
+     *
      * @param dormIds 需要删除的数据主键集合
      * @return 结果
      */
     public int deleteDormBuildingByDormIds(Long[] dormIds);
+
+    /**
+     * 增加宿舍当前入住人数
+     *
+     * @param dormId 宿舍ID
+     * @return 结果
+     */
+    public int incrementCurrentCount(Long dormId);
+
+    /**
+     * 减少宿舍当前入住人数
+     *
+     * @param dormId 宿舍ID
+     * @return 结果
+     */
+    public int decrementCurrentCount(Long dormId);
+
+    /**
+     * 检查宿舍容量是否已满
+     *
+     * @param dormId 宿舍ID
+     * @return 是否已满 (1:已满, 0:未满)
+     */
+    public int checkDormCapacityFull(Long dormId);
+
+    /**
+     * 获取宿舍容量信息
+     *
+     * @param dormId 宿舍ID
+     * @return 宿舍容量信息
+     */
+    public DormBuilding selectDormCapacityInfo(Long dormId);
+
+    /**
+     * 自动更新宿舍状态（基于当前容量）
+     *
+     * @param dormId 宿舍ID
+     * @return 结果
+     */
+    public int updateDormStatusByCapacity(Long dormId);
+
+    /**
+     * 批量自动更新所有宿舍状态（基于当前容量）
+     *
+     * @return 结果
+     */
+    public int batchUpdateDormStatusByCapacity();
+
+    /**
+     * 检查状态与容量是否一致
+     *
+     * @return 不一致的宿舍数量
+     */
+    public int checkStatusCapacityConsistency();
+
+    /**
+     * 获取状态与容量不一致的宿舍列表
+     *
+     * @return 宿舍列表
+     */
+    public List<DormBuilding> selectInconsistentStatusDorms();
 }

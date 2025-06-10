@@ -55,7 +55,11 @@
               <el-table-column type="selection" width="55" align="center" />
               <el-table-column label="学号" align="center" prop="studentNo" />
               <el-table-column label="学生姓名" align="center" prop="name" :show-overflow-tooltip="true" />
-              <el-table-column label="性别" align="center" prop="gender" width="60" />
+              <el-table-column label="性别" align="center" prop="gender" width="60">
+                <template #default="scope">
+                  <dict-tag :options="sys_user_sex" :value="scope.row.gender"/>
+                </template>
+              </el-table-column>
               <el-table-column label="班级名称" align="center" prop="className" :show-overflow-tooltip="true" />
               <el-table-column label="手机号码" align="center" prop="phone" width="120" />
               <el-table-column label="邮箱地址" align="center" prop="email" :show-overflow-tooltip="true" />
@@ -91,8 +95,12 @@
           <el-col :span="12">
             <el-form-item label="性别" prop="gender">
               <el-select v-model="form.gender" placeholder="请选择性别" style="width: 100%">
-                <el-option label="男" value="男" />
-                <el-option label="女" value="女" />
+                <el-option
+                  v-for="dict in sys_user_sex"
+                  :key="dict.value"
+                  :label="dict.label"
+                  :value="dict.value"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -145,11 +153,12 @@
 </template>
 
 <script setup name="Student">
-import { listStudent, getStudent, delStudent, addStudent, updateStudent, dormTreeSelect } from "@/api/dorm/student"
+import { listStudent, getStudent, delStudent, addStudent, updateStudent, dormTreeSelect, dormTreeSelectWithCapacity } from "@/api/dorm/student"
 import { Splitpanes, Pane } from "splitpanes"
 import useAppStore from '@/store/modules/app'
 import "splitpanes/dist/splitpanes.css"
 const { proxy } = getCurrentInstance()
+const { sys_user_sex } = proxy.useDict("sys_user_sex")
 
 const appStore = useAppStore()
 const studentList = ref([])
@@ -163,6 +172,7 @@ const total = ref(0)
 const title = ref("")
 const dormOptions = ref(undefined)
 const enabledDormOptions = ref(undefined)
+const dormName = ref("")
 
 const data = reactive({
   form: {},
@@ -202,6 +212,28 @@ function getDormTree() {
   dormTreeSelect().then(response => {
     dormOptions.value = response.data
     enabledDormOptions.value = filterDisabledDorm(JSON.parse(JSON.stringify(response.data)))
+    // 为宿舍选项添加容量信息显示
+    addCapacityInfoToOptions(enabledDormOptions.value)
+  })
+}
+
+/** 为宿舍选项添加容量信息 */
+function addCapacityInfoToOptions(dormList) {
+  dormList.forEach(dorm => {
+    if (dorm.maxCapacity !== null && dorm.maxCapacity !== undefined) {
+      const currentCount = dorm.currentCount || 0
+      const maxCapacity = dorm.maxCapacity
+      dorm.label = `${dorm.label} (${currentCount}/${maxCapacity})`
+
+      // 如果已满，标记为禁用
+      if (currentCount >= maxCapacity && maxCapacity > 0) {
+        dorm.disabled = true
+      }
+    }
+
+    if (dorm.children && dorm.children.length) {
+      addCapacityInfoToOptions(dorm.children)
+    }
   })
 }
 
@@ -309,12 +341,20 @@ function submitForm() {
           proxy.$modal.msgSuccess("修改成功")
           open.value = false
           getList()
+          // 重新加载宿舍树以更新容量信息
+          getDormTree()
+        }).catch(error => {
+          proxy.$modal.msgError(error.response?.data?.msg || "修改失败")
         })
       } else {
         addStudent(form.value).then(response => {
           proxy.$modal.msgSuccess("新增成功")
           open.value = false
           getList()
+          // 重新加载宿舍树以更新容量信息
+          getDormTree()
+        }).catch(error => {
+          proxy.$modal.msgError(error.response?.data?.msg || "新增失败")
         })
       }
     }
@@ -328,6 +368,8 @@ function handleDelete(row) {
     return delStudent(_studentIds)
   }).then(() => {
     getList()
+    // 重新加载宿舍树以更新容量信息
+    getDormTree()
     proxy.$modal.msgSuccess("删除成功")
   }).catch(() => {})
 }
@@ -338,6 +380,17 @@ function handleExport() {
     ...queryParams.value
   }, `student_${new Date().getTime()}.xlsx`)
 }
+
+/** 宿舍树过滤 */
+function filterNode(value, data) {
+  if (!value) return true
+  return data.label.indexOf(value) !== -1
+}
+
+/** 监听宿舍名称变化 */
+watch(dormName, val => {
+  proxy.$refs.dormTreeRef.filter(val)
+})
 
 getDormTree()
 getList()

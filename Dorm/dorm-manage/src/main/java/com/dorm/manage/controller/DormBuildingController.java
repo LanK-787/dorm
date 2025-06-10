@@ -1,6 +1,8 @@
 package com.dorm.manage.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -156,5 +158,64 @@ public class DormBuildingController extends BaseController
             }
         }
         return toAjax(dormBuildingService.deleteDormBuildingByDormIds(dormIds));
+    }
+
+    /**
+     * 批量修复宿舍状态
+     */
+    @PreAuthorize("@ss.hasPermi('dorm:building:edit')")
+    @Log(title = "宿舍管理", businessType = BusinessType.UPDATE)
+    @PostMapping("/batchFixStatus")
+    public AjaxResult batchFixStatus()
+    {
+        try {
+            int fixedCount = dormBuildingService.batchFixDormStatus();
+            return success("成功修复 " + fixedCount + " 个宿舍的状态");
+        } catch (Exception e) {
+            return error("批量修复状态失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 检查宿舍状态一致性
+     */
+    @PreAuthorize("@ss.hasPermi('dorm:building:list')")
+    @GetMapping("/checkStatusConsistency")
+    public AjaxResult checkStatusConsistency()
+    {
+        try {
+            List<DormBuilding> inconsistentDorms = dormBuildingService.getInconsistentStatusDorms();
+            if (inconsistentDorms.isEmpty()) {
+                return success("所有宿舍状态与容量一致");
+            } else {
+                // 创建包含消息和数据的结果对象
+                Map<String, Object> result = new HashMap<>();
+                result.put("message", "发现 " + inconsistentDorms.size() + " 个宿舍状态与容量不一致");
+                result.put("inconsistentDorms", inconsistentDorms);
+                result.put("count", inconsistentDorms.size());
+                return success(result);
+            }
+        } catch (Exception e) {
+            return error("检查状态一致性失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 验证宿舍状态数据一致性
+     */
+    @PreAuthorize("@ss.hasPermi('dorm:building:list')")
+    @GetMapping("/validateStatus")
+    public AjaxResult validateStatus()
+    {
+        try {
+            boolean isConsistent = dormBuildingService.validateDormStatusConsistency();
+            if (isConsistent) {
+                return success("宿舍状态数据一致性验证通过");
+            } else {
+                return warn("宿舍状态数据存在不一致，建议执行批量修复");
+            }
+        } catch (Exception e) {
+            return error("验证状态一致性失败：" + e.getMessage());
+        }
     }
 }

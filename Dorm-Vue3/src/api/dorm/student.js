@@ -50,3 +50,11 @@ export function dormTreeSelect() {
     method: 'get'
   })
 }
+
+// 查询带容量信息的宿舍下拉树结构
+export function dormTreeSelectWithCapacity() {
+  return request({
+    url: '/dorm/student/dormTreeWithCapacity',
+    method: 'get'
+  })
+}

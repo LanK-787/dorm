@@ -159,9 +159,105 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <delete id="deleteDormBuildingByDormIds" parameterType="Long">
-        update dorm_building set del_flag = '2' where dorm_id in 
+        update dorm_building set del_flag = '2' where dorm_id in
         <foreach item="dormId" collection="array" open="(" separator="," close=")">
             #{dormId}
         </foreach>
     </delete>
+
+    <!-- 增加宿舍当前入住人数并自动更新状态 -->
+    <update id="incrementCurrentCount" parameterType="Long">
+        update dorm_building
+        set current_count = IFNULL(current_count, 0) + 1,
+            status = CASE
+                WHEN max_capacity IS NULL OR max_capacity = 0 THEN '0'
+                WHEN IFNULL(current_count, 0) + 1 >= max_capacity THEN '1'
+                ELSE '0'
+            END,
+            update_time = sysdate()
+        where dorm_id = #{dormId}
+    </update>
+
+    <!-- 减少宿舍当前入住人数并自动更新状态 -->
+    <update id="decrementCurrentCount" parameterType="Long">
+        update dorm_building
+        set current_count = GREATEST(IFNULL(current_count, 0) - 1, 0),
+            status = CASE
+                WHEN max_capacity IS NULL OR max_capacity = 0 THEN '0'
+                WHEN GREATEST(IFNULL(current_count, 0) - 1, 0) >= max_capacity THEN '1'
+                ELSE '0'
+            END,
+            update_time = sysdate()
+        where dorm_id = #{dormId}
+    </update>
+
+    <!-- 检查宿舍容量是否已满 -->
+    <select id="checkDormCapacityFull" parameterType="Long" resultType="int">
+        select case
+            when max_capacity is null or max_capacity = 0 then 0
+            when IFNULL(current_count, 0) >= max_capacity then 1
+            else 0
+        end as is_full
+        from dorm_building
+        where dorm_id = #{dormId} and del_flag = '0'
+    </select>
+
+    <!-- 获取宿舍容量信息 -->
+    <select id="selectDormCapacityInfo" parameterType="Long" resultMap="DormBuildingResult">
+        select dorm_id, building_name, full_name, max_capacity, current_count, status
+        from dorm_building
+        where dorm_id = #{dormId} and del_flag = '0'
+    </select>
+
+    <!-- 自动更新宿舍状态（基于当前容量） -->
+    <update id="updateDormStatusByCapacity" parameterType="Long">
+        update dorm_building
+        set status = CASE
+                WHEN max_capacity IS NULL OR max_capacity = 0 THEN '0'
+                WHEN IFNULL(current_count, 0) >= max_capacity THEN '1'
+                ELSE '0'
+            END,
+            update_time = sysdate()
+        where dorm_id = #{dormId} and del_flag = '0'
+    </update>
+
+    <!-- 批量自动更新所有宿舍状态（基于当前容量） -->
+    <update id="batchUpdateDormStatusByCapacity">
+        update dorm_building
+        set status = CASE
+                WHEN max_capacity IS NULL OR max_capacity = 0 THEN '0'
+                WHEN IFNULL(current_count, 0) >= max_capacity THEN '1'
+                ELSE '0'
+            END,
+            update_time = sysdate()
+        where del_flag = '0'
+          AND max_capacity IS NOT NULL
+    </update>
+
+    <!-- 检查状态与容量是否一致 -->
+    <select id="checkStatusCapacityConsistency" resultType="int">
+        select count(*)
+        from dorm_building
+        where del_flag = '0'
+          AND max_capacity IS NOT NULL
+          AND max_capacity > 0
+          AND (
+            (status = '0' AND IFNULL(current_count, 0) >= max_capacity) OR
+            (status = '1' AND IFNULL(current_count, 0) &lt; max_capacity)
+          )
+    </select>
+
+    <!-- 获取状态与容量不一致的宿舍列表 -->
+    <select id="selectInconsistentStatusDorms" resultMap="DormBuildingResult">
+        select dorm_id, building_name, full_name, max_capacity, current_count, status
+        from dorm_building
+        where del_flag = '0'
+          AND max_capacity IS NOT NULL
+          AND max_capacity > 0
+          AND (
+            (status = '0' AND IFNULL(current_count, 0) >= max_capacity) OR
+            (status = '1' AND IFNULL(current_count, 0) &lt; max_capacity)
+          )
+        order by building_name
+    </select>
 </mapper>

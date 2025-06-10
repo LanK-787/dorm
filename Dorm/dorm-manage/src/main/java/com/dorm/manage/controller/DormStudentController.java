@@ -84,7 +84,11 @@ public class DormStudentController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody DormStudent dormStudent)
     {
-        return toAjax(dormStudentService.insertDormStudent(dormStudent));
+        try {
+            return toAjax(dormStudentService.insertDormStudentWithCapacityCheck(dormStudent));
+        } catch (Exception e) {
+            return error(e.getMessage());
+        }
     }
 
     /**
@@ -95,7 +99,11 @@ public class DormStudentController extends BaseController
     @PutMapping
     public AjaxResult edit(@RequestBody DormStudent dormStudent)
     {
-        return toAjax(dormStudentService.updateDormStudent(dormStudent));
+        try {
+            return toAjax(dormStudentService.updateDormStudentWithCapacityCheck(dormStudent));
+        } catch (Exception e) {
+            return error(e.getMessage());
+        }
     }
 
     /**
@@ -115,6 +123,16 @@ public class DormStudentController extends BaseController
     @PreAuthorize("@ss.hasPermi('dorm:student:list')")
     @GetMapping("/dormTree")
     public AjaxResult deptTree(DormBuilding dormBuilding)
+    {
+        return success(dormBuildingService.selectDormTreeList(dormBuilding));
+    }
+
+    /**
+     * 获取带容量信息的宿舍树列表
+     */
+    @PreAuthorize("@ss.hasPermi('dorm:student:list')")
+    @GetMapping("/dormTreeWithCapacity")
+    public AjaxResult dormTreeWithCapacity(DormBuilding dormBuilding)
     {
         return success(dormBuildingService.selectDormTreeList(dormBuilding));
     }

@@ -30,7 +30,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 宿舍子树查询片段 -->
     <sql id="dormIdSubtree">
         SELECT d.dorm_id FROM dorm_building d
-        WHERE d.del_flag = '0' AND d.status = '0'
+        WHERE d.del_flag = '0'
         AND (
             d.dorm_id = #{dormId}
             OR d.ancestors LIKE CONCAT('%,', #{dormId}, ',%')
