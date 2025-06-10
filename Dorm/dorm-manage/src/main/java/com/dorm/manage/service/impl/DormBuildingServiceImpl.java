@@ -339,7 +339,12 @@ public class DormBuildingServiceImpl implements IDormBuildingService
         if (dormId == null) {
             return 0;
         }
-        return dormBuildingMapper.incrementCurrentCount(dormId);
+        int result = dormBuildingMapper.incrementCurrentCount(dormId);
+        // 更新后重新计算状态，确保状态正确
+        if (result > 0) {
+            dormBuildingMapper.updateDormStatusByCapacity(dormId);
+        }
+        return result;
     }
 
     /**
@@ -354,7 +359,12 @@ public class DormBuildingServiceImpl implements IDormBuildingService
         if (dormId == null) {
             return 0;
         }
-        return dormBuildingMapper.decrementCurrentCount(dormId);
+        int result = dormBuildingMapper.decrementCurrentCount(dormId);
+        // 更新后重新计算状态，确保状态正确
+        if (result > 0) {
+            dormBuildingMapper.updateDormStatusByCapacity(dormId);
+        }
+        return result;
     }
 
     /**

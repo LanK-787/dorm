@@ -67,6 +67,15 @@
           @click="toggleExpandAll"
         >展开/折叠</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="warning"
+          plain
+          icon="Tools"
+          @click="handleFixStatus"
+          v-hasPermi="['dorm:building:edit']"
+        >修复状态</el-button>
+      </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -178,7 +187,7 @@
 </template>
 
 <script setup name="Building">
-import { listBuilding, getBuilding, delBuilding, addBuilding, updateBuilding } from "@/api/dorm/building"
+import { listBuilding, getBuilding, delBuilding, addBuilding, updateBuilding, batchFixDormStatus, checkStatusConsistency } from "@/api/dorm/building"
 
 const { proxy } = getCurrentInstance()
 const { dorm_status } = proxy.useDict('dorm_status')
@@ -630,6 +639,35 @@ function handleDelete(row) {
     getList()
     proxy.$modal.msgSuccess("删除成功")
   }).catch(() => {})
+}
+
+/** 修复宿舍状态 */
+async function handleFixStatus() {
+  try {
+    // 先检查是否有不一致的状态
+    const checkResponse = await checkStatusConsistency()
+
+    if (checkResponse.data && checkResponse.data.count > 0) {
+      const inconsistentCount = checkResponse.data.count
+      const confirmMessage = `检测到 ${inconsistentCount} 个宿舍的状态与容量不一致，是否执行批量修复？`
+
+      await proxy.$modal.confirm(confirmMessage)
+
+      // 执行批量修复
+      const fixResponse = await batchFixDormStatus()
+      proxy.$modal.msgSuccess(fixResponse.msg || "状态修复成功")
+
+      // 刷新列表
+      getList()
+    } else {
+      proxy.$modal.msgInfo("所有宿舍状态与容量一致，无需修复")
+    }
+  } catch (error) {
+    console.error('修复状态失败:', error)
+    if (error !== 'cancel') {
+      proxy.$modal.msgError("修复状态失败，请重试")
+    }
+  }
 }
 
 getList()

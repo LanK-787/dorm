@@ -165,28 +165,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </delete>
 
-    <!-- 增加宿舍当前入住人数并自动更新状态 -->
+    <!-- 增加宿舍当前入住人数 -->
     <update id="incrementCurrentCount" parameterType="Long">
         update dorm_building
         set current_count = IFNULL(current_count, 0) + 1,
-            status = CASE
-                WHEN max_capacity IS NULL OR max_capacity = 0 THEN '0'
-                WHEN IFNULL(current_count, 0) + 1 >= max_capacity THEN '1'
-                ELSE '0'
-            END,
             update_time = sysdate()
         where dorm_id = #{dormId}
     </update>
 
-    <!-- 减少宿舍当前入住人数并自动更新状态 -->
+    <!-- 减少宿舍当前入住人数 -->
     <update id="decrementCurrentCount" parameterType="Long">
         update dorm_building
         set current_count = GREATEST(IFNULL(current_count, 0) - 1, 0),
-            status = CASE
-                WHEN max_capacity IS NULL OR max_capacity = 0 THEN '0'
-                WHEN GREATEST(IFNULL(current_count, 0) - 1, 0) >= max_capacity THEN '1'
-                ELSE '0'
-            END,
             update_time = sysdate()
         where dorm_id = #{dormId}
     </update>

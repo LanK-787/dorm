@@ -42,3 +42,27 @@ export function delBuilding(dormId) {
     method: 'delete'
   })
 }
+
+// 批量修复宿舍状态
+export function batchFixDormStatus() {
+  return request({
+    url: '/dorm/building/batchFixStatus',
+    method: 'post'
+  })
+}
+
+// 检查宿舍状态一致性
+export function checkStatusConsistency() {
+  return request({
+    url: '/dorm/building/checkStatusConsistency',
+    method: 'get'
+  })
+}
+
+// 验证宿舍状态数据一致性
+export function validateStatus() {
+  return request({
+    url: '/dorm/building/validateStatus',
+    method: 'get'
+  })
+}
