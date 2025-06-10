@@ -30,6 +30,12 @@ public class TreeSelect implements Serializable
     /** 节点禁用 */
     private boolean disabled = false;
 
+    /** 最大入住人数（仅房间级有效） */
+    private Integer maxCapacity;
+
+    /** 当前入住人数（仅房间级有效） */
+    private Integer currentCount;
+
     /** 子节点 */
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<TreeSelect> children;
@@ -43,6 +49,8 @@ public class TreeSelect implements Serializable
         this.id = building.getDormId();
         this.label = building.getBuildingName();
         this.disabled = StringUtils.equals(UserConstants.DEPT_DISABLE, building.getStatus());
+        this.maxCapacity = building.getMaxCapacity();
+        this.currentCount = building.getCurrentCount();
         this.children = building.getChildren().stream().map(TreeSelect::new).collect(Collectors.toList());
     }
 
@@ -100,5 +108,25 @@ public class TreeSelect implements Serializable
     public void setChildren(List<TreeSelect> children)
     {
         this.children = children;
+    }
+
+    public Integer getMaxCapacity()
+    {
+        return maxCapacity;
+    }
+
+    public void setMaxCapacity(Integer maxCapacity)
+    {
+        this.maxCapacity = maxCapacity;
+    }
+
+    public Integer getCurrentCount()
+    {
+        return currentCount;
+    }
+
+    public void setCurrentCount(Integer currentCount)
+    {
+        this.currentCount = currentCount;
     }
 }

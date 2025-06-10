@@ -153,7 +153,7 @@
 </template>
 
 <script setup name="Student">
-import { listStudent, getStudent, delStudent, addStudent, updateStudent, dormTreeSelect, dormTreeSelectWithCapacity } from "@/api/dorm/student"
+import { listStudent, getStudent, delStudent, addStudent, updateStudent, dormTreeSelectWithCapacity } from "@/api/dorm/student"
 import { Splitpanes, Pane } from "splitpanes"
 import useAppStore from '@/store/modules/app'
 import "splitpanes/dist/splitpanes.css"
@@ -209,7 +209,7 @@ const { queryParams, form, rules } = toRefs(data)
 
 /** 查询宿舍下拉树结构 */
 function getDormTree(currentStudentDormId = null) {
-  dormTreeSelect().then(response => {
+  dormTreeSelectWithCapacity().then(response => {
     dormOptions.value = response.data
     // 统一使用同一个函数处理宿舍选项，传入当前学生宿舍ID（如果有）
     enabledDormOptions.value = processDormOptions(JSON.parse(JSON.stringify(response.data)), currentStudentDormId)
@@ -227,7 +227,10 @@ function processDormOptions(dormList, currentStudentDormId = null) {
     if (dorm.maxCapacity !== null && dorm.maxCapacity !== undefined) {
       const currentCount = dorm.currentCount || 0
       const maxCapacity = dorm.maxCapacity
-      dorm.label = `${dorm.label} (${currentCount}/${maxCapacity})`
+
+      // 确保不重复添加容量信息
+      const originalLabel = dorm.label.replace(/\s*\(\d+\/\d+\)$/, '')
+      dorm.label = `${originalLabel} (${currentCount}/${maxCapacity})`
 
       // 设置禁用状态：满员的宿舍禁用，但当前学生的宿舍除外
       if (currentCount >= maxCapacity && maxCapacity > 0) {
@@ -237,6 +240,9 @@ function processDormOptions(dormList, currentStudentDormId = null) {
         // 未满员的宿舍不禁用
         dorm.disabled = false
       }
+    } else {
+      // 没有容量信息的宿舍（如楼栋、楼层）不禁用
+      dorm.disabled = false
     }
 
     // 递归处理子节点
