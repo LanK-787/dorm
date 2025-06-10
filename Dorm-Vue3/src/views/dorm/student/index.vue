@@ -208,46 +208,44 @@ const data = reactive({
 const { queryParams, form, rules } = toRefs(data)
 
 /** 查询宿舍下拉树结构 */
-function getDormTree() {
+function getDormTree(currentStudentDormId = null) {
   dormTreeSelect().then(response => {
     dormOptions.value = response.data
-    enabledDormOptions.value = filterDisabledDorm(JSON.parse(JSON.stringify(response.data)))
-    // 为宿舍选项添加容量信息显示
-    addCapacityInfoToOptions(enabledDormOptions.value)
+    // 统一使用同一个函数处理宿舍选项，传入当前学生宿舍ID（如果有）
+    enabledDormOptions.value = processDormOptions(JSON.parse(JSON.stringify(response.data)), currentStudentDormId)
   })
 }
 
-/** 为宿舍选项添加容量信息 */
-function addCapacityInfoToOptions(dormList) {
+/**
+ * 统一处理宿舍选项：添加容量信息并设置禁用状态
+ * @param {Array} dormList 宿舍列表
+ * @param {Number|null} currentStudentDormId 当前学生的宿舍ID（编辑时传入，新增时为null）
+ */
+function processDormOptions(dormList, currentStudentDormId = null) {
   dormList.forEach(dorm => {
+    // 添加容量信息显示
     if (dorm.maxCapacity !== null && dorm.maxCapacity !== undefined) {
       const currentCount = dorm.currentCount || 0
       const maxCapacity = dorm.maxCapacity
       dorm.label = `${dorm.label} (${currentCount}/${maxCapacity})`
 
-      // 如果已满，标记为禁用
+      // 设置禁用状态：满员的宿舍禁用，但当前学生的宿舍除外
       if (currentCount >= maxCapacity && maxCapacity > 0) {
-        dorm.disabled = true
+        // 如果是当前学生的宿舍，即使满员也不禁用
+        dorm.disabled = (dorm.id !== currentStudentDormId)
+      } else {
+        // 未满员的宿舍不禁用
+        dorm.disabled = false
       }
     }
 
+    // 递归处理子节点
     if (dorm.children && dorm.children.length) {
-      addCapacityInfoToOptions(dorm.children)
+      processDormOptions(dorm.children, currentStudentDormId)
     }
   })
-}
 
-/** 过滤禁用的宿舍 */
-function filterDisabledDorm(dormList) {
-  return dormList.filter(dorm => {
-    if (dorm.disabled) {
-      return false
-    }
-    if (dorm.children && dorm.children.length) {
-      dorm.children = filterDisabledDorm(dorm.children)
-    }
-    return true
-  })
+  return dormList
 }
 
 /** 查询学生管理列表 */
@@ -311,6 +309,8 @@ function handleSelectionChange(selection) {
 /** 新增按钮操作 */
 function handleAdd() {
   reset()
+  // 新增时不传入当前学生宿舍ID，满员宿舍将被禁用
+  getDormTree()
   open.value = true
   title.value = "添加学生管理"
 }
@@ -321,6 +321,8 @@ function handleUpdate(row) {
   const _studentId = row.studentId || ids.value
   getStudent(_studentId).then(response => {
     form.value = response.data
+    // 传入当前学生的宿舍ID，确保其当前宿舍即使满员也不被禁用
+    getDormTree(form.value.dormId)
     open.value = true
     title.value = "修改学生管理"
   })
@@ -337,17 +339,17 @@ function submitForm() {
   proxy.$refs["studentRef"].validate(valid => {
     if (valid) {
       if (form.value.studentId != null) {
-        updateStudent(form.value).then(response => {
+        updateStudent(form.value).then(() => {
           proxy.$modal.msgSuccess("修改成功")
           open.value = false
           getList()
-          // 重新加载宿舍树以更新容量信息
+          // 重新加载宿舍树以更新容量信息（不传入学生ID，恢复正常状态）
           getDormTree()
         }).catch(error => {
           proxy.$modal.msgError(error.response?.data?.msg || "修改失败")
         })
       } else {
-        addStudent(form.value).then(response => {
+        addStudent(form.value).then(() => {
           proxy.$modal.msgSuccess("新增成功")
           open.value = false
           getList()
