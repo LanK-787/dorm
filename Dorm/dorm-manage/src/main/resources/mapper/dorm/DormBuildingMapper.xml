@@ -222,6 +222,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             update_time = sysdate()
         where del_flag = '0'
           AND max_capacity IS NOT NULL
+          AND max_capacity > 0
+          AND (
+            (status = '0' AND IFNULL(current_count, 0) >= max_capacity) OR
+            (status = '1' AND IFNULL(current_count, 0) &lt; max_capacity)
+          )
     </update>
 
     <!-- 检查状态与容量是否一致 -->

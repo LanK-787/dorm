@@ -7,6 +7,10 @@ export default {
   msg(content) {
     ElMessage.info(content)
   },
+  // 信息消息
+  msgInfo(content) {
+    ElMessage.info(content)
+  },
   // 错误消息
   msgError(content) {
     ElMessage.error(content)

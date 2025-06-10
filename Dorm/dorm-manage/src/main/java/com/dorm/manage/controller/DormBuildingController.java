@@ -170,7 +170,11 @@ public class DormBuildingController extends BaseController
     {
         try {
             int fixedCount = dormBuildingService.batchFixDormStatus();
-            return success("成功修复 " + fixedCount + " 个宿舍的状态");
+            if (fixedCount > 0) {
+                return success("成功修复 " + fixedCount + " 个宿舍的状态");
+            } else {
+                return success("所有宿舍状态与容量一致，无需修复");
+            }
         } catch (Exception e) {
             return error("批量修复状态失败：" + e.getMessage());
         }

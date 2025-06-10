@@ -643,30 +643,87 @@ function handleDelete(row) {
 
 /** 修复宿舍状态 */
 async function handleFixStatus() {
-  try {
-    // 先检查是否有不一致的状态
-    const checkResponse = await checkStatusConsistency()
+  console.log('🔧 开始执行修复状态功能')
+  let checkResponse = null
 
-    if (checkResponse.data && checkResponse.data.count > 0) {
+  // 第一步：调用检查状态一致性API
+  try {
+    console.log('📡 调用检查状态一致性API...')
+    checkResponse = await checkStatusConsistency()
+    console.log('✅ API调用成功，响应:', checkResponse)
+  } catch (error) {
+    console.error('❌ 调用检查状态一致性API失败:', error)
+    proxy.$modal.msgError("检查状态一致性失败，请重试")
+    return
+  }
+
+  // 第二步：处理API响应
+  try {
+    // 验证响应数据
+    if (!checkResponse) {
+      console.error('❌ checkResponse 为空')
+      proxy.$modal.msgError("检查状态一致性失败")
+      return
+    }
+
+    console.log('🔍 分析响应数据:')
+    console.log('  - 响应码:', checkResponse.code)
+    console.log('  - 响应消息:', checkResponse.msg)
+    console.log('  - 响应数据:', checkResponse.data)
+
+    // 判断是否有不一致的状态
+    // 当有不一致状态时，data 包含 { count, inconsistentDorms, message }
+    // 当无不一致状态时，data 为 null，消息在 msg 中
+    if (checkResponse.data && typeof checkResponse.data === 'object' && checkResponse.data.count > 0) {
+      console.log('⚠️ 发现不一致状态，需要修复')
+      // 有不一致状态，需要修复
       const inconsistentCount = checkResponse.data.count
       const confirmMessage = `检测到 ${inconsistentCount} 个宿舍的状态与容量不一致，是否执行批量修复？`
 
-      await proxy.$modal.confirm(confirmMessage)
+      // 显示确认对话框
+      try {
+        console.log('❓ 显示确认对话框')
+        await proxy.$modal.confirm(confirmMessage)
+        console.log('✅ 用户确认执行修复')
+      } catch (error) {
+        console.log('🚫 用户取消操作')
+        return
+      }
 
       // 执行批量修复
-      const fixResponse = await batchFixDormStatus()
-      proxy.$modal.msgSuccess(fixResponse.msg || "状态修复成功")
+      let fixResponse = null
+      try {
+        console.log('🔧 执行批量修复...')
+        fixResponse = await batchFixDormStatus()
+        console.log('✅ 批量修复完成，响应:', fixResponse)
+      } catch (error) {
+        console.error('❌ 调用批量修复API失败:', error)
+        proxy.$modal.msgError("批量修复失败，请重试")
+        return
+      }
 
-      // 刷新列表
-      getList()
+      // 处理修复结果
+      if (fixResponse && fixResponse.code === 200) {
+        console.log('🎉 修复成功')
+        proxy.$modal.msgSuccess(fixResponse.msg || "状态修复成功")
+        getList()
+      } else {
+        console.error('❌ 修复失败:', fixResponse)
+        proxy.$modal.msgError(fixResponse?.msg || "状态修复失败")
+      }
     } else {
-      proxy.$modal.msgInfo("所有宿舍状态与容量一致，无需修复")
+      console.log('ℹ️ 无不一致状态，显示信息提示')
+      // 无不一致状态，显示信息提示（使用后端返回的消息）
+      proxy.$modal.msgInfo(checkResponse.msg || "所有宿舍状态与容量一致，无需修复")
     }
   } catch (error) {
-    console.error('修复状态失败:', error)
-    if (error !== 'cancel') {
-      proxy.$modal.msgError("修复状态失败，请重试")
-    }
+    console.error('💥 处理修复状态逻辑时发生错误:', error)
+    console.error('错误详情:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    })
+    proxy.$modal.msgError("修复状态失败，请重试")
   }
 }
 
