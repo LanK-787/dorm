@@ -176,4 +176,29 @@ public interface DormBuildingMapper
      * @return 宿舍列表
      */
     public List<DormBuilding> selectInconsistentStatusDorms();
+
+    /**
+     * 检查子宿舍状态
+     *
+     * @param dormId 宿舍ID
+     * @return 是否所有子宿舍都满员 (1:是, 0:否)
+     */
+    public int checkChildrenDormStatus(Long dormId);
+
+    /**
+     * 获取父节点ID
+     *
+     * @param dormId 宿舍ID
+     * @return 父节点ID
+     */
+    public Long getParentId(Long dormId);
+
+    /**
+     * 更新父节点状态
+     *
+     * @param dormId 宿舍ID
+     * @param status 状态值
+     * @return 结果
+     */
+    public int updateParentStatus(@Param("dormId") Long dormId, @Param("status") String status);
 }

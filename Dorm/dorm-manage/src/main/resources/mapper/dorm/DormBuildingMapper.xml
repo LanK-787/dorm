@@ -213,20 +213,31 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 批量自动更新所有宿舍状态（基于当前容量） -->
     <update id="batchUpdateDormStatusByCapacity">
-        update dorm_building
-        set status = CASE
+        UPDATE dorm_building 
+        SET status = CASE
                 WHEN max_capacity IS NULL OR max_capacity = 0 THEN '0'
                 WHEN IFNULL(current_count, 0) >= max_capacity THEN '1'
                 ELSE '0'
             END,
             update_time = sysdate()
-        where del_flag = '0'
-          AND max_capacity IS NOT NULL
-          AND max_capacity > 0
-          AND (
-            (status = '0' AND IFNULL(current_count, 0) >= max_capacity) OR
-            (status = '1' AND IFNULL(current_count, 0) &lt; max_capacity)
-          )
+        WHERE dorm_id IN (
+            SELECT leaf_dorms.dorm_id FROM (
+                SELECT d1.dorm_id
+                FROM dorm_building d1
+                WHERE d1.del_flag = '0'
+                AND d1.max_capacity IS NOT NULL
+                AND d1.max_capacity > 0
+                AND (
+                    (d1.status = '0' AND IFNULL(d1.current_count, 0) >= d1.max_capacity) OR
+                    (d1.status = '1' AND IFNULL(d1.current_count, 0) &lt; d1.max_capacity)
+                )
+                AND NOT EXISTS (
+                    SELECT 1 FROM dorm_building d2
+                    WHERE d2.parent_id = d1.dorm_id
+                    AND d2.del_flag = '0'
+                )
+            ) leaf_dorms
+        )
     </update>
 
     <!-- 检查状态与容量是否一致 -->
@@ -255,4 +266,36 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           )
         order by building_name
     </select>
+
+    <!-- 检查子宿舍状态 -->
+    <select id="checkChildrenDormStatus" parameterType="Long" resultType="int">
+        SELECT CASE
+            WHEN COUNT(*) = 0 THEN 0
+            WHEN COUNT(*) = SUM(CASE WHEN status = '1' THEN 1 ELSE 0 END) THEN 1
+            ELSE 0
+        END as all_full
+        FROM dorm_building
+        WHERE parent_id = #{dormId}
+        AND del_flag = '0'
+        AND max_capacity IS NOT NULL
+        AND max_capacity > 0
+    </select>
+
+    <!-- 获取父节点ID -->
+    <select id="getParentId" parameterType="Long" resultType="Long">
+        SELECT parent_id
+        FROM dorm_building
+        WHERE dorm_id = #{dormId}
+        AND del_flag = '0'
+    </select>
+
+    <!-- 更新父节点状态 -->
+    <update id="updateParentStatus">
+        UPDATE dorm_building
+        SET status = #{status},
+            update_time = sysdate()
+        WHERE dorm_id = #{dormId}
+        AND del_flag = '0'
+        AND status != #{status}
+    </update>
 </mapper>

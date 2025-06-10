@@ -132,7 +132,7 @@ public class DormBuildingController extends BaseController
         }
         else if (StringUtils.equals(UserConstants.DEPT_DISABLE, dormBuilding.getStatus()) && dormBuildingService.selectNormalChildrenDormById(dormId) > 0)
         {
-            return error("该宿舍包含未停用的子宿舍！");
+            return error("该宿舍包含未空闲的子宿舍！");
         }
         dormBuilding.setUpdateBy(getUsername());
         return toAjax(dormBuildingService.updateDormBuilding(dormBuilding));

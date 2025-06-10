@@ -1,8 +1,11 @@
 package com.dorm.manage.service.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.dorm.common.constant.UserConstants;
@@ -343,6 +346,8 @@ public class DormBuildingServiceImpl implements IDormBuildingService
         // 更新后重新计算状态，确保状态正确
         if (result > 0) {
             dormBuildingMapper.updateDormStatusByCapacity(dormId);
+            // 递归更新父节点状态
+            recursiveUpdateParentStatus(dormId);
         }
         return result;
     }
@@ -363,6 +368,8 @@ public class DormBuildingServiceImpl implements IDormBuildingService
         // 更新后重新计算状态，确保状态正确
         if (result > 0) {
             dormBuildingMapper.updateDormStatusByCapacity(dormId);
+            // 递归更新父节点状态
+            recursiveUpdateParentStatus(dormId);
         }
         return result;
     }
@@ -394,7 +401,12 @@ public class DormBuildingServiceImpl implements IDormBuildingService
         if (dormId == null) {
             return 0;
         }
-        return dormBuildingMapper.updateDormStatusByCapacity(dormId);
+        int result = dormBuildingMapper.updateDormStatusByCapacity(dormId);
+        if (result > 0) {
+            // 递归更新父节点状态
+            recursiveUpdateParentStatus(dormId);
+        }
+        return result;
     }
 
     /**
@@ -405,7 +417,33 @@ public class DormBuildingServiceImpl implements IDormBuildingService
     @Override
     public int batchFixDormStatus()
     {
-        return dormBuildingMapper.batchUpdateDormStatusByCapacity();
+        // 1. 获取所有状态不一致的宿舍
+        List<DormBuilding> inconsistentDorms = getInconsistentStatusDorms();
+        if (inconsistentDorms.isEmpty()) {
+            return 0;
+        }
+
+        // 2. 更新所有不一致宿舍的状态
+        int fixedCount = dormBuildingMapper.batchUpdateDormStatusByCapacity();
+
+        // 3. 收集所有需要检查的父节点ID
+        Set<Long> parentIds = new HashSet<>();
+        for (DormBuilding dorm : inconsistentDorms) {
+            Long parentId = dormBuildingMapper.getParentId(dorm.getDormId());
+            while (parentId != null && parentId > 0) {
+                parentIds.add(parentId);
+                parentId = dormBuildingMapper.getParentId(parentId);
+            }
+        }
+
+        // 4. 从下到上更新父节点状态
+        List<Long> sortedParentIds = new ArrayList<>(parentIds);
+        Collections.sort(sortedParentIds); // 按ID升序排序，确保从低层级到高层级更新
+        for (Long parentId : sortedParentIds) {
+            updateParentDormStatus(parentId);
+        }
+
+        return fixedCount;
     }
 
     /**
@@ -429,5 +467,48 @@ public class DormBuildingServiceImpl implements IDormBuildingService
     {
         int inconsistentCount = dormBuildingMapper.checkStatusCapacityConsistency();
         return inconsistentCount == 0;
+    }
+
+    /**
+     * 更新父节点状态
+     *
+     * @param dormId 宿舍ID
+     * @return 结果
+     */
+    @Override
+    public int updateParentDormStatus(Long dormId) {
+        if (dormId == null) {
+            return 0;
+        }
+        
+        // 检查子宿舍状态
+        int allFull = dormBuildingMapper.checkChildrenDormStatus(dormId);
+        
+        // 更新当前节点状态
+        String newStatus = allFull == 1 ? "1" : "0";
+        return dormBuildingMapper.updateParentStatus(dormId, newStatus);
+    }
+
+    /**
+     * 递归更新父节点状态
+     *
+     * @param dormId 宿舍ID
+     */
+    @Override
+    public void recursiveUpdateParentStatus(Long dormId) {
+        if (dormId == null) {
+            return;
+        }
+
+        // 获取父节点ID
+        Long parentId = dormBuildingMapper.getParentId(dormId);
+        if (parentId != null && parentId > 0) {
+            // 更新父节点状态
+            int updated = updateParentDormStatus(parentId);
+            if (updated > 0) {
+                // 继续递归更新上级父节点
+                recursiveUpdateParentStatus(parentId);
+            }
+        }
     }
 }

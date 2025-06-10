@@ -176,4 +176,19 @@ public interface IDormBuildingService
      * @return 是否一致
      */
     public boolean validateDormStatusConsistency();
+
+    /**
+     * 更新父节点状态
+     *
+     * @param dormId 宿舍ID
+     * @return 结果
+     */
+    public int updateParentDormStatus(Long dormId);
+
+    /**
+     * 递归更新父节点状态
+     *
+     * @param dormId 宿舍ID
+     */
+    public void recursiveUpdateParentStatus(Long dormId);
 }
