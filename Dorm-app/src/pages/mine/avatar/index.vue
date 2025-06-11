@@ -36,302 +36,333 @@
 	</view>
 </template>
 
-<script>
-  import config from '@/config'
+<script setup>
+  import { ref, reactive, onMounted } from 'vue'
   import useUserStore from '@/store/modules/user'
   import { uploadAvatar } from "@/api/system/user"
-  
-  const baseUrl = config.baseUrl
-	let sysInfo = uni.getSystemInfoSync()
-	let SCREEN_WIDTH = sysInfo.screenWidth
-	let PAGE_X, // 手按下的x位置
-		PAGE_Y, // 手按下y的位置 
-		PR = sysInfo.pixelRatio, // dpi
-		T_PAGE_X, // 手移动的时候x的位置
-		T_PAGE_Y, // 手移动的时候Y的位置
-		CUT_L, // 初始化拖拽元素的left值
-		CUT_T, // 初始化拖拽元素的top值
-		CUT_R, // 初始化拖拽元素的
-		CUT_B, // 初始化拖拽元素的
-		CUT_W, // 初始化拖拽元素的宽度
-		CUT_H, //  初始化拖拽元素的高度
-		IMG_RATIO, // 图片比例
-		IMG_REAL_W, // 图片实际的宽度
-		IMG_REAL_H, // 图片实际的高度
-		DRAFG_MOVE_RATIO = 1, //移动时候的比例,
-		INIT_DRAG_POSITION = 100, // 初始化屏幕宽度和裁剪区域的宽度之差，用于设置初始化裁剪的宽度
-		DRAW_IMAGE_W = sysInfo.screenWidth // 设置生成的图片宽度
 
-	export default {
-		/**
-		 * 页面的初始数据
-		 */
-		data() {
-			const userStore = useUserStore()
-			return {
-				userStore: userStore,
-				imageSrc: userStore.avatar,
-				isShowImg: false,
-				// 初始化的宽高
-				cropperInitW: SCREEN_WIDTH,
-				cropperInitH: SCREEN_WIDTH,
-				// 动态的宽高
-				cropperW: SCREEN_WIDTH,
-				cropperH: SCREEN_WIDTH,
-				// 动态的left top值
-				cropperL: 0,
-				cropperT: 0,
+  const userStore = useUserStore()
 
-				transL: 0,
-				transT: 0,
+  // 系统信息和常量
+  const sysInfo = uni.getSystemInfoSync()
+  const SCREEN_WIDTH = sysInfo.screenWidth
+  const PR = sysInfo.pixelRatio // dpi
+  const DRAFG_MOVE_RATIO = 1 // 移动时候的比例
+  let INIT_DRAG_POSITION = 100 // 初始化屏幕宽度和裁剪区域的宽度之差（需要动态修改）
+  const DRAW_IMAGE_W = sysInfo.screenWidth // 设置生成的图片宽度
 
-				// 图片缩放值
-				scaleP: 0,
-				imageW: 0,
-				imageH: 0,
+  // 触摸和拖拽相关变量
+  let PAGE_X, PAGE_Y // 手按下的位置
+  let T_PAGE_X, T_PAGE_Y // 手移动时的位置
+  let CUT_L, CUT_T, CUT_R, CUT_B // 拖拽元素的位置和尺寸
+  let CUT_W, CUT_H // 拖拽元素的宽高
+  let IMG_RATIO, IMG_REAL_W, IMG_REAL_H // 图片相关变量
 
-				// 裁剪框 宽高
-				cutL: 0,
-				cutT: 0,
-				cutB: SCREEN_WIDTH,
-				cutR: '100%',
-				qualityWidth: DRAW_IMAGE_W,
-				innerAspectRadio: DRAFG_MOVE_RATIO
-			}
-		},
-		/**
-		 * 生命周期函数--监听页面初次渲染完成
-		 */
-		onReady: function () {
-			this.loadImage()
-		},
-		methods: {
-			setData: function (obj) {
-				let that = this
-				Object.keys(obj).forEach(function (key) {
-					that.$set(that.$data, key, obj[key])
-				})
-			},
-			getImage: function () {
-				var _this = this
-				uni.chooseImage({
-					success: function (res) {
-						_this.setData({
-							imageSrc: res.tempFilePaths[0],
-						})
-						_this.loadImage()
-					},
-				})
-			},
-			loadImage: function () {
-				var _this = this
+  // 响应式数据
+  const imageSrc = ref(userStore.avatar)
+  const isShowImg = ref(false)
 
-				uni.getImageInfo({
-					src: _this.imageSrc,
-					success: function success(res) {
-						IMG_RATIO = 1 / 1
-						if (IMG_RATIO >= 1) {
-							IMG_REAL_W = SCREEN_WIDTH
-							IMG_REAL_H = SCREEN_WIDTH / IMG_RATIO
-						} else {
-							IMG_REAL_W = SCREEN_WIDTH * IMG_RATIO
-							IMG_REAL_H = SCREEN_WIDTH
-						}
-						let minRange = IMG_REAL_W > IMG_REAL_H ? IMG_REAL_W : IMG_REAL_H
-						INIT_DRAG_POSITION = minRange > INIT_DRAG_POSITION ? INIT_DRAG_POSITION : minRange
-						// 根据图片的宽高显示不同的效果   保证图片可以正常显示
-						if (IMG_RATIO >= 1) {
-							let cutT = Math.ceil((SCREEN_WIDTH / IMG_RATIO - (SCREEN_WIDTH / IMG_RATIO - INIT_DRAG_POSITION)) / 2)
-							let cutB = cutT
-							let cutL = Math.ceil((SCREEN_WIDTH - SCREEN_WIDTH + INIT_DRAG_POSITION) / 2)
-							let cutR = cutL
-							_this.setData({
-								cropperW: SCREEN_WIDTH,
-								cropperH: SCREEN_WIDTH / IMG_RATIO,
-								// 初始化left right
-								cropperL: Math.ceil((SCREEN_WIDTH - SCREEN_WIDTH) / 2),
-								cropperT: Math.ceil((SCREEN_WIDTH - SCREEN_WIDTH / IMG_RATIO) / 2),
-								cutL: cutL,
-								cutT: cutT,
-								cutR: cutR,
-								cutB: cutB,
-								// 图片缩放值
-								imageW: IMG_REAL_W,
-								imageH: IMG_REAL_H,
-								scaleP: IMG_REAL_W / SCREEN_WIDTH,
-								qualityWidth: DRAW_IMAGE_W,
-								innerAspectRadio: IMG_RATIO
-							})
-						} else {
-							let cutL = Math.ceil((SCREEN_WIDTH * IMG_RATIO - (SCREEN_WIDTH * IMG_RATIO)) / 2)
-							let cutR = cutL
-							let cutT = Math.ceil((SCREEN_WIDTH - INIT_DRAG_POSITION) / 2)
-							let cutB = cutT
-							_this.setData({
-								cropperW: SCREEN_WIDTH * IMG_RATIO,
-								cropperH: SCREEN_WIDTH,
-								// 初始化left right
-								cropperL: Math.ceil((SCREEN_WIDTH - SCREEN_WIDTH * IMG_RATIO) / 2),
-								cropperT: Math.ceil((SCREEN_WIDTH - SCREEN_WIDTH) / 2),
+  // 初始化的宽高
+  const cropperInitW = ref(SCREEN_WIDTH)
+  const cropperInitH = ref(SCREEN_WIDTH)
 
-								cutL: cutL,
-								cutT: cutT,
-								cutR: cutR,
-								cutB: cutB,
-								// 图片缩放值
-								imageW: IMG_REAL_W,
-								imageH: IMG_REAL_H,
-								scaleP: IMG_REAL_W / SCREEN_WIDTH,
-								qualityWidth: DRAW_IMAGE_W,
-								innerAspectRadio: IMG_RATIO
-							})
-						}
-						_this.setData({
-							isShowImg: true
-						})
-						uni.hideLoading()
-					}
-				})
-			},
-			// 拖动时候触发的touchStart事件
-			contentStartMove(e) {
-				PAGE_X = e.touches[0].pageX
-				PAGE_Y = e.touches[0].pageY
-			},
+  // 动态的宽高
+  const cropperW = ref(SCREEN_WIDTH)
+  const cropperH = ref(SCREEN_WIDTH)
 
-			// 拖动时候触发的touchMove事件
-			contentMoveing(e) {
-				var _this = this
-				var dragLengthX = (PAGE_X - e.touches[0].pageX) * DRAFG_MOVE_RATIO
-				var dragLengthY = (PAGE_Y - e.touches[0].pageY) * DRAFG_MOVE_RATIO
-				// 左移
-				if (dragLengthX > 0) {
-					if (this.cutL - dragLengthX < 0) dragLengthX = this.cutL
-				} else {
-					if (this.cutR + dragLengthX < 0) dragLengthX = -this.cutR
-				}
+  // 动态的left top值
+  const cropperL = ref(0)
+  const cropperT = ref(0)
 
-				if (dragLengthY > 0) {
-					if (this.cutT - dragLengthY < 0) dragLengthY = this.cutT
-				} else {
-					if (this.cutB + dragLengthY < 0) dragLengthY = -this.cutB
-				}
-				this.setData({
-					cutL: this.cutL - dragLengthX,
-					cutT: this.cutT - dragLengthY,
-					cutR: this.cutR + dragLengthX,
-					cutB: this.cutB + dragLengthY
-				})
+  const transL = ref(0)
+  const transT = ref(0)
 
-				PAGE_X = e.touches[0].pageX
-				PAGE_Y = e.touches[0].pageY
-			},
+  // 图片缩放值
+  const scaleP = ref(0)
+  const imageW = ref(0)
+  const imageH = ref(0)
 
-			contentTouchEnd() {
+  // 裁剪框 宽高
+  const cutL = ref(0)
+  const cutT = ref(0)
+  const cutB = ref(SCREEN_WIDTH)
+  const cutR = ref('100%')
+  const qualityWidth = ref(DRAW_IMAGE_W)
+  const innerAspectRadio = ref(DRAFG_MOVE_RATIO)
+  // 辅助函数 - 设置数据（替代Vue 2的setData）
+  const setData = (obj) => {
+    Object.keys(obj).forEach(key => {
+      switch(key) {
+        case 'imageSrc':
+          imageSrc.value = obj[key]
+          break
+        case 'isShowImg':
+          isShowImg.value = obj[key]
+          break
+        case 'cropperW':
+          cropperW.value = obj[key]
+          break
+        case 'cropperH':
+          cropperH.value = obj[key]
+          break
+        case 'cropperL':
+          cropperL.value = obj[key]
+          break
+        case 'cropperT':
+          cropperT.value = obj[key]
+          break
+        case 'cutL':
+          cutL.value = obj[key]
+          break
+        case 'cutT':
+          cutT.value = obj[key]
+          break
+        case 'cutR':
+          cutR.value = obj[key]
+          break
+        case 'cutB':
+          cutB.value = obj[key]
+          break
+        case 'imageW':
+          imageW.value = obj[key]
+          break
+        case 'imageH':
+          imageH.value = obj[key]
+          break
+        case 'scaleP':
+          scaleP.value = obj[key]
+          break
+        case 'qualityWidth':
+          qualityWidth.value = obj[key]
+          break
+        case 'innerAspectRadio':
+          innerAspectRadio.value = obj[key]
+          break
+      }
+    })
+  }
 
-			},
+  const getImage = () => {
+    uni.chooseImage({
+      success: function (res) {
+        setData({
+          imageSrc: res.tempFilePaths[0],
+        })
+        loadImage()
+      },
+    })
+  }
 
-			// 获取图片
-			getImageInfo() {
-				var _this = this
-				uni.showLoading({
-					title: '图片生成中...',
-				})
-				// 将图片写入画布
-				const ctx = uni.createCanvasContext('myCanvas')
-				ctx.drawImage(_this.imageSrc, 0, 0, IMG_REAL_W, IMG_REAL_H)
-				ctx.draw(true, () => {
-					// 获取画布要裁剪的位置和宽度   均为百分比 * 画布中图片的宽度    保证了在微信小程序中裁剪的图片模糊  位置不对的问题 canvasT = (_this.cutT / _this.cropperH) * (_this.imageH / pixelRatio)
-					var canvasW = ((_this.cropperW - _this.cutL - _this.cutR) / _this.cropperW) * IMG_REAL_W
-					var canvasH = ((_this.cropperH - _this.cutT - _this.cutB) / _this.cropperH) * IMG_REAL_H
-					var canvasL = (_this.cutL / _this.cropperW) * IMG_REAL_W
-					var canvasT = (_this.cutT / _this.cropperH) * IMG_REAL_H
-					uni.canvasToTempFilePath({
-						x: canvasL,
-						y: canvasT,
-						width: canvasW,
-						height: canvasH,
-						destWidth: canvasW,
-						destHeight: canvasH,
-						quality: 0.5,
-						canvasId: 'myCanvas',
-						success: function (res) {
-							uni.hideLoading()
-							let data = {name: 'avatarfile', filePath: res.tempFilePath}
-							uploadAvatar(data).then(response => {
-								this.userStore.setAvatar(baseUrl + response.imgUrl)
-								uni.showToast({ title: "修改成功", icon: 'success' })
-								uni.navigateBack()
-							})
-						}
-					})
-				})
-			},
-			// 设置大小的时候触发的touchStart事件
-			dragStart(e) {
-				T_PAGE_X = e.touches[0].pageX
-				T_PAGE_Y = e.touches[0].pageY
-				CUT_L = this.cutL
-				CUT_R = this.cutR
-				CUT_B = this.cutB
-				CUT_T = this.cutT
-			},
+  const loadImage = () => {
+    uni.getImageInfo({
+      src: imageSrc.value,
+      success: function success(res) {
+        IMG_RATIO = 1 / 1
+        if (IMG_RATIO >= 1) {
+          IMG_REAL_W = SCREEN_WIDTH
+          IMG_REAL_H = SCREEN_WIDTH / IMG_RATIO
+        } else {
+          IMG_REAL_W = SCREEN_WIDTH * IMG_RATIO
+          IMG_REAL_H = SCREEN_WIDTH
+        }
+        let minRange = IMG_REAL_W > IMG_REAL_H ? IMG_REAL_W : IMG_REAL_H
+        INIT_DRAG_POSITION = minRange > INIT_DRAG_POSITION ? INIT_DRAG_POSITION : minRange
+        // 根据图片的宽高显示不同的效果   保证图片可以正常显示
+        if (IMG_RATIO >= 1) {
+          let cutTVal = Math.ceil((SCREEN_WIDTH / IMG_RATIO - (SCREEN_WIDTH / IMG_RATIO - INIT_DRAG_POSITION)) / 2)
+          let cutBVal = cutTVal
+          let cutLVal = Math.ceil((SCREEN_WIDTH - SCREEN_WIDTH + INIT_DRAG_POSITION) / 2)
+          let cutRVal = cutLVal
+          setData({
+            cropperW: SCREEN_WIDTH,
+            cropperH: SCREEN_WIDTH / IMG_RATIO,
+            // 初始化left right
+            cropperL: Math.ceil((SCREEN_WIDTH - SCREEN_WIDTH) / 2),
+            cropperT: Math.ceil((SCREEN_WIDTH - SCREEN_WIDTH / IMG_RATIO) / 2),
+            cutL: cutLVal,
+            cutT: cutTVal,
+            cutR: cutRVal,
+            cutB: cutBVal,
+            // 图片缩放值
+            imageW: IMG_REAL_W,
+            imageH: IMG_REAL_H,
+            scaleP: IMG_REAL_W / SCREEN_WIDTH,
+            qualityWidth: DRAW_IMAGE_W,
+            innerAspectRadio: IMG_RATIO
+          })
+        } else {
+          let cutLVal = Math.ceil((SCREEN_WIDTH * IMG_RATIO - (SCREEN_WIDTH * IMG_RATIO)) / 2)
+          let cutRVal = cutLVal
+          let cutTVal = Math.ceil((SCREEN_WIDTH - INIT_DRAG_POSITION) / 2)
+          let cutBVal = cutTVal
+          setData({
+            cropperW: SCREEN_WIDTH * IMG_RATIO,
+            cropperH: SCREEN_WIDTH,
+            // 初始化left right
+            cropperL: Math.ceil((SCREEN_WIDTH - SCREEN_WIDTH * IMG_RATIO) / 2),
+            cropperT: Math.ceil((SCREEN_WIDTH - SCREEN_WIDTH) / 2),
+            cutL: cutLVal,
+            cutT: cutTVal,
+            cutR: cutRVal,
+            cutB: cutBVal,
+            // 图片缩放值
+            imageW: IMG_REAL_W,
+            imageH: IMG_REAL_H,
+            scaleP: IMG_REAL_W / SCREEN_WIDTH,
+            qualityWidth: DRAW_IMAGE_W,
+            innerAspectRadio: IMG_RATIO
+          })
+        }
+        setData({
+          isShowImg: true
+        })
+        uni.hideLoading()
+      }
+    })
+  }
+  // 拖动时候触发的touchStart事件
+  const contentStartMove = (e) => {
+    PAGE_X = e.touches[0].pageX
+    PAGE_Y = e.touches[0].pageY
+  }
 
-			// 设置大小的时候触发的touchMove事件
-			dragMove(e) {
-				var _this = this
-				var dragType = e.target.dataset.drag
-				switch (dragType) {
-					case 'right':
-						var dragLength = (T_PAGE_X - e.touches[0].pageX) * DRAFG_MOVE_RATIO
-						if (CUT_R + dragLength < 0) dragLength = -CUT_R
-						this.setData({
-							cutR: CUT_R + dragLength
-						})
-						break
-					case 'left':
-						var dragLength = (T_PAGE_X - e.touches[0].pageX) * DRAFG_MOVE_RATIO
-						if (CUT_L - dragLength < 0) dragLength = CUT_L
-						if ((CUT_L - dragLength) > (this.cropperW - this.cutR)) dragLength = CUT_L - (this.cropperW - this.cutR)
-						this.setData({
-							cutL: CUT_L - dragLength
-						})
-						break
-					case 'top':
-						var dragLength = (T_PAGE_Y - e.touches[0].pageY) * DRAFG_MOVE_RATIO
-						if (CUT_T - dragLength < 0) dragLength = CUT_T
-						if ((CUT_T - dragLength) > (this.cropperH - this.cutB)) dragLength = CUT_T - (this.cropperH - this.cutB)
-						this.setData({
-							cutT: CUT_T - dragLength
-						})
-						break
-					case 'bottom':
-						var dragLength = (T_PAGE_Y - e.touches[0].pageY) * DRAFG_MOVE_RATIO
-						if (CUT_B + dragLength < 0) dragLength = -CUT_B
-						this.setData({
-							cutB: CUT_B + dragLength
-						})
-						break
-					case 'rightBottom':
-						var dragLengthX = (T_PAGE_X - e.touches[0].pageX) * DRAFG_MOVE_RATIO
-						var dragLengthY = (T_PAGE_Y - e.touches[0].pageY) * DRAFG_MOVE_RATIO
+  // 拖动时候触发的touchMove事件
+  const contentMoveing = (e) => {
+    var dragLengthX = (PAGE_X - e.touches[0].pageX) * DRAFG_MOVE_RATIO
+    var dragLengthY = (PAGE_Y - e.touches[0].pageY) * DRAFG_MOVE_RATIO
+    // 左移
+    if (dragLengthX > 0) {
+      if (cutL.value - dragLengthX < 0) dragLengthX = cutL.value
+    } else {
+      if (cutR.value + dragLengthX < 0) dragLengthX = -cutR.value
+    }
 
-						if (CUT_B + dragLengthY < 0) dragLengthY = -CUT_B
-						if (CUT_R + dragLengthX < 0) dragLengthX = -CUT_R
-						let cutB = CUT_B + dragLengthY
-						let cutR = CUT_R + dragLengthX
+    if (dragLengthY > 0) {
+      if (cutT.value - dragLengthY < 0) dragLengthY = cutT.value
+    } else {
+      if (cutB.value + dragLengthY < 0) dragLengthY = -cutB.value
+    }
+    setData({
+      cutL: cutL.value - dragLengthX,
+      cutT: cutT.value - dragLengthY,
+      cutR: cutR.value + dragLengthX,
+      cutB: cutB.value + dragLengthY
+    })
 
-						this.setData({
-							cutB: cutB,
-							cutR: cutR
-						})
-						break
-					default:
-						break
-				}
-			}
-		}
-	}
+    PAGE_X = e.touches[0].pageX
+    PAGE_Y = e.touches[0].pageY
+  }
+
+  const contentTouchEnd = () => {
+    // Touch end handler
+  }
+
+  // 获取图片
+  const getImageInfo = () => {
+    uni.showLoading({
+      title: '图片生成中...',
+    })
+    // 将图片写入画布
+    const ctx = uni.createCanvasContext('myCanvas')
+    ctx.drawImage(imageSrc.value, 0, 0, IMG_REAL_W, IMG_REAL_H)
+    ctx.draw(true, () => {
+      // 获取画布要裁剪的位置和宽度   均为百分比 * 画布中图片的宽度    保证了在微信小程序中裁剪的图片模糊  位置不对的问题
+      var canvasW = ((cropperW.value - cutL.value - cutR.value) / cropperW.value) * IMG_REAL_W
+      var canvasH = ((cropperH.value - cutT.value - cutB.value) / cropperH.value) * IMG_REAL_H
+      var canvasL = (cutL.value / cropperW.value) * IMG_REAL_W
+      var canvasT = (cutT.value / cropperH.value) * IMG_REAL_H
+      uni.canvasToTempFilePath({
+        x: canvasL,
+        y: canvasT,
+        width: canvasW,
+        height: canvasH,
+        destWidth: canvasW,
+        destHeight: canvasH,
+        quality: 0.5,
+        canvasId: 'myCanvas',
+        success: function (res) {
+          uni.hideLoading()
+          let data = {name: 'avatarfile', filePath: res.tempFilePath}
+          uploadAvatar(data).then(response => {
+            userStore.setAvatar(response.imgUrl)
+            uni.showToast({ title: "修改成功", icon: 'success' })
+            uni.navigateBack()
+          })
+        }
+      })
+    })
+  }
+  // 设置大小的时候触发的touchStart事件
+  const dragStart = (e) => {
+    T_PAGE_X = e.touches[0].pageX
+    T_PAGE_Y = e.touches[0].pageY
+    CUT_L = cutL.value
+    CUT_R = cutR.value
+    CUT_B = cutB.value
+    CUT_T = cutT.value
+  }
+
+  // 设置大小的时候触发的touchMove事件
+  const dragMove = (e) => {
+    var dragType = e.target.dataset.drag
+    switch (dragType) {
+      case 'right':
+        var dragLength = (T_PAGE_X - e.touches[0].pageX) * DRAFG_MOVE_RATIO
+        if (CUT_R + dragLength < 0) dragLength = -CUT_R
+        setData({
+          cutR: CUT_R + dragLength
+        })
+        break
+      case 'left':
+        var dragLength = (T_PAGE_X - e.touches[0].pageX) * DRAFG_MOVE_RATIO
+        if (CUT_L - dragLength < 0) dragLength = CUT_L
+        if ((CUT_L - dragLength) > (cropperW.value - cutR.value)) dragLength = CUT_L - (cropperW.value - cutR.value)
+        setData({
+          cutL: CUT_L - dragLength
+        })
+        break
+      case 'top':
+        var dragLength = (T_PAGE_Y - e.touches[0].pageY) * DRAFG_MOVE_RATIO
+        if (CUT_T - dragLength < 0) dragLength = CUT_T
+        if ((CUT_T - dragLength) > (cropperH.value - cutB.value)) dragLength = CUT_T - (cropperH.value - cutB.value)
+        setData({
+          cutT: CUT_T - dragLength
+        })
+        break
+      case 'bottom':
+        var dragLength = (T_PAGE_Y - e.touches[0].pageY) * DRAFG_MOVE_RATIO
+        if (CUT_B + dragLength < 0) dragLength = -CUT_B
+        setData({
+          cutB: CUT_B + dragLength
+        })
+        break
+      case 'rightBottom':
+        var dragLengthX = (T_PAGE_X - e.touches[0].pageX) * DRAFG_MOVE_RATIO
+        var dragLengthY = (T_PAGE_Y - e.touches[0].pageY) * DRAFG_MOVE_RATIO
+
+        if (CUT_B + dragLengthY < 0) dragLengthY = -CUT_B
+        if (CUT_R + dragLengthX < 0) dragLengthX = -CUT_R
+        let cutBVal = CUT_B + dragLengthY
+        let cutRVal = CUT_R + dragLengthX
+
+        setData({
+          cutB: cutBVal,
+          cutR: cutRVal
+        })
+        break
+      default:
+        break
+    }
+  }
+
+  const dragEnd = () => {
+    // Drag end handler
+  }
+
+  // 生命周期钩子
+  onMounted(() => {
+    loadImage()
+  })
 </script>
 
 <style scoped>

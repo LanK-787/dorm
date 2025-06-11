@@ -125,7 +125,7 @@
   const loginSuccess = async () => {
     try {
       // 设置用户信息
-      userStore.getInfo().then(async () => {
+      userStore.GetInfo().then(async () => {
         try {
           // 在获取用户信息成功后进行学生账号检测
           const studentStatus = await checkIsStudent(loginForm.username)
@@ -176,7 +176,7 @@
       // 确保即使检测失败也不影响正常登录流程
       proxy.$modal.msgSuccess('登录成功')
 
-      userStore.getInfo().then(() => {
+      userStore.GetInfo().then(() => {
         proxy.$tab.reLaunch('/pages/index')
       }).catch(error => {
         console.error('获取用户信息失败:', error)
@@ -202,7 +202,7 @@
   // 密码登录
   const pwdLogin = async () => {
     try {
-      await userStore.login(loginForm)
+      await userStore.Login(loginForm)
       proxy.$modal.closeLoading()
       await loginSuccess()
     } catch (error) {

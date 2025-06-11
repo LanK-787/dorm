@@ -62,7 +62,7 @@
 
   const handleLogout = () => {
     proxy.$modal.confirm('确定注销并退出系统吗？').then(() => {
-      userStore.logOut().then(() => {
+      userStore.LogOut().then(() => {
         // 清空当前学生信息
         studentStore.clearCurrentStudent()
       }).finally(() => {
