@@ -132,11 +132,12 @@ function uploadImg() {
     let formData = new FormData()
     formData.append("avatarfile", data, options.filename)
     uploadAvatar(formData).then(response => {
-      open.value = false
-      options.img = import.meta.env.VITE_APP_BASE_API + response.imgUrl
-      userStore.avatar = options.img
+      const newAvatarUrl = response.imgUrl
+      options.img = newAvatarUrl
+      userStore.avatar = newAvatarUrl
       proxy.$modal.msgSuccess("修改成功")
       visible.value = false
+      open.value = false
     })
   })
 }
@@ -148,8 +149,8 @@ function realTime(data) {
 
 /** 关闭窗口 */
 function closeDialog() {
+  visible.value = false
   options.img = userStore.avatar
-  options.visible = false
 }
 </script>
 
