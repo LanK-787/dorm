@@ -7,8 +7,11 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,6 +23,11 @@ import com.dorm.common.utils.StringUtils;
 import com.dorm.common.utils.file.FileUploadUtils;
 import com.dorm.common.utils.file.FileUtils;
 import com.dorm.framework.config.ServerConfig;
+import io.minio.*;
+import java.io.ByteArrayInputStream;
+import java.security.MessageDigest;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 通用请求处理
@@ -35,7 +43,36 @@ public class CommonController
     @Autowired
     private ServerConfig serverConfig;
 
+    @Autowired
+    private MinioClient minioClient;
+    
+    @Value("${minio.bucketName}")
+    private String bucket;
+    
+    @Value("${minio.url}")
+    private String minioUrl;
+    
+    // 用于存储文件MD5与文件路径的映射
+    private static final ConcurrentHashMap<String, String> fileHashMap = new ConcurrentHashMap<>();
+    // 用于存储文件引用计数
+    private static final ConcurrentHashMap<String, AtomicInteger> fileRefCount = new ConcurrentHashMap<>();
+
     private static final String FILE_DELIMETER = ",";
+
+    /**
+     * 计算文件的MD5值
+     */
+    private String calculateMD5(byte[] fileData) throws Exception {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        byte[] hash = md.digest(fileData);
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : hash) {
+            String hex = Integer.toHexString(0xff & b);
+            if (hex.length() == 1) hexString.append('0');
+            hexString.append(hex);
+        }
+        return hexString.toString();
+    }
 
     /**
      * 通用下载请求
@@ -70,28 +107,61 @@ public class CommonController
     }
 
     /**
-     * 通用上传请求（单个）
+     * 文件上传（支持MinIO）
      */
     @PostMapping("/upload")
-    public AjaxResult uploadFile(MultipartFile file) throws Exception
-    {
-        try
-        {
-            // 上传文件路径
-            String filePath = RuoYiConfig.getUploadPath();
-            // 上传并返回新文件名称
-            String fileName = FileUploadUtils.upload(filePath, file);
-            String url = serverConfig.getUrl() + fileName;
+    public AjaxResult uploadFile(MultipartFile file) throws Exception {
+        if (file.isEmpty()) {
+            return AjaxResult.error("上传文件不能为空");
+        }
+        
+        try {
+            byte[] fileData = file.getBytes();
+            String md5Hash = calculateMD5(fileData);
+            String fileName;
+            String objectName;
+            
+            // 检查文件是否已存在
+            if (fileHashMap.containsKey(md5Hash)) {
+                // 文件已存在，增加引用计数
+                objectName = fileHashMap.get(md5Hash);
+                fileRefCount.get(md5Hash).incrementAndGet();
+                log.info("文件已存在，增加引用计数: {}", objectName);
+            } else {
+                // 生成新的文件名
+                fileName = FileUploadUtils.extractFilename(file);
+                objectName = FileUploadUtils.getPathFileName(RuoYiConfig.getUploadPath(), fileName);
+                
+                // 上传到MinIO
+                try (ByteArrayInputStream bais = new ByteArrayInputStream(fileData)) {
+                    minioClient.putObject(PutObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(objectName)
+                            .stream(bais, fileData.length, -1)
+                            .contentType(file.getContentType())
+                            .build());
+                }
+                
+                // 保存文件哈希和引用计数
+                fileHashMap.put(md5Hash, objectName);
+                fileRefCount.put(md5Hash, new AtomicInteger(1));
+                log.info("文件上传成功: {}", objectName);
+            }
+            
+            // 构建文件访问URL
+            String url = minioUrl + "/" + bucket + "/" + objectName;
+            
+            // 返回上传结果
             AjaxResult ajax = AjaxResult.success();
             ajax.put("url", url);
-            ajax.put("fileName", fileName);
-            ajax.put("newFileName", FileUtils.getName(fileName));
+            ajax.put("fileName", objectName);
+            ajax.put("newFileName", FileUtils.getName(objectName));
             ajax.put("originalFilename", file.getOriginalFilename());
+            
             return ajax;
-        }
-        catch (Exception e)
-        {
-            return AjaxResult.error(e.getMessage());
+        } catch (Exception e) {
+            log.error("文件上传失败", e);
+            return AjaxResult.error("文件上传失败：" + e.getMessage());
         }
     }
 
@@ -181,6 +251,41 @@ public class CommonController
         catch (Exception e)
         {
             return AjaxResult.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 删除文件
+     */
+    @DeleteMapping("/file/{md5Hash}")
+    public AjaxResult deleteFile(@PathVariable String md5Hash) {
+        try {
+            if (!fileHashMap.containsKey(md5Hash)) {
+                return AjaxResult.error("文件不存在");
+            }
+            
+            // 减少引用计数
+            AtomicInteger refCount = fileRefCount.get(md5Hash);
+            int currentCount = refCount.decrementAndGet();
+            
+            // 如果引用计数为0，则删除文件
+            if (currentCount == 0) {
+                String objectName = fileHashMap.get(md5Hash);
+                minioClient.removeObject(RemoveObjectArgs.builder()
+                        .bucket(bucket)
+                        .object(objectName)
+                        .build());
+                
+                // 清理映射
+                fileHashMap.remove(md5Hash);
+                fileRefCount.remove(md5Hash);
+                log.info("文件已删除: {}", objectName);
+            }
+            
+            return AjaxResult.success();
+        } catch (Exception e) {
+            log.error("文件删除失败", e);
+            return AjaxResult.error("文件删除失败：" + e.getMessage());
         }
     }
 }
