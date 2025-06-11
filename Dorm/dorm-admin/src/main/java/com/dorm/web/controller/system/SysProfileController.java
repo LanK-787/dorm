@@ -133,8 +133,8 @@ public class SysProfileController extends BaseController
             }
 
             LoginUser loginUser = getLoginUser();
-            // 使用MinIO存储头像文件
-            String avatar = FileUploadUtils.uploadMinio(file);
+            // 使用MinIO存储头像文件，采用安全的文件命名策略
+            String avatar = FileUploadUtils.uploadAvatarToMinio(file);
             if (userService.updateUserAvatar(loginUser.getUsername(), avatar))
             {
                 AjaxResult ajax = AjaxResult.success();

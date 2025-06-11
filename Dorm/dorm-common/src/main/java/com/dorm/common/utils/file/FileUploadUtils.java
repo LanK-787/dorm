@@ -168,6 +168,51 @@ public class FileUploadUtils
         }
     }
 
+    /**
+     * 上传头像到MinIO，使用安全的文件命名策略
+     *
+     * @param file 头像文件
+     * @return MinIO文件URL
+     * @throws IOException
+     */
+    public static final String uploadAvatarToMinio(MultipartFile file) throws IOException
+    {
+        try
+        {
+            return uploadMinioWithBusinessType(getBucketName(), file, "avatar", MimeTypeUtils.IMAGE_EXTENSION);
+        }
+        catch (Exception e)
+        {
+            throw new IOException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 上传文件到MinIO，支持指定业务类型
+     */
+    private static final String uploadMinioWithBusinessType(String bucketName, MultipartFile file,
+            String businessType, String[] allowedExtension)
+            throws FileSizeLimitExceededException, IOException, FileNameLengthLimitExceededException,
+            InvalidExtensionException
+    {
+        int fileNamelength = file.getOriginalFilename().length();
+        if (fileNamelength > FileUploadUtils.DEFAULT_FILE_NAME_LENGTH)
+        {
+            throw new FileNameLengthLimitExceededException(FileUploadUtils.DEFAULT_FILE_NAME_LENGTH);
+        }
+        assertAllowed(file, allowedExtension);
+        try
+        {
+            String fileName = extractSecureFilename(file, businessType);
+            String pathFileName = MinioUtil.uploadFile(bucketName, fileName, file);
+            return pathFileName;
+        }
+        catch (Exception e)
+        {
+            throw new IOException(e.getMessage(), e);
+        }
+    }
+
     private static final String uploadMinino(String bucketName, MultipartFile file, String[] allowedExtension)
             throws FileSizeLimitExceededException, IOException, FileNameLengthLimitExceededException,
             InvalidExtensionException
@@ -191,12 +236,31 @@ public class FileUploadUtils
     }
 
     /**
-     * 编码文件名
+     * 编码文件名 - 使用安全的UUID命名策略
      */
     public static final String extractFilename(MultipartFile file)
     {
-        return StringUtils.format("{}/{}_{}.{}", DateUtils.datePath(),
-                FilenameUtils.getBaseName(file.getOriginalFilename()), Seq.getId(Seq.uploadSeqType), getExtension(file));
+        return extractSecureFilename(file, "file");
+    }
+
+    /**
+     * 生成安全的文件名，使用UUID避免信息泄露
+     *
+     * @param file 上传文件
+     * @param businessType 业务类型前缀（如：avatar, doc, image等）
+     * @return 安全的文件路径
+     */
+    public static final String extractSecureFilename(MultipartFile file, String businessType)
+    {
+        // 使用UUID生成唯一文件名，避免信息泄露
+        String uuid = java.util.UUID.randomUUID().toString().replace("-", "");
+        String extension = getExtension(file);
+
+        // 使用年月进行目录分层，避免单个目录文件过多
+        String datePath = DateUtils.parseDateToStr("yyyy/MM", new java.util.Date());
+
+        // 格式：年/月/业务类型_UUID.扩展名
+        return StringUtils.format("{}/{}/{}.{}", datePath, businessType, uuid, extension);
     }
 
     public static final File getAbsoluteFile(String uploadDir, String fileName) throws IOException

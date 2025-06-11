@@ -139,3 +139,15 @@ minio:
   accessKey: root
   secretKey: 12345678
   bucketName: test
+
+# 文件命名策略配置
+file:
+  naming:
+    # 文件命名策略: UUID(推荐) | TIMESTAMP(兼容旧版)
+    strategy: UUID
+    # 是否包含业务类型前缀
+    includeBusinessType: true
+    # 目录分层策略: YEAR_MONTH | YEAR_MONTH_DAY | FLAT
+    directoryStrategy: YEAR_MONTH
+    # 是否保留原始文件名(不推荐，存在安全风险)
+    preserveOriginalName: false
