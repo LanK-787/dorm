@@ -125,8 +125,16 @@ public class SysProfileController extends BaseController
     {
         if (!file.isEmpty())
         {
+            // 验证文件类型是否为图片
+            String extension = FileUploadUtils.getExtension(file);
+            if (!FileUploadUtils.isAllowedExtension(extension, MimeTypeUtils.IMAGE_EXTENSION))
+            {
+                return error("文件格式不正确，请上传图片文件");
+            }
+
             LoginUser loginUser = getLoginUser();
-            String avatar = FileUploadUtils.upload(RuoYiConfig.getAvatarPath(), file, MimeTypeUtils.IMAGE_EXTENSION);
+            // 使用MinIO存储头像文件
+            String avatar = FileUploadUtils.uploadMinio(file);
             if (userService.updateUserAvatar(loginUser.getUsername(), avatar))
             {
                 AjaxResult ajax = AjaxResult.success();
