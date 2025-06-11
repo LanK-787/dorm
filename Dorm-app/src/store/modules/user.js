@@ -42,7 +42,8 @@ const useUserStore = defineStore('userStore', {
           // 处理头像URL - 检查是否已经是完整URL
           let avatar
           if (user == null || user.avatar == "" || user.avatar == null) {
-            avatar = require("@/static/images/profile.jpg")
+            // 使用默认头像的静态路径
+            avatar = "/static/images/profile.jpg"
           } else if (user.avatar.startsWith('http://') || user.avatar.startsWith('https://')) {
             // 如果已经是完整URL，直接使用
             avatar = user.avatar
