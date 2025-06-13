@@ -7,6 +7,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="DormNotice" id="DormNoticeResult">
         <result property="noticeId"    column="notice_id"    />
         <result property="noticeTitle"    column="notice_title"    />
+        <result property="coverImage"    column="cover_image"    />
         <result property="noticeType"    column="notice_type"    />
         <result property="noticeContent"    column="notice_content"    />
         <result property="status"    column="status"    />
@@ -18,13 +19,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectDormNoticeVo">
-        select notice_id, notice_title, notice_type, notice_content, status, create_by, create_time, update_by, update_time, remark from dorm_notice
+        select notice_id, notice_title, cover_image, notice_type, notice_content, status, create_by, create_time, update_by, update_time, remark from dorm_notice
     </sql>
 
     <select id="selectDormNoticeList" parameterType="DormNotice" resultMap="DormNoticeResult">
         <include refid="selectDormNoticeVo"/>
         <where>  
             <if test="noticeTitle != null  and noticeTitle != ''"> and notice_title like concat('%', #{noticeTitle}, '%')</if>
+            <if test="coverImage != null  and coverImage != ''"> and cover_image = #{coverImage}</if>
             <if test="noticeType != null  and noticeType != ''"> and notice_type = #{noticeType}</if>
             <if test="noticeContent != null  and noticeContent != ''"> and notice_content like concat('%', #{noticeContent}, '%')</if>
             <if test="status != null  and status != ''"> and status = #{status}</if>
@@ -40,6 +42,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         insert into dorm_notice
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="noticeTitle != null and noticeTitle != ''">notice_title,</if>
+            <if test="coverImage != null">cover_image,</if>
             <if test="noticeType != null and noticeType != ''">notice_type,</if>
             <if test="noticeContent != null and noticeContent != ''">notice_content,</if>
             <if test="status != null">status,</if>
@@ -51,6 +54,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="noticeTitle != null and noticeTitle != ''">#{noticeTitle},</if>
+            <if test="coverImage != null">#{coverImage},</if>
             <if test="noticeType != null and noticeType != ''">#{noticeType},</if>
             <if test="noticeContent != null and noticeContent != ''">#{noticeContent},</if>
             <if test="status != null">#{status},</if>
@@ -66,6 +70,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         update dorm_notice
         <trim prefix="SET" suffixOverrides=",">
             <if test="noticeTitle != null and noticeTitle != ''">notice_title = #{noticeTitle},</if>
+            <if test="coverImage != null">cover_image = #{coverImage},</if>
             <if test="noticeType != null and noticeType != ''">notice_type = #{noticeType},</if>
             <if test="noticeContent != null and noticeContent != ''">notice_content = #{noticeContent},</if>
             <if test="status != null">status = #{status},</if>

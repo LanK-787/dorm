@@ -22,6 +22,10 @@ public class DormNotice extends BaseEntity
     @Excel(name = "公告标题")
     private String noticeTitle;
 
+    /** 封面图片路径 */
+    @Excel(name = "封面图片")
+    private String coverImage;
+
     /** 公告类型（0=公告,1=通知,2=活动） */
     @Excel(name = "公告类型", readConverterExp = "0=公告,1=通知,2=活动")
     private String noticeType;
@@ -52,6 +56,16 @@ public class DormNotice extends BaseEntity
     public String getNoticeTitle() 
     {
         return noticeTitle;
+    }
+
+    public void setCoverImage(String coverImage)
+    {
+        this.coverImage = coverImage;
+    }
+
+    public String getCoverImage()
+    {
+        return coverImage;
     }
 
     public void setNoticeType(String noticeType) 
@@ -89,6 +103,7 @@ public class DormNotice extends BaseEntity
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("noticeId", getNoticeId())
             .append("noticeTitle", getNoticeTitle())
+            .append("coverImage", getCoverImage())
             .append("noticeType", getNoticeType())
             .append("noticeContent", getNoticeContent())
             .append("status", getStatus())

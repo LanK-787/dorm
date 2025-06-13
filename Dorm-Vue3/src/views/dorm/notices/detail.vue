@@ -34,6 +34,34 @@
               </el-form-item>
             </el-col>
 
+            <el-col :span="24">
+              <el-form-item label="封面图片" prop="coverImage">
+                <el-upload
+                  class="cover-image-uploader"
+                  :action="uploadUrl"
+                  :headers="headers"
+                  :show-file-list="false"
+                  :on-success="handleCoverSuccess"
+                  :before-upload="beforeCoverUpload"
+                  :on-error="handleCoverError"
+                >
+                  <div v-if="form.coverImage" class="cover-image-preview">
+                    <img :src="form.coverImage" class="cover-image" />
+                    <div class="cover-image-actions">
+                      <el-button type="danger" icon="Delete" circle @click.stop="removeCoverImage"></el-button>
+                    </div>
+                  </div>
+                  <div v-else class="upload-placeholder">
+                    <el-icon class="upload-icon"><Plus /></el-icon>
+                    <div class="upload-text">点击上传封面图片</div>
+                  </div>
+                </el-upload>
+                <div class="cover-image-tip">
+                  <p>建议尺寸: 800x450px，支持JPG、PNG、SVG格式，不超过2MB</p>
+                </div>
+              </el-form-item>
+            </el-col>
+
             <el-col :span="12">
               <el-form-item label="公告类型" prop="noticeType">
                 <el-select v-model="form.noticeType" placeholder="请选择公告类型" class="form-select">
@@ -73,7 +101,8 @@
 
 <script setup name="Notices">
 import { getNotices, addNotices, updateNotices } from "@/api/dorm/notices"
-import { Document, ArrowLeft, Check } from '@element-plus/icons-vue'
+import { Document, ArrowLeft, Check, Plus } from '@element-plus/icons-vue'
+import { getToken } from "@/utils/auth"
 
 const { proxy } = getCurrentInstance()
 const route = useRoute()
@@ -84,11 +113,14 @@ const { sys_notice_status, dorm_notice_type } = proxy.useDict('sys_notice_status
 const pageLoading = ref(false)
 const submitLoading = ref(false)
 const isEdit = ref(false)
+const uploadUrl = ref(import.meta.env.VITE_APP_BASE_API + "/common/upload")
+const headers = ref({ Authorization: "Bearer " + getToken() })
 
 // 表单数据
 const form = ref({
   noticeId: null,
   noticeTitle: '',
+  coverImage: '',
   noticeType: '',
   noticeContent: '',
   status: '0', // 默认启用状态
@@ -171,6 +203,7 @@ function getInfo(noticeId) {
       form.value = {
         noticeId: response.data.noticeId,
         noticeTitle: response.data.noticeTitle || '',
+        coverImage: response.data.coverImage || '',
         noticeType: response.data.noticeType || '',
         noticeContent: response.data.noticeContent || '',
         status: response.data.status || '0',
@@ -211,6 +244,7 @@ function reset() {
   form.value = {
     noticeId: null,
     noticeTitle: '',
+    coverImage: '',
     noticeType: '',
     noticeContent: '',
     status: '0',
@@ -221,6 +255,43 @@ function reset() {
     remark: null
   }
   proxy.resetForm("noticesRef")
+}
+
+// 封面图片上传前的校验
+function beforeCoverUpload(file) {
+  const isJPG = file.type === 'image/jpeg'
+  const isPNG = file.type === 'image/png'
+  const isSVG = file.type === 'image/svg+xml'
+  const isLt2M = file.size / 1024 / 1024 < 2
+
+  if (!isJPG && !isPNG && !isSVG) {
+    proxy.$modal.msgError('封面图片只能是 JPG/PNG/SVG 格式!')
+    return false
+  }
+  if (!isLt2M) {
+    proxy.$modal.msgError('封面图片大小不能超过 2MB!')
+    return false
+  }
+  return true
+}
+
+// 封面图片上传成功处理
+function handleCoverSuccess(res, file) {
+  if (res.code === 200) {
+    form.value.coverImage = res.url
+  } else {
+    proxy.$modal.msgError('封面图片上传失败，请重试!')
+  }
+}
+
+// 封面图片上传失败处理
+function handleCoverError() {
+  proxy.$modal.msgError('封面图片上传失败，请重试!')
+}
+
+// 删除封面图片
+function removeCoverImage() {
+  form.value.coverImage = ''
 }
 
 /** 提交表单 */
@@ -502,6 +573,92 @@ function submitForm() {
       }
     }
 
+    /* 封面图片上传组件样式 */
+    .cover-image-uploader {
+      width: 100%;
+      max-width: 500px;
+      cursor: pointer;
+      
+      .cover-image-preview {
+        position: relative;
+        width: 100%;
+        height: 280px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        
+        .cover-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.3s;
+        }
+        
+        .cover-image-actions {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          opacity: 0;
+          transition: opacity 0.3s;
+        }
+        
+        &:hover {
+          .cover-image {
+            transform: scale(1.05);
+          }
+          
+          .cover-image-actions {
+            opacity: 1;
+          }
+        }
+      }
+      
+      .upload-placeholder {
+        width: 100%;
+        height: 280px;
+        border: 2px dashed #d9d9d9;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: #fafafa;
+        transition: all 0.3s;
+        
+        .upload-icon {
+          font-size: 48px;
+          color: #8c939d;
+          margin-bottom: 16px;
+        }
+        
+        .upload-text {
+          font-size: 16px;
+          color: #8c939d;
+        }
+        
+        &:hover {
+          border-color: #409EFF;
+          background: #f0f9ff;
+          
+          .upload-icon, .upload-text {
+            color: #409EFF;
+          }
+        }
+      }
+    }
+    
+    .cover-image-tip {
+      margin-top: 8px;
+      color: #909399;
+      font-size: 12px;
+    }
+
     .status-radio-group {
       display: flex;
       gap: 16px;
@@ -696,9 +853,5 @@ function submitForm() {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.form-card {
-  animation: fadeInUp 0.6s ease-out;
 }
 </style>
