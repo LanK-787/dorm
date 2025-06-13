@@ -38,6 +38,10 @@ public class DormNotice extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=草稿,1=已发布,2=撤回")
     private String status;
 
+    /** 是否在轮播图显示（0否 1是） */
+    @Excel(name = "轮播图显示", readConverterExp = "0=否,1=是")
+    private String isCarousel;
+
     public void setNoticeId(Long noticeId) 
     {
         this.noticeId = noticeId;
@@ -88,9 +92,19 @@ public class DormNotice extends BaseEntity
         return noticeContent;
     }
 
-    public void setStatus(String status) 
+    public void setStatus(String status)
     {
         this.status = status;
+    }
+
+    public String getIsCarousel()
+    {
+        return isCarousel;
+    }
+
+    public void setIsCarousel(String isCarousel)
+    {
+        this.isCarousel = isCarousel;
     }
 
     public String getStatus() 
@@ -107,6 +121,7 @@ public class DormNotice extends BaseEntity
             .append("noticeType", getNoticeType())
             .append("noticeContent", getNoticeContent())
             .append("status", getStatus())
+            .append("isCarousel", getIsCarousel())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

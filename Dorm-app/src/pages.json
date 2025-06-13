@@ -12,7 +12,7 @@
   }, {
     "path": "pages/index",
     "style": {
-      "navigationBarTitleText": "若依移动端框架",
+      "navigationBarTitleText": "智慧宿舍",
       "navigationStyle": "custom"
     }
   }, {
@@ -74,6 +74,18 @@
     "path": "pages/student/complete-info",
     "style": {
       "navigationBarTitleText": "完善学生信息"
+    }
+  }, {
+    "path": "pages/notice/list",
+    "style": {
+      "navigationBarTitleText": "通知公告",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/notice/detail",
+    "style": {
+      "navigationBarTitleText": "通告详情",
+      "navigationStyle": "custom"
     }
   }],
   "tabBar": {

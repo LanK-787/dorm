@@ -29,6 +29,16 @@
           />
         </el-select>
       </el-form-item>
+      <el-form-item label="轮播图显示" prop="isCarousel" style="width: 250px;">
+        <el-select v-model="queryParams.isCarousel" placeholder="请选择轮播图显示" clearable>
+          <el-option
+            v-for="dict in is_carousel"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -133,6 +143,11 @@
           <dict-tag :options="sys_notice_status" :value="scope.row.status"/>
         </template>
       </el-table-column>
+      <el-table-column label="轮播图显示" align="center" prop="isCarousel" width="120">
+        <template #default="scope">
+          <dict-tag :options="is_carousel" :value="scope.row.isCarousel"/>
+        </template>
+      </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
         <template #default="scope">
           <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
@@ -191,6 +206,15 @@
         <el-form-item label="公告内容">
           <editor v-model="form.noticeContent" :min-height="300"/>
         </el-form-item>
+        <el-form-item label="轮播图显示" prop="isCarousel">
+          <el-radio-group v-model="form.isCarousel">
+            <el-radio
+              v-for="dict in is_carousel"
+              :key="dict.value"
+              :label="dict.value"
+            >{{dict.label}}</el-radio>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item label="状态" prop="status" v-if="form.noticeId != null">
           <el-radio-group v-model="form.status">
             <el-radio
@@ -219,7 +243,7 @@ import { getToken } from "@/utils/auth"
 import { isExternal } from "@/utils/validate"
 
 const { proxy } = getCurrentInstance()
-const { sys_notice_status, dorm_notice_type } = proxy.useDict('sys_notice_status', 'dorm_notice_type')
+const { sys_notice_status, dorm_notice_type, is_carousel } = proxy.useDict('sys_notice_status', 'dorm_notice_type', 'is_carousel')
 
 const noticesList = ref([])
 const open = ref(false)
@@ -246,6 +270,7 @@ const data = reactive({
     noticeType: null,
     noticeContent: null,
     status: null,
+    isCarousel: null,
   },
   rules: {
     noticeTitle: [
@@ -461,6 +486,7 @@ function reset() {
     noticeType: null,
     noticeContent: null,
     status: null,
+    isCarousel: '0', // 默认不在轮播图显示
     createBy: null,
     createTime: null,
     updateBy: null,

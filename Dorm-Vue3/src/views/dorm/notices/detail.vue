@@ -71,6 +71,17 @@
               </el-form-item>
             </el-col>
 
+            <el-col :span="12">
+              <el-form-item label="轮播图显示" prop="isCarousel">
+                <el-radio-group v-model="form.isCarousel" class="carousel-radio-group">
+                  <el-radio v-for="dict in is_carousel" :key="dict.value" :label="dict.value"
+                    class="carousel-radio">
+                    {{ dict.label }}
+                  </el-radio>
+                </el-radio-group>
+              </el-form-item>
+            </el-col>
+
             <el-col :span="12" v-if="isEdit">
               <el-form-item label="状态" prop="status">
                 <el-radio-group v-model="form.status" class="status-radio-group">
@@ -107,7 +118,7 @@ import { getToken } from "@/utils/auth"
 const { proxy } = getCurrentInstance()
 const route = useRoute()
 const router = useRouter()
-const { sys_notice_status, dorm_notice_type } = proxy.useDict('sys_notice_status', 'dorm_notice_type')
+const { sys_notice_status, dorm_notice_type, is_carousel } = proxy.useDict('sys_notice_status', 'dorm_notice_type', 'is_carousel')
 
 // 页面状态
 const pageLoading = ref(false)
@@ -124,6 +135,7 @@ const form = ref({
   noticeType: '',
   noticeContent: '',
   status: '0', // 默认启用状态
+  isCarousel: '0', // 默认不在轮播图显示
   createBy: null,
   createTime: null,
   updateBy: null,
@@ -186,6 +198,7 @@ function initPage() {
     // 新增模式 - 设置默认值
     isEdit.value = false
     form.value.status = '0' // 默认启用状态
+    form.value.isCarousel = '0' // 默认不在轮播图显示
     console.log('新增模式，设置默认值')
   }
 }
@@ -207,6 +220,7 @@ function getInfo(noticeId) {
         noticeType: response.data.noticeType || '',
         noticeContent: response.data.noticeContent || '',
         status: response.data.status || '0',
+        isCarousel: response.data.isCarousel || '0',
         createBy: response.data.createBy,
         createTime: response.data.createTime,
         updateBy: response.data.updateBy,
@@ -248,6 +262,7 @@ function reset() {
     noticeType: '',
     noticeContent: '',
     status: '0',
+    isCarousel: '0',
     createBy: null,
     createTime: null,
     updateBy: null,

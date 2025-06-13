@@ -11,7 +11,7 @@
  Target Server Version : 80012 (8.0.12)
  File Encoding         : 65001
 
- Date: 13/06/2025 10:41:17
+ Date: 13/06/2025 23:12:35
 */
 
 SET NAMES utf8mb4;
@@ -56,13 +56,13 @@ INSERT INTO `dorm_building` VALUES (243, 242, '0,100,242', '听涛公寓', '瓯�
 INSERT INTO `dorm_building` VALUES (244, 243, '0,100,242,243', 'A栋', '瓯江口 - 光电制造学院 - 听涛公寓 - A栋', 0, NULL, NULL, NULL, NULL, 0, '0', '0', 'admin', '2025-06-09 20:12:54', '', NULL);
 INSERT INTO `dorm_building` VALUES (245, 243, '0,100,242,243', 'B栋', '瓯江口 - 光电制造学院 - 听涛公寓 - B栋', 1, NULL, NULL, NULL, NULL, 0, '0', '0', 'admin', '2025-06-09 20:13:05', '', NULL);
 INSERT INTO `dorm_building` VALUES (246, 243, '0,100,242,243', 'C栋', '瓯江口 - 光电制造学院 - 听涛公寓 - C栋', 2, NULL, NULL, NULL, NULL, 0, '0', '0', 'admin', '2025-06-09 20:13:19', '', NULL);
-INSERT INTO `dorm_building` VALUES (247, 239, '0,100,237,238,239', '一楼', '瓯江口 - 人工智能学院 - 观潮公寓 - A栋 - 一楼', 0, NULL, NULL, NULL, NULL, 0, '1', '0', 'admin', '2025-06-09 20:13:31', 'admin', '2025-06-10 22:35:34');
+INSERT INTO `dorm_building` VALUES (247, 239, '0,100,237,238,239', '一楼', '瓯江口 - 人工智能学院 - 观潮公寓 - A栋 - 一楼', 0, NULL, NULL, NULL, NULL, 0, '1', '0', 'admin', '2025-06-09 20:13:31', 'admin', '2025-06-13 16:23:58');
 INSERT INTO `dorm_building` VALUES (248, 239, '0,100,237,238,239', '二楼', '瓯江口 - 人工智能学院 - 观潮公寓 - A栋 - 二楼', 1, NULL, NULL, NULL, NULL, 0, '0', '0', 'admin', '2025-06-09 20:13:50', '', '2025-06-10 22:25:01');
 INSERT INTO `dorm_building` VALUES (249, 239, '0,100,237,238,239', '三楼', '瓯江口 - 人工智能学院 - 观潮公寓 - A栋 - 三楼', 2, NULL, NULL, NULL, NULL, 0, '0', '0', 'admin', '2025-06-09 20:15:25', '', NULL);
 INSERT INTO `dorm_building` VALUES (250, 239, '0,100,237,238,239', '四楼', '瓯江口 - 人工智能学院 - 观潮公寓 - A栋 - 四楼', 3, NULL, NULL, NULL, NULL, 0, '0', '0', 'admin', '2025-06-09 20:15:39', '', NULL);
 INSERT INTO `dorm_building` VALUES (252, 239, '0,100,237,238,239', '五楼', '瓯江口 - 人工智能学院 - 观潮公寓 - A栋 - 五楼', 4, NULL, NULL, NULL, NULL, 0, '0', '0', 'admin', '2025-06-09 20:16:15', '', NULL);
 INSERT INTO `dorm_building` VALUES (253, 240, '0,100,237,238,240', '一楼', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 一楼', 0, NULL, NULL, NULL, NULL, 0, '0', '0', 'admin', '2025-06-09 20:16:38', '', NULL);
-INSERT INTO `dorm_building` VALUES (254, 247, '0,100,237,238,239,247', '101', '瓯江口 - 人工智能学院 - 观潮公寓 - A栋 - 一楼 - 101', 0, NULL, NULL, NULL, 6, 6, '1', '0', 'admin', '2025-06-09 20:18:32', 'admin', '2025-06-10 22:35:34');
+INSERT INTO `dorm_building` VALUES (254, 247, '0,100,237,238,239,247', '101', '瓯江口 - 人工智能学院 - 观潮公寓 - A栋 - 一楼 - 101', 0, NULL, NULL, NULL, 6, 6, '1', '0', 'admin', '2025-06-09 20:18:32', 'admin', '2025-06-13 16:23:57');
 INSERT INTO `dorm_building` VALUES (255, 240, '0,100,237,238,240', '二楼', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 二楼', 1, NULL, NULL, NULL, NULL, 0, '0', '0', 'admin', '2025-06-09 20:37:28', '', NULL);
 INSERT INTO `dorm_building` VALUES (256, 240, '0,100,237,238,240', '三楼', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 三楼', 2, NULL, NULL, NULL, NULL, 0, '0', '0', 'admin', '2025-06-09 20:37:49', 'admin', '2025-06-10 15:13:23');
 INSERT INTO `dorm_building` VALUES (257, 256, '0,100,237,238,240,256', '301', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 三楼 - 301', 0, NULL, NULL, NULL, 6, 0, '0', '0', 'admin', '2025-06-09 20:38:20', 'admin', '2025-06-10 21:39:05');
@@ -80,6 +80,7 @@ DROP TABLE IF EXISTS `dorm_notice`;
 CREATE TABLE `dorm_notice`  (
   `notice_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '公告ID（主键）',
   `notice_title` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '公告标题',
+  `cover_image` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '封面图片路径（存储图片URL）',
   `notice_type` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '0' COMMENT '公告类型（0全校公告 1楼栋公告 2全校通知 3楼栋通知 4全校活动 5楼栋活动）',
   `notice_content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '公告内容（支持HTML/富文本）',
   `status` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT '0' COMMENT '状态（0草稿 1已发布 2撤回）',
@@ -88,20 +89,21 @@ CREATE TABLE `dorm_notice`  (
   `update_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT '' COMMENT '更新者',
   `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '备注',
+  `is_carousel` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT '0' COMMENT '是否在轮播图显示（0否 1是）',
   PRIMARY KEY (`notice_id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '宿舍公告表（无楼栋字段）' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of dorm_notice
 -- ----------------------------
-INSERT INTO `dorm_notice` VALUES (1, '关于期末考试时间安排的公告', '0', '<p>请各位同学提前查阅期末考试时间表，合理安排复习。<img src=\"http://172.18.34.104:9005/test//profile/upload/2025/06/file/2911c02447f54e6d85cd3b47a0fe66ce.png\"></p>', '1', 'admin', '2025-06-06 15:44:33', 'admin', '2025-06-11 15:17:31', '教务处发布');
-INSERT INTO `dorm_notice` VALUES (2, '宿舍楼用电安全须知', '0', '<p>近期天气炎热，请注意合理用电，避免跳闸。</p>', '1', 'admin', '2025-06-06 15:44:33', '', NULL, '安全提醒');
-INSERT INTO `dorm_notice` VALUES (3, '校园网升级通知', '1', '<p>6月10日凌晨校园网将维护升级，期间可能出现短时断网。</p>', '1', 'net_admin', '2025-06-06 15:44:33', 'net_admin', '2025-06-06 15:44:33', '信息中心');
-INSERT INTO `dorm_notice` VALUES (4, '图书馆闭馆时间调整通知', '1', '<p>因暑假临近，图书馆将于6月20日起调整开放时间。</p>', '0', 'library_admin', '2025-06-06 15:44:33', '', NULL, '草稿');
-INSERT INTO `dorm_notice` VALUES (5, '2025年校园科技节活动安排', '2', '<p>诚邀全校师生参与科技节活动，包括创新作品展、专题讲座等。</p>', '1', 'student_union', '2025-06-06 15:44:33', 'teacher_zhang', '2025-06-06 15:44:33', '校团委主办');
-INSERT INTO `dorm_notice` VALUES (6, '端午节包粽子比赛报名中', '2', '<p>欢迎各宿舍报名参加端午节包粽子比赛，名额有限，先到先得！</p>', '0', 'life_committee', '2025-06-06 15:44:33', '', NULL, '学生社区活动');
-INSERT INTO `dorm_notice` VALUES (7, '旧版防疫政策公告（已撤回）', '0', '<p>此公告已作废，请以最新政策为准。</p>', '1', 'admin', '2025-06-06 15:44:33', 'admin', '2025-06-06 15:58:02', '已撤回');
-INSERT INTO `dorm_notice` VALUES (8, '校园跑步打卡活动（取消）', '2', '<p>受天气影响，该活动取消。</p>', '1', 'sports_admin', '2025-06-06 15:44:33', 'admin', '2025-06-06 15:57:21', '撤回通知');
+INSERT INTO `dorm_notice` VALUES (1, '关于期末考试时间安排的公告', 'http://172.18.34.104:9005/test//profile/upload/2025/06/file/9465a858be354f4cbc42955e551f9681.png', '0', '<p>请各位同学提前查阅期末考试时间表，合理安排复习。<img src=\"http://172.18.34.104:9005/test//profile/upload/2025/06/file/2911c02447f54e6d85cd3b47a0fe66ce.png\"></p>', '0', 'admin', '2025-06-06 15:44:33', 'admin', '2025-06-13 23:08:44', '教务处发布', '0');
+INSERT INTO `dorm_notice` VALUES (2, '宿舍楼用电安全须知', NULL, '0', '<p>近期天气炎热，请注意合理用电，避免跳闸。</p>', '0', 'admin', '2025-06-06 15:44:33', '', '2025-06-13 23:08:49', '安全提醒', '0');
+INSERT INTO `dorm_notice` VALUES (3, '校园网升级通知', NULL, '1', '<p>6月10日凌晨校园网将维护升级，期间可能出现短时断网。</p>', '0', 'net_admin', '2025-06-06 15:44:33', 'net_admin', '2025-06-13 23:08:53', '信息中心', '0');
+INSERT INTO `dorm_notice` VALUES (4, '图书馆闭馆时间调整通知', NULL, '1', '<p>因暑假临近，图书馆将于6月20日起调整开放时间。</p>', '0', 'library_admin', '2025-06-06 15:44:33', '', NULL, '草稿', '0');
+INSERT INTO `dorm_notice` VALUES (5, '2025年校园科技节活动安排', NULL, '2', '<p>诚邀全校师生参与科技节活动，包括创新作品展、专题讲座等。</p>', '0', 'student_union', '2025-06-06 15:44:33', 'teacher_zhang', '2025-06-13 23:08:56', '校团委主办', '0');
+INSERT INTO `dorm_notice` VALUES (6, '端午节包粽子比赛报名中', NULL, '2', '<p>欢迎各宿舍报名参加端午节包粽子比赛，名额有限，先到先得！</p>', '0', 'life_committee', '2025-06-06 15:44:33', '', NULL, '学生社区活动', '0');
+INSERT INTO `dorm_notice` VALUES (7, '旧版防疫政策公告（已撤回）', NULL, '0', '<p>此公告已作废，请以最新政策为准。</p>', '0', 'admin', '2025-06-06 15:44:33', 'admin', '2025-06-13 23:09:00', '已撤回', '0');
+INSERT INTO `dorm_notice` VALUES (8, '校园跑步打卡活动（取消）', NULL, '2', '<p>受天气影响，该活动取消。</p>', '0', 'sports_admin', '2025-06-06 15:44:33', 'admin', '2025-06-13 23:09:04', '撤回通知', '0');
 
 -- ----------------------------
 -- Table structure for dorm_student
@@ -489,7 +491,7 @@ CREATE TABLE `sys_logininfor`  (
   PRIMARY KEY (`info_id`) USING BTREE,
   INDEX `idx_sys_logininfor_s`(`status` ASC) USING BTREE,
   INDEX `idx_sys_logininfor_lt`(`login_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 463 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '系统访问记录' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 480 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '系统访问记录' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_logininfor
@@ -857,6 +859,23 @@ INSERT INTO `sys_logininfor` VALUES (459, 'admin', '127.0.0.1', '内网IP', 'Chr
 INSERT INTO `sys_logininfor` VALUES (460, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-13 10:07:58');
 INSERT INTO `sys_logininfor` VALUES (461, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-13 10:09:24');
 INSERT INTO `sys_logininfor` VALUES (462, 'admin', '127.0.0.1', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-13 10:09:30');
+INSERT INTO `sys_logininfor` VALUES (463, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-13 11:03:39');
+INSERT INTO `sys_logininfor` VALUES (464, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-13 16:21:11');
+INSERT INTO `sys_logininfor` VALUES (465, 'admin', '127.0.0.1', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-13 16:23:09');
+INSERT INTO `sys_logininfor` VALUES (466, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-13 16:23:20');
+INSERT INTO `sys_logininfor` VALUES (467, 'admin', '127.0.0.1', '内网IP', 'Mobile Safari', 'Mac OS X (iPhone)', '1', '验证码已失效', '2025-06-13 22:25:49');
+INSERT INTO `sys_logininfor` VALUES (468, 'admin', '127.0.0.1', '内网IP', 'Mobile Safari', 'Mac OS X (iPhone)', '0', '登录成功', '2025-06-13 22:25:55');
+INSERT INTO `sys_logininfor` VALUES (469, 'admin', '127.0.0.1', '内网IP', 'Chrome Mobile', 'Android 1.x', '1', '验证码错误', '2025-06-13 22:26:39');
+INSERT INTO `sys_logininfor` VALUES (470, 'admin', '127.0.0.1', '内网IP', 'Chrome Mobile', 'Android 1.x', '1', '验证码错误', '2025-06-13 22:26:43');
+INSERT INTO `sys_logininfor` VALUES (471, 'admin', '127.0.0.1', '内网IP', 'Chrome Mobile', 'Android 1.x', '0', '登录成功', '2025-06-13 22:26:47');
+INSERT INTO `sys_logininfor` VALUES (472, 'admin', '172.18.213.84', '内网IP', 'Chrome Mobile', 'Android 1.x', '0', '登录成功', '2025-06-13 22:45:36');
+INSERT INTO `sys_logininfor` VALUES (473, 'admin', '172.18.213.84', '内网IP', 'Chrome Mobile', 'Android 1.x', '0', '退出成功', '2025-06-13 22:45:47');
+INSERT INTO `sys_logininfor` VALUES (474, 'admin', '172.18.213.84', '内网IP', 'Chrome Mobile', 'Android 1.x', '0', '登录成功', '2025-06-13 23:00:26');
+INSERT INTO `sys_logininfor` VALUES (475, 'admin', '172.18.213.84', '内网IP', 'Chrome Mobile', 'Android 1.x', '0', '退出成功', '2025-06-13 23:00:31');
+INSERT INTO `sys_logininfor` VALUES (476, 'admin', '172.18.34.104', '内网IP', 'Mobile Safari', 'Mac OS X (iPhone)', '0', '登录成功', '2025-06-13 23:01:32');
+INSERT INTO `sys_logininfor` VALUES (477, 'admin', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-13 23:04:34');
+INSERT INTO `sys_logininfor` VALUES (478, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '1', '验证码已失效', '2025-06-13 23:07:11');
+INSERT INTO `sys_logininfor` VALUES (479, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-13 23:07:14');
 
 -- ----------------------------
 -- Table structure for sys_menu
@@ -1044,7 +1063,7 @@ CREATE TABLE `sys_oper_log`  (
   INDEX `idx_sys_oper_log_bt`(`business_type` ASC) USING BTREE,
   INDEX `idx_sys_oper_log_s`(`status` ASC) USING BTREE,
   INDEX `idx_sys_oper_log_ot`(`oper_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 587 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '操作日志记录' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 599 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '操作日志记录' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_oper_log
@@ -1536,6 +1555,18 @@ INSERT INTO `sys_oper_log` VALUES (583, '字典类型', 3, 'com.dorm.web.control
 INSERT INTO `sys_oper_log` VALUES (584, '字典类型', 3, 'com.dorm.web.controller.system.SysDictDataController.remove()', 'DELETE', 1, 'admin', '研发部门', '/system/dict/data/108', '127.0.0.1', '内网IP', '[108]', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-12 15:24:04', 44);
 INSERT INTO `sys_oper_log` VALUES (585, '字典类型', 3, 'com.dorm.web.controller.system.SysDictDataController.remove()', 'DELETE', 1, 'admin', '研发部门', '/system/dict/data/109', '127.0.0.1', '内网IP', '[109]', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-12 15:24:06', 23);
 INSERT INTO `sys_oper_log` VALUES (586, '字典类型', 3, 'com.dorm.web.controller.system.SysDictTypeController.remove()', 'DELETE', 1, 'admin', '研发部门', '/system/dict/type/102', '127.0.0.1', '内网IP', '[102]', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-12 15:24:12', 15);
+INSERT INTO `sys_oper_log` VALUES (587, '宿舍公告', 2, 'com.dorm.manage.controller.DormNoticeController.edit()', 'PUT', 1, 'admin', '研发部门', '/dorm/notices', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"createTime\":\"2025-06-06 15:44:33\",\"noticeContent\":\"<p>请各位同学提前查阅期末考试时间表，合理安排复习。<img src=\\\"http://172.18.34.104:9005/test//profile/upload/2025/06/file/2911c02447f54e6d85cd3b47a0fe66ce.png\\\"></p>\",\"noticeId\":1,\"noticeTitle\":\"关于期末考试时间安排的公告\",\"noticeType\":\"0\",\"params\":{},\"remark\":\"教务处发布\",\"status\":\"1\",\"updateBy\":\"admin\",\"updateTime\":\"2025-06-13 11:06:20\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-13 11:06:20', 86);
+INSERT INTO `sys_oper_log` VALUES (588, '宿舍公告', 2, 'com.dorm.manage.controller.DormNoticeController.edit()', 'PUT', 1, 'admin', '研发部门', '/dorm/notices', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"createTime\":\"2025-06-06 15:44:33\",\"noticeContent\":\"<p>请各位同学提前查阅期末考试时间表，合理安排复习。<img src=\\\"http://172.18.34.104:9005/test//profile/upload/2025/06/file/2911c02447f54e6d85cd3b47a0fe66ce.png\\\"></p>\",\"noticeId\":1,\"noticeTitle\":\"关于期末考试时间安排的公告\",\"noticeType\":\"0\",\"params\":{},\"remark\":\"教务处发布\",\"status\":\"1\",\"updateBy\":\"admin\",\"updateTime\":\"2025-06-13 11:06:38\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-13 11:06:38', 58);
+INSERT INTO `sys_oper_log` VALUES (589, '宿舍公告', 2, 'com.dorm.manage.controller.DormNoticeController.edit()', 'PUT', 1, 'admin', '研发部门', '/dorm/notices', '127.0.0.1', '内网IP', '{\"coverImage\":\"http://172.18.34.104:9005/test//profile/upload/2025/06/file/9465a858be354f4cbc42955e551f9681.png\",\"createBy\":\"admin\",\"createTime\":\"2025-06-06 15:44:33\",\"noticeContent\":\"<p>请各位同学提前查阅期末考试时间表，合理安排复习。<img src=\\\"http://172.18.34.104:9005/test//profile/upload/2025/06/file/2911c02447f54e6d85cd3b47a0fe66ce.png\\\"></p>\",\"noticeId\":1,\"noticeTitle\":\"关于期末考试时间安排的公告\",\"noticeType\":\"0\",\"params\":{},\"remark\":\"教务处发布\",\"status\":\"1\",\"updateBy\":\"admin\",\"updateTime\":\"2025-06-13 11:23:43\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-13 11:23:43', 123);
+INSERT INTO `sys_oper_log` VALUES (590, '宿舍管理', 2, 'com.dorm.manage.controller.DormBuildingController.edit()', 'PUT', 1, 'admin', '研发部门', '/dorm/building', '127.0.0.1', '内网IP', '{\"ancestors\":\"0,100,237,238,239\",\"buildingName\":\"一楼\",\"children\":[],\"currentCount\":0,\"dormId\":247,\"fullName\":\"瓯江口 - 人工智能学院 - 观潮公寓 - A栋 - 一楼\",\"orderNum\":0,\"params\":{},\"parentId\":239,\"parentName\":\"A栋\",\"status\":\"0\",\"updateBy\":\"admin\",\"updateTime\":\"2025-06-13 16:23:39\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-13 16:23:39', 100);
+INSERT INTO `sys_oper_log` VALUES (591, '宿舍管理', 2, 'com.dorm.manage.controller.DormBuildingController.edit()', 'PUT', 1, 'admin', '研发部门', '/dorm/building', '127.0.0.1', '内网IP', '{\"ancestors\":\"0,100,237,238,239,247\",\"buildingName\":\"101\",\"children\":[],\"currentCount\":6,\"dormId\":254,\"fullName\":\"瓯江口 - 人工智能学院 - 观潮公寓 - A栋 - 一楼 - 101\",\"maxCapacity\":6,\"orderNum\":0,\"params\":{},\"parentId\":247,\"parentName\":\"一楼\",\"status\":\"0\",\"updateBy\":\"admin\",\"updateTime\":\"2025-06-13 16:23:54\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-13 16:23:54', 103);
+INSERT INTO `sys_oper_log` VALUES (592, '宿舍管理', 2, 'com.dorm.manage.controller.DormBuildingController.batchFixStatus()', 'POST', 1, 'admin', '研发部门', '/dorm/building/batchFixStatus', '127.0.0.1', '内网IP', '', '{\"msg\":\"成功修复 1 个宿舍的状态\",\"code\":200}', 0, NULL, '2025-06-13 16:23:58', 142);
+INSERT INTO `sys_oper_log` VALUES (593, '宿舍公告', 2, 'com.dorm.manage.controller.DormNoticeController.edit()', 'PUT', 1, 'admin', '研发部门', '/dorm/notices', '127.0.0.1', '内网IP', '{\"coverImage\":\"http://172.18.34.104:9005/test//profile/upload/2025/06/file/9465a858be354f4cbc42955e551f9681.png\",\"createBy\":\"admin\",\"createTime\":\"2025-06-06 15:44:33\",\"noticeContent\":\"<p>请各位同学提前查阅期末考试时间表，合理安排复习。<img src=\\\"http://172.18.34.104:9005/test//profile/upload/2025/06/file/2911c02447f54e6d85cd3b47a0fe66ce.png\\\"></p>\",\"noticeId\":1,\"noticeTitle\":\"关于期末考试时间安排的公告\",\"noticeType\":\"0\",\"params\":{},\"remark\":\"教务处发布\",\"status\":\"0\",\"updateBy\":\"admin\",\"updateTime\":\"2025-06-13 23:08:44\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-13 23:08:44', 76);
+INSERT INTO `sys_oper_log` VALUES (594, '宿舍公告', 2, 'com.dorm.manage.controller.DormNoticeController.edit()', 'PUT', 1, 'admin', '研发部门', '/dorm/notices', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"createTime\":\"2025-06-06 15:44:33\",\"noticeContent\":\"<p>近期天气炎热，请注意合理用电，避免跳闸。</p>\",\"noticeId\":2,\"noticeTitle\":\"宿舍楼用电安全须知\",\"noticeType\":\"0\",\"params\":{},\"remark\":\"安全提醒\",\"status\":\"0\",\"updateBy\":\"\",\"updateTime\":\"2025-06-13 23:08:48\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-13 23:08:49', 57);
+INSERT INTO `sys_oper_log` VALUES (595, '宿舍公告', 2, 'com.dorm.manage.controller.DormNoticeController.edit()', 'PUT', 1, 'admin', '研发部门', '/dorm/notices', '127.0.0.1', '内网IP', '{\"createBy\":\"net_admin\",\"createTime\":\"2025-06-06 15:44:33\",\"noticeContent\":\"<p>6月10日凌晨校园网将维护升级，期间可能出现短时断网。</p>\",\"noticeId\":3,\"noticeTitle\":\"校园网升级通知\",\"noticeType\":\"1\",\"params\":{},\"remark\":\"信息中心\",\"status\":\"0\",\"updateBy\":\"net_admin\",\"updateTime\":\"2025-06-13 23:08:52\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-13 23:08:52', 24);
+INSERT INTO `sys_oper_log` VALUES (596, '宿舍公告', 2, 'com.dorm.manage.controller.DormNoticeController.edit()', 'PUT', 1, 'admin', '研发部门', '/dorm/notices', '127.0.0.1', '内网IP', '{\"createBy\":\"student_union\",\"createTime\":\"2025-06-06 15:44:33\",\"noticeContent\":\"<p>诚邀全校师生参与科技节活动，包括创新作品展、专题讲座等。</p>\",\"noticeId\":5,\"noticeTitle\":\"2025年校园科技节活动安排\",\"noticeType\":\"2\",\"params\":{},\"remark\":\"校团委主办\",\"status\":\"0\",\"updateBy\":\"teacher_zhang\",\"updateTime\":\"2025-06-13 23:08:56\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-13 23:08:56', 17);
+INSERT INTO `sys_oper_log` VALUES (597, '宿舍公告', 2, 'com.dorm.manage.controller.DormNoticeController.edit()', 'PUT', 1, 'admin', '研发部门', '/dorm/notices', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"createTime\":\"2025-06-06 15:44:33\",\"noticeContent\":\"<p>此公告已作废，请以最新政策为准。</p>\",\"noticeId\":7,\"noticeTitle\":\"旧版防疫政策公告（已撤回）\",\"noticeType\":\"0\",\"params\":{},\"remark\":\"已撤回\",\"status\":\"0\",\"updateBy\":\"admin\",\"updateTime\":\"2025-06-13 23:09:00\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-13 23:09:00', 18);
+INSERT INTO `sys_oper_log` VALUES (598, '宿舍公告', 2, 'com.dorm.manage.controller.DormNoticeController.edit()', 'PUT', 1, 'admin', '研发部门', '/dorm/notices', '127.0.0.1', '内网IP', '{\"createBy\":\"sports_admin\",\"createTime\":\"2025-06-06 15:44:33\",\"noticeContent\":\"<p>受天气影响，该活动取消。</p>\",\"noticeId\":8,\"noticeTitle\":\"校园跑步打卡活动（取消）\",\"noticeType\":\"2\",\"params\":{},\"remark\":\"撤回通知\",\"status\":\"0\",\"updateBy\":\"admin\",\"updateTime\":\"2025-06-13 23:09:03\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-13 23:09:03', 18);
 
 -- ----------------------------
 -- Table structure for sys_post
@@ -1744,7 +1775,7 @@ CREATE TABLE `sys_user`  (
 -- ----------------------------
 -- Records of sys_user
 -- ----------------------------
-INSERT INTO `sys_user` VALUES (1, 103, 'admin', '若依', '00', 'ry@163.com', '15888888888', '1', 'http://172.18.34.104:9005/test/2025/06/avatar/b0523dcb7bca4442b447cac98617efd5.png', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2025-06-13 10:09:31', '2025-06-03 20:44:14', 'admin', '2025-06-03 20:44:14', '', '2025-06-13 10:09:30', '管理员');
+INSERT INTO `sys_user` VALUES (1, 103, 'admin', '若依', '00', 'ry@163.com', '15888888888', '1', 'http://172.18.34.104:9005/test/2025/06/avatar/b0523dcb7bca4442b447cac98617efd5.png', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2025-06-13 23:07:15', '2025-06-03 20:44:14', 'admin', '2025-06-03 20:44:14', '', '2025-06-13 23:07:14', '管理员');
 INSERT INTO `sys_user` VALUES (2, 105, 'ry', '若依', '00', 'ry@qq.com', '15666666666', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2025-06-03 20:44:14', '2025-06-03 20:44:14', 'admin', '2025-06-03 20:44:14', '', NULL, '测试员');
 INSERT INTO `sys_user` VALUES (101, NULL, '2310305320', '王新瑜', '00', '2559118499@qq.com', '13282973175', '0', '', '$2a$10$KxpBw6D/j92BmWb18xK/xOZ3Iwzv/HkKmPR1/CXgmse6HFrXAKWWS', '0', '0', '127.0.0.1', '2025-06-11 16:05:03', '2025-06-07 12:19:27', '', '2025-06-07 12:19:27', 'admin', '2025-06-11 16:05:02', NULL);
 
