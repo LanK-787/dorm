@@ -84,10 +84,30 @@
           v-hasPermi="['dorm:notices:export']"
         >导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="info"
+          plain
+          icon="Edit"
+          :disabled="multiple"
+          @click="handleBatchStatus"
+          v-hasPermi="['dorm:notices:edit']"
+        >批量修改状态</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="success"
+          plain
+          icon="Picture"
+          :disabled="multiple"
+          @click="handleBatchCarousel"
+          v-hasPermi="['dorm:notices:edit']"
+        >批量设置轮播图</el-button>
+      </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="noticesList" @selection-change="handleSelectionChange">
+    <el-table ref="noticesTable" v-loading="loading" :data="noticesList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="序号" align="center" prop="noticeId" />
       <el-table-column label="封面图片" align="center" width="120">
@@ -232,11 +252,59 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 批量修改状态对话框 -->
+    <el-dialog title="批量修改状态" v-model="batchStatusOpen" width="500px" append-to-body>
+      <el-form ref="batchStatusRef" :model="batchStatusForm" label-width="100px">
+        <el-form-item label="选中数量">
+          <span>{{ selectedNotices.length }} 条公告</span>
+        </el-form-item>
+        <el-form-item label="修改状态为" prop="status">
+          <el-radio-group v-model="batchStatusForm.status">
+            <el-radio
+              v-for="dict in sys_notice_status"
+              :key="dict.value"
+              :label="dict.value"
+            >{{ dict.label }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="confirmBatchStatus" :loading="batchLoading">确 定</el-button>
+          <el-button @click="cancelBatchStatus">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 批量设置轮播图对话框 -->
+    <el-dialog title="批量设置轮播图显示" v-model="batchCarouselOpen" width="500px" append-to-body>
+      <el-form ref="batchCarouselRef" :model="batchCarouselForm" label-width="120px">
+        <el-form-item label="选中数量">
+          <span>{{ selectedNotices.length }} 条公告</span>
+        </el-form-item>
+        <el-form-item label="轮播图显示" prop="isCarousel">
+          <el-radio-group v-model="batchCarouselForm.isCarousel">
+            <el-radio
+              v-for="dict in is_carousel"
+              :key="dict.value"
+              :label="dict.value"
+            >{{ dict.label }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="confirmBatchCarousel" :loading="batchLoading">确 定</el-button>
+          <el-button @click="cancelBatchCarousel">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="Notices">
-import { listNotices, getNotices, delNotices, addNotices, updateNotices } from "@/api/dorm/notices"
+import { listNotices, getNotices, delNotices, addNotices, updateNotices, batchUpdateStatus, batchUpdateCarousel } from "@/api/dorm/notices"
 import { useRouter } from 'vue-router'
 import { Plus, Picture } from '@element-plus/icons-vue'
 import { getToken } from "@/utils/auth"
@@ -260,6 +328,14 @@ const headers = ref({ Authorization: "Bearer " + getToken() })
 const previewImages = ref([]) // 用于存储所有可预览的图片列表
 const defaultImage = ref(new URL('@/assets/images/profile.jpg', import.meta.url).href) // 默认图片
 const imageViewerVisible = ref(false) // 控制图片预览器的显示状态
+
+// 批量操作相关变量
+const selectedNotices = ref([]) // 选中的公告列表
+const batchStatusOpen = ref(false) // 批量修改状态对话框
+const batchCarouselOpen = ref(false) // 批量设置轮播图对话框
+const batchLoading = ref(false) // 批量操作加载状态
+const batchStatusForm = ref({ status: '0' }) // 批量状态修改表单
+const batchCarouselForm = ref({ isCarousel: '0' }) // 批量轮播图设置表单
 
 const data = reactive({
   form: {},
@@ -511,6 +587,7 @@ function resetQuery() {
 // 多选框选中数据
 function handleSelectionChange(selection) {
   ids.value = selection.map(item => item.noticeId)
+  selectedNotices.value = selection
   single.value = selection.length != 1
   multiple.value = !selection.length
 }
@@ -616,6 +693,96 @@ function handleExport() {
   proxy.download('dorm/notices/export', {
     ...queryParams.value
   }, `notices_${new Date().getTime()}.xlsx`)
+}
+
+/** 批量修改状态按钮操作 */
+function handleBatchStatus() {
+  if (selectedNotices.value.length === 0) {
+    proxy.$modal.msgWarning('请选择要修改的公告')
+    return
+  }
+  batchStatusForm.value = { status: '0' }
+  batchStatusOpen.value = true
+}
+
+/** 批量设置轮播图按钮操作 */
+function handleBatchCarousel() {
+  if (selectedNotices.value.length === 0) {
+    proxy.$modal.msgWarning('请选择要设置的公告')
+    return
+  }
+  batchCarouselForm.value = { isCarousel: '0' }
+  batchCarouselOpen.value = true
+}
+
+/** 确认批量修改状态 */
+function confirmBatchStatus() {
+  if (!batchStatusForm.value.status && batchStatusForm.value.status !== '0') {
+    proxy.$modal.msgWarning('请选择要修改的状态')
+    return
+  }
+
+  const statusLabel = sys_notice_status.value.find(item => item.value === batchStatusForm.value.status)?.label || '未知状态'
+
+  proxy.$modal.confirm(`确认将选中的 ${selectedNotices.value.length} 条公告状态修改为"${statusLabel}"吗？`).then(() => {
+    batchLoading.value = true
+    const data = {
+      noticeIds: selectedNotices.value.map(item => item.noticeId),
+      status: batchStatusForm.value.status
+    }
+
+    batchUpdateStatus(data).then(() => {
+      proxy.$modal.msgSuccess(`成功修改 ${selectedNotices.value.length} 条公告状态`)
+      batchStatusOpen.value = false
+      batchLoading.value = false
+      getList()
+      // 清空选择
+      proxy.$refs.noticesTable?.clearSelection()
+    }).catch(() => {
+      batchLoading.value = false
+    })
+  }).catch(() => {})
+}
+
+/** 确认批量设置轮播图 */
+function confirmBatchCarousel() {
+  if (!batchCarouselForm.value.isCarousel && batchCarouselForm.value.isCarousel !== '0') {
+    proxy.$modal.msgWarning('请选择轮播图显示设置')
+    return
+  }
+
+  const carouselLabel = is_carousel.value.find(item => item.value === batchCarouselForm.value.isCarousel)?.label || '未知设置'
+
+  proxy.$modal.confirm(`确认将选中的 ${selectedNotices.value.length} 条公告轮播图显示设置为"${carouselLabel}"吗？`).then(() => {
+    batchLoading.value = true
+    const data = {
+      noticeIds: selectedNotices.value.map(item => item.noticeId),
+      isCarousel: batchCarouselForm.value.isCarousel
+    }
+
+    batchUpdateCarousel(data).then(() => {
+      proxy.$modal.msgSuccess(`成功设置 ${selectedNotices.value.length} 条公告轮播图显示`)
+      batchCarouselOpen.value = false
+      batchLoading.value = false
+      getList()
+      // 清空选择
+      proxy.$refs.noticesTable?.clearSelection()
+    }).catch(() => {
+      batchLoading.value = false
+    })
+  }).catch(() => {})
+}
+
+/** 取消批量修改状态 */
+function cancelBatchStatus() {
+  batchStatusOpen.value = false
+  batchStatusForm.value = { status: '0' }
+}
+
+/** 取消批量设置轮播图 */
+function cancelBatchCarousel() {
+  batchCarouselOpen.value = false
+  batchCarouselForm.value = { isCarousel: '0' }
 }
 
 // 监听预览器的打开和关闭

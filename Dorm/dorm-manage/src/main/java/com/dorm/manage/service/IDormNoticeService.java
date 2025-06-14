@@ -2,6 +2,7 @@ package com.dorm.manage.service;
 
 import java.util.List;
 import com.dorm.manage.domain.DormNotice;
+import com.dorm.manage.domain.dto.BatchUpdateNoticeDTO;
 
 /**
  * 宿舍公告Service接口
@@ -53,9 +54,25 @@ public interface IDormNoticeService
 
     /**
      * 删除宿舍公告信息
-     * 
+     *
      * @param noticeId 宿舍公告主键
      * @return 结果
      */
     public int deleteDormNoticeByNoticeId(Long noticeId);
+
+    /**
+     * 批量修改公告状态
+     *
+     * @param batchUpdateDTO 批量更新DTO
+     * @return 结果
+     */
+    public int batchUpdateNoticeStatus(BatchUpdateNoticeDTO batchUpdateDTO);
+
+    /**
+     * 批量设置轮播图显示
+     *
+     * @param batchUpdateDTO 批量更新DTO
+     * @return 结果
+     */
+    public int batchUpdateNoticeCarousel(BatchUpdateNoticeDTO batchUpdateDTO);
 }

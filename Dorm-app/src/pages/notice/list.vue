@@ -126,7 +126,7 @@ export default {
         pageNum: 1,
         pageSize: 10,
         noticeType: '',
-        status: '1' // 只显示已发布的
+        status: '0' // 只显示已发布的（0=正常，1=关闭）
       },
       noticeTypes: {
         '0': '公告',

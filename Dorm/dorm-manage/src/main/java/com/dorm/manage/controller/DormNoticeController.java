@@ -17,9 +17,11 @@ import com.dorm.common.core.controller.BaseController;
 import com.dorm.common.core.domain.AjaxResult;
 import com.dorm.common.enums.BusinessType;
 import com.dorm.manage.domain.DormNotice;
+import com.dorm.manage.domain.dto.BatchUpdateNoticeDTO;
 import com.dorm.manage.service.IDormNoticeService;
 import com.dorm.common.utils.poi.ExcelUtil;
 import com.dorm.common.core.page.TableDataInfo;
+import javax.validation.Valid;
 
 /**
  * 宿舍公告Controller
@@ -100,5 +102,61 @@ public class DormNoticeController extends BaseController
     public AjaxResult remove(@PathVariable Long[] noticeIds)
     {
         return toAjax(dormNoticeService.deleteDormNoticeByNoticeIds(noticeIds));
+    }
+
+    /**
+     * 批量修改公告状态
+     */
+    @PreAuthorize("@ss.hasPermi('dorm:notices:edit')")
+    @Log(title = "宿舍公告", businessType = BusinessType.UPDATE)
+    @PutMapping("/batchUpdateStatus")
+    public AjaxResult batchUpdateStatus(@Valid @RequestBody BatchUpdateNoticeDTO batchUpdateDTO)
+    {
+        try {
+            if (batchUpdateDTO.getNoticeIds() == null || batchUpdateDTO.getNoticeIds().isEmpty()) {
+                return error("请选择要修改的公告");
+            }
+            if (batchUpdateDTO.getStatus() == null) {
+                return error("请选择目标状态");
+            }
+
+            int result = dormNoticeService.batchUpdateNoticeStatus(batchUpdateDTO);
+            if (result > 0) {
+                return success("成功修改 " + result + " 条公告状态");
+            } else {
+                return error("批量修改状态失败");
+            }
+        } catch (Exception e) {
+            logger.error("批量修改公告状态失败", e);
+            return error("批量修改状态失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 批量设置轮播图显示
+     */
+    @PreAuthorize("@ss.hasPermi('dorm:notices:edit')")
+    @Log(title = "宿舍公告", businessType = BusinessType.UPDATE)
+    @PutMapping("/batchUpdateCarousel")
+    public AjaxResult batchUpdateCarousel(@Valid @RequestBody BatchUpdateNoticeDTO batchUpdateDTO)
+    {
+        try {
+            if (batchUpdateDTO.getNoticeIds() == null || batchUpdateDTO.getNoticeIds().isEmpty()) {
+                return error("请选择要设置的公告");
+            }
+            if (batchUpdateDTO.getIsCarousel() == null) {
+                return error("请选择轮播图显示设置");
+            }
+
+            int result = dormNoticeService.batchUpdateNoticeCarousel(batchUpdateDTO);
+            if (result > 0) {
+                return success("成功设置 " + result + " 条公告轮播图显示");
+            } else {
+                return error("批量设置轮播图显示失败");
+            }
+        } catch (Exception e) {
+            logger.error("批量设置轮播图显示失败", e);
+            return error("批量设置轮播图显示失败：" + e.getMessage());
+        }
     }
 }

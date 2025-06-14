@@ -93,9 +93,29 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <delete id="deleteDormNoticeByNoticeIds" parameterType="String">
-        delete from dorm_notice where notice_id in 
+        delete from dorm_notice where notice_id in
         <foreach item="noticeId" collection="array" open="(" separator="," close=")">
             #{noticeId}
         </foreach>
     </delete>
+
+    <!-- 批量修改公告状态 -->
+    <update id="batchUpdateNoticeStatus">
+        update dorm_notice
+        set status = #{status}, update_time = sysdate()
+        where notice_id in
+        <foreach item="noticeId" collection="noticeIds" open="(" separator="," close=")">
+            #{noticeId}
+        </foreach>
+    </update>
+
+    <!-- 批量设置轮播图显示 -->
+    <update id="batchUpdateNoticeCarousel">
+        update dorm_notice
+        set is_carousel = #{isCarousel}, update_time = sysdate()
+        where notice_id in
+        <foreach item="noticeId" collection="noticeIds" open="(" separator="," close=")">
+            #{noticeId}
+        </foreach>
+    </update>
 </mapper>

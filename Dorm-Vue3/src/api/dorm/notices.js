@@ -42,3 +42,21 @@ export function delNotices(noticeId) {
     method: 'delete'
   })
 }
+
+// 批量修改公告状态
+export function batchUpdateStatus(data) {
+  return request({
+    url: '/dorm/notices/batchUpdateStatus',
+    method: 'put',
+    data: data
+  })
+}
+
+// 批量设置轮播图显示
+export function batchUpdateCarousel(data) {
+  return request({
+    url: '/dorm/notices/batchUpdateCarousel',
+    method: 'put',
+    data: data
+  })
+}

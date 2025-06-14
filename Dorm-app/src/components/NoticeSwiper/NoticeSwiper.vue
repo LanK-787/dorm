@@ -93,7 +93,7 @@ export default {
         this.loading = true
         const params = {
           isCarousel: '1', // 只获取轮播图显示的通告
-          status: '1', // 只获取已发布的通告
+          status: '0', // 只获取已发布的通告（0=正常，1=关闭）
           pageNum: 1,
           pageSize: 10
         }

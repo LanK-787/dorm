@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.dorm.manage.mapper.DormNoticeMapper;
 import com.dorm.manage.domain.DormNotice;
+import com.dorm.manage.domain.dto.BatchUpdateNoticeDTO;
 import com.dorm.manage.service.IDormNoticeService;
 
 /**
@@ -84,7 +85,7 @@ public class DormNoticeServiceImpl implements IDormNoticeService
 
     /**
      * 删除宿舍公告信息
-     * 
+     *
      * @param noticeId 宿舍公告主键
      * @return 结果
      */
@@ -92,5 +93,41 @@ public class DormNoticeServiceImpl implements IDormNoticeService
     public int deleteDormNoticeByNoticeId(Long noticeId)
     {
         return dormNoticeMapper.deleteDormNoticeByNoticeId(noticeId);
+    }
+
+    /**
+     * 批量修改公告状态
+     *
+     * @param batchUpdateDTO 批量更新DTO
+     * @return 结果
+     */
+    @Override
+    public int batchUpdateNoticeStatus(BatchUpdateNoticeDTO batchUpdateDTO)
+    {
+        if (batchUpdateDTO.getNoticeIds() == null || batchUpdateDTO.getNoticeIds().isEmpty()) {
+            return 0;
+        }
+        if (batchUpdateDTO.getStatus() == null) {
+            throw new IllegalArgumentException("状态不能为空");
+        }
+        return dormNoticeMapper.batchUpdateNoticeStatus(batchUpdateDTO.getNoticeIds(), batchUpdateDTO.getStatus());
+    }
+
+    /**
+     * 批量设置轮播图显示
+     *
+     * @param batchUpdateDTO 批量更新DTO
+     * @return 结果
+     */
+    @Override
+    public int batchUpdateNoticeCarousel(BatchUpdateNoticeDTO batchUpdateDTO)
+    {
+        if (batchUpdateDTO.getNoticeIds() == null || batchUpdateDTO.getNoticeIds().isEmpty()) {
+            return 0;
+        }
+        if (batchUpdateDTO.getIsCarousel() == null) {
+            throw new IllegalArgumentException("轮播图显示设置不能为空");
+        }
+        return dormNoticeMapper.batchUpdateNoticeCarousel(batchUpdateDTO.getNoticeIds(), batchUpdateDTO.getIsCarousel());
     }
 }

@@ -2,6 +2,7 @@ package com.dorm.manage.mapper;
 
 import java.util.List;
 import com.dorm.manage.domain.DormNotice;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * 宿舍公告Mapper接口
@@ -53,9 +54,27 @@ public interface DormNoticeMapper
 
     /**
      * 批量删除宿舍公告
-     * 
+     *
      * @param noticeIds 需要删除的数据主键集合
      * @return 结果
      */
     public int deleteDormNoticeByNoticeIds(Long[] noticeIds);
+
+    /**
+     * 批量修改公告状态
+     *
+     * @param noticeIds 公告ID列表
+     * @param status 目标状态
+     * @return 结果
+     */
+    public int batchUpdateNoticeStatus(@Param("noticeIds") List<Long> noticeIds, @Param("status") String status);
+
+    /**
+     * 批量设置轮播图显示
+     *
+     * @param noticeIds 公告ID列表
+     * @param isCarousel 轮播图显示设置
+     * @return 结果
+     */
+    public int batchUpdateNoticeCarousel(@Param("noticeIds") List<Long> noticeIds, @Param("isCarousel") String isCarousel);
 }

@@ -34,8 +34,8 @@ public class DormNotice extends BaseEntity
     @Excel(name = "公告内容", readConverterExp = "支=持HTML/富文本")
     private String noticeContent;
 
-    /** 状态（0草稿 1已发布 2撤回） */
-    @Excel(name = "状态", readConverterExp = "0=草稿,1=已发布,2=撤回")
+    /** 状态（0正常,1关闭） */
+    @Excel(name = "状态", readConverterExp = "0=正常,1=关闭")
     private String status;
 
     /** 是否在轮播图显示（0否 1是） */
