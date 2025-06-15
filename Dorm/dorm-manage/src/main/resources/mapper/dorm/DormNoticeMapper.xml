@@ -12,6 +12,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="noticeContent"    column="notice_content"    />
         <result property="status"    column="status"    />
         <result property="isCarousel"    column="is_carousel"    />
+        <result property="likeCount"    column="like_count"    />
         <result property="createBy"    column="create_by"    />
         <result property="createTime"    column="create_time"    />
         <result property="updateBy"    column="update_by"    />
@@ -20,7 +21,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectDormNoticeVo">
-        select notice_id, notice_title, cover_image, notice_type, notice_content, status, is_carousel, create_by, create_time, update_by, update_time, remark from dorm_notice
+        select notice_id, notice_title, cover_image, notice_type, notice_content, status, is_carousel, like_count, create_by, create_time, update_by, update_time, remark from dorm_notice
     </sql>
 
     <select id="selectDormNoticeList" parameterType="DormNotice" resultMap="DormNoticeResult">
@@ -49,6 +50,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="noticeContent != null and noticeContent != ''">notice_content,</if>
             <if test="status != null">status,</if>
             <if test="isCarousel != null">is_carousel,</if>
+            <if test="likeCount != null">like_count,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
@@ -62,6 +64,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="noticeContent != null and noticeContent != ''">#{noticeContent},</if>
             <if test="status != null">#{status},</if>
             <if test="isCarousel != null">#{isCarousel},</if>
+            <if test="likeCount != null">#{likeCount},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
@@ -79,6 +82,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="noticeContent != null and noticeContent != ''">notice_content = #{noticeContent},</if>
             <if test="status != null">status = #{status},</if>
             <if test="isCarousel != null">is_carousel = #{isCarousel},</if>
+            <if test="likeCount != null">like_count = #{likeCount},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
@@ -117,5 +121,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <foreach item="noticeId" collection="noticeIds" open="(" separator="," close=")">
             #{noticeId}
         </foreach>
+    </update>
+
+    <!-- 更新公告点赞数量 -->
+    <update id="updateNoticeLikeCount">
+        update dorm_notice
+        set like_count = #{likeCount}
+        where notice_id = #{noticeId}
     </update>
 </mapper>

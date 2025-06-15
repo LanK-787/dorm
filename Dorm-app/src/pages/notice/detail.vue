@@ -59,9 +59,12 @@
 
         <!-- 底部操作 -->
         <view class="notice-actions">
-          <view class="action-btn" @click="handleLike">
-            <text class="iconfont icon-like">👍</text>
-            <text class="action-text">点赞</text>
+          <view class="action-btn" :class="{ 'liked': isLiked, 'loading': likeLoading }" @click="handleLike">
+            <text class="like-icon" :class="{ 'liked': isLiked }">{{ isLiked ? '❤️' : '🤍' }}</text>
+            <text class="action-text" :class="{ 'liked': isLiked }">
+              {{ isLiked ? '已赞' : '点赞' }}
+              <text v-if="likeCount > 0" class="like-count">({{ likeCount }})</text>
+            </text>
           </view>
           <view class="action-btn" @click="handleShare">
             <text class="iconfont icon-share">📤</text>
@@ -83,7 +86,7 @@
 </template>
 
 <script>
-import { getNotice } from '@/api/dorm/notices'
+import { getNotices, toggleLike, isUserLiked, getLikeCount } from '@/api/dorm/notices'
 
 export default {
   data() {
@@ -94,9 +97,13 @@ export default {
       noticeId: null,
       noticeTypes: {
         '0': '公告',
-        '1': '通知', 
+        '1': '通知',
         '2': '活动'
-      }
+      },
+      // 点赞相关数据
+      isLiked: false,
+      likeCount: 0,
+      likeLoading: false
     }
   },
 
@@ -122,9 +129,13 @@ export default {
 
       try {
         this.loading = true
-        const response = await getNotice(this.noticeId)
+        const response = await getNotices(this.noticeId)
         if (response.code === 200) {
           this.noticeInfo = response.data
+          // 设置点赞数量
+          this.likeCount = response.data.likeCount || 0
+          // 加载用户点赞状态
+          await this.loadLikeStatus()
         } else {
           console.error('获取通告详情失败:', response.msg)
           uni.showToast({
@@ -199,11 +210,58 @@ export default {
     },
 
     // 点赞功能
-    handleLike() {
-      uni.showToast({
-        title: '点赞成功',
-        icon: 'success'
-      })
+    async handleLike() {
+      if (this.likeLoading) return
+
+      try {
+        this.likeLoading = true
+        const response = await toggleLike(this.noticeId)
+
+        if (response.code === 200) {
+          // 切换点赞状态
+          this.isLiked = !this.isLiked
+
+          // 更新点赞数量
+          if (this.isLiked) {
+            this.likeCount += 1
+            uni.showToast({
+              title: '点赞成功',
+              icon: 'success'
+            })
+          } else {
+            this.likeCount = Math.max(0, this.likeCount - 1)
+            uni.showToast({
+              title: '取消点赞',
+              icon: 'success'
+            })
+          }
+        } else {
+          uni.showToast({
+            title: response.msg || '操作失败',
+            icon: 'none'
+          })
+        }
+      } catch (error) {
+        console.error('点赞操作失败:', error)
+        uni.showToast({
+          title: '网络异常',
+          icon: 'none'
+        })
+      } finally {
+        this.likeLoading = false
+      }
+    },
+
+    // 加载用户点赞状态
+    async loadLikeStatus() {
+      try {
+        const response = await isUserLiked(this.noticeId)
+        if (response.code === 200) {
+          this.isLiked = response.data
+        }
+      } catch (error) {
+        console.error('获取点赞状态失败:', error)
+      }
     },
 
     // 分享功能
@@ -400,6 +458,16 @@ export default {
     transform: scale(0.95);
     background: #f8f9fa;
   }
+
+  &.liked {
+    background: #ffe6e6;
+    transform: scale(1.05);
+  }
+
+  &.loading {
+    opacity: 0.6;
+    pointer-events: none;
+  }
 }
 
 .action-btn .iconfont {
@@ -407,9 +475,48 @@ export default {
   margin-bottom: 12rpx;
 }
 
+.like-icon {
+  font-size: 32rpx;
+  margin-bottom: 12rpx;
+  transition: all 0.3s ease;
+
+  &.liked {
+    animation: heartBeat 0.6s ease-in-out;
+  }
+}
+
 .action-text {
   font-size: 24rpx;
   color: #666;
+  transition: color 0.3s ease;
+
+  &.liked {
+    color: #ff4757;
+    font-weight: bold;
+  }
+}
+
+.like-count {
+  font-size: 20rpx;
+  margin-left: 4rpx;
+}
+
+@keyframes heartBeat {
+  0% {
+    transform: scale(1);
+  }
+  14% {
+    transform: scale(1.3);
+  }
+  28% {
+    transform: scale(1);
+  }
+  42% {
+    transform: scale(1.3);
+  }
+  70% {
+    transform: scale(1);
+  }
 }
 
 .error-container {

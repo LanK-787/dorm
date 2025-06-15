@@ -77,4 +77,13 @@ public interface DormNoticeMapper
      * @return 结果
      */
     public int batchUpdateNoticeCarousel(@Param("noticeIds") List<Long> noticeIds, @Param("isCarousel") String isCarousel);
+
+    /**
+     * 更新公告点赞数量
+     *
+     * @param noticeId 公告ID
+     * @param likeCount 点赞数量
+     * @return 结果
+     */
+    public int updateNoticeLikeCount(@Param("noticeId") Long noticeId, @Param("likeCount") Integer likeCount);
 }

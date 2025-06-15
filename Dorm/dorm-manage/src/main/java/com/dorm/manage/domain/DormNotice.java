@@ -42,6 +42,10 @@ public class DormNotice extends BaseEntity
     @Excel(name = "轮播图显示", readConverterExp = "0=否,1=是")
     private String isCarousel;
 
+    /** 点赞数量 */
+    @Excel(name = "点赞数量")
+    private Integer likeCount;
+
     public void setNoticeId(Long noticeId) 
     {
         this.noticeId = noticeId;
@@ -107,9 +111,19 @@ public class DormNotice extends BaseEntity
         this.isCarousel = isCarousel;
     }
 
-    public String getStatus() 
+    public String getStatus()
     {
         return status;
+    }
+
+    public void setLikeCount(Integer likeCount)
+    {
+        this.likeCount = likeCount;
+    }
+
+    public Integer getLikeCount()
+    {
+        return likeCount;
     }
 
     @Override
@@ -122,6 +136,7 @@ public class DormNotice extends BaseEntity
             .append("noticeContent", getNoticeContent())
             .append("status", getStatus())
             .append("isCarousel", getIsCarousel())
+            .append("likeCount", getLikeCount())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

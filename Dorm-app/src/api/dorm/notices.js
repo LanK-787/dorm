@@ -42,3 +42,27 @@ export function delNotices(noticeId) {
     method: 'delete'
   })
 }
+
+// 点赞/取消点赞公告
+export function toggleLike(noticeId) {
+  return request({
+    url: '/dorm/noticeLike/toggle/' + noticeId,
+    method: 'post'
+  })
+}
+
+// 查询用户是否已点赞
+export function isUserLiked(noticeId) {
+  return request({
+    url: '/dorm/noticeLike/isLiked/' + noticeId,
+    method: 'get'
+  })
+}
+
+// 获取公告点赞数量
+export function getLikeCount(noticeId) {
+  return request({
+    url: '/dorm/noticeLike/count/' + noticeId,
+    method: 'get'
+  })
+}
