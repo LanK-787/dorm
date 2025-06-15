@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -183,7 +184,15 @@ public class DormBuildingServiceImpl implements IDormBuildingService
         }
         dormBuilding.setAncestors(info.getAncestors() + "," + dormBuilding.getParentId());
         dormBuilding.setCreateTime(DateUtils.getNowDate());
-        return dormBuildingMapper.insertDormBuilding(dormBuilding);
+
+        int result = dormBuildingMapper.insertDormBuilding(dormBuilding);
+
+        // 新增成功后，递归更新父节点容量数据
+        if (result > 0) {
+            recursiveUpdateParentCapacity(dormBuilding.getDormId());
+        }
+
+        return result;
     }
 
     /**
@@ -195,8 +204,22 @@ public class DormBuildingServiceImpl implements IDormBuildingService
     @Override
     public int updateDormBuilding(DormBuilding dormBuilding)
     {
-        DormBuilding newParentDorm = dormBuildingMapper.selectDormBuildingByDormId(dormBuilding.getParentId());
+        // 保存修改前的容量信息，用于判断是否需要更新父节点
         DormBuilding oldDorm = dormBuildingMapper.selectDormBuildingByDormId(dormBuilding.getDormId());
+        boolean capacityChanged = false;
+
+        if (oldDorm != null) {
+            // 检查容量是否发生变化
+            Integer oldMaxCapacity = oldDorm.getMaxCapacity();
+            Integer oldCurrentCount = oldDorm.getCurrentCount();
+            Integer newMaxCapacity = dormBuilding.getMaxCapacity();
+            Integer newCurrentCount = dormBuilding.getCurrentCount();
+
+            capacityChanged = !Objects.equals(oldMaxCapacity, newMaxCapacity) ||
+                             !Objects.equals(oldCurrentCount, newCurrentCount);
+        }
+
+        DormBuilding newParentDorm = dormBuildingMapper.selectDormBuildingByDormId(dormBuilding.getParentId());
         if (StringUtils.isNotNull(newParentDorm) && StringUtils.isNotNull(oldDorm))
         {
             String newAncestors = newParentDorm.getAncestors() + "," + newParentDorm.getDormId();
@@ -206,6 +229,12 @@ public class DormBuildingServiceImpl implements IDormBuildingService
         }
         dormBuilding.setUpdateTime(DateUtils.getNowDate());
         int result = dormBuildingMapper.updateDormBuilding(dormBuilding);
+
+        // 修改成功后，如果容量发生变化，递归更新父节点容量数据
+        if (result > 0 && capacityChanged) {
+            recursiveUpdateParentCapacity(dormBuilding.getDormId());
+        }
+
         if (UserConstants.DEPT_NORMAL.equals(dormBuilding.getStatus()) && StringUtils.isNotEmpty(dormBuilding.getAncestors())
                 && !StringUtils.equals("0", dormBuilding.getAncestors()))
         {
@@ -249,26 +278,54 @@ public class DormBuildingServiceImpl implements IDormBuildingService
 
     /**
      * 删除宿舍管理信息
-     * 
+     *
      * @param dormId 宿舍管理主键
      * @return 结果
      */
     @Override
     public int deleteDormBuildingByDormId(Long dormId)
     {
-        return dormBuildingMapper.deleteDormBuildingByDormId(dormId);
+        // 获取要删除的节点信息，用于后续更新父节点容量
+        DormBuilding dormToDelete = dormBuildingMapper.selectDormBuildingByDormId(dormId);
+
+        int result = dormBuildingMapper.deleteDormBuildingByDormId(dormId);
+
+        // 删除成功后，递归更新父节点容量数据
+        if (result > 0 && dormToDelete != null) {
+            recursiveUpdateParentCapacity(dormId);
+        }
+
+        return result;
     }
 
     /**
      * 批量删除宿舍管理
-     * 
+     *
      * @param dormIds 需要删除的宿舍管理主键
      * @return 结果
      */
     @Override
     public int deleteDormBuildingByDormIds(Long[] dormIds)
     {
-        return dormBuildingMapper.deleteDormBuildingByDormIds(dormIds);
+        // 获取要删除的节点信息，用于后续更新父节点容量
+        Set<Long> parentIdsToUpdate = new HashSet<>();
+        for (Long dormId : dormIds) {
+            DormBuilding dormToDelete = dormBuildingMapper.selectDormBuildingByDormId(dormId);
+            if (dormToDelete != null && dormToDelete.getParentId() != null && dormToDelete.getParentId() > 0) {
+                parentIdsToUpdate.add(dormToDelete.getParentId());
+            }
+        }
+
+        int result = dormBuildingMapper.deleteDormBuildingByDormIds(dormIds);
+
+        // 删除成功后，批量更新所有相关父节点的容量数据
+        if (result > 0 && !parentIdsToUpdate.isEmpty()) {
+            for (Long parentId : parentIdsToUpdate) {
+                recursiveUpdateParentCapacity(parentId);
+            }
+        }
+
+        return result;
     }
 
     /**
@@ -346,8 +403,9 @@ public class DormBuildingServiceImpl implements IDormBuildingService
         // 更新后重新计算状态，确保状态正确
         if (result > 0) {
             dormBuildingMapper.updateDormStatusByCapacity(dormId);
-            // 递归更新父节点状态
+            // 递归更新父节点状态和容量
             recursiveUpdateParentStatus(dormId);
+            recursiveUpdateParentCapacity(dormId);
         }
         return result;
     }
@@ -368,8 +426,9 @@ public class DormBuildingServiceImpl implements IDormBuildingService
         // 更新后重新计算状态，确保状态正确
         if (result > 0) {
             dormBuildingMapper.updateDormStatusByCapacity(dormId);
-            // 递归更新父节点状态
+            // 递归更新父节点状态和容量
             recursiveUpdateParentStatus(dormId);
+            recursiveUpdateParentCapacity(dormId);
         }
         return result;
     }
@@ -510,5 +569,56 @@ public class DormBuildingServiceImpl implements IDormBuildingService
                 recursiveUpdateParentStatus(parentId);
             }
         }
+    }
+
+    /**
+     * 更新父节点容量数据
+     *
+     * @param dormId 父节点ID
+     * @return 结果
+     */
+    @Override
+    public int updateParentCapacity(Long dormId) {
+        if (dormId == null) {
+            return 0;
+        }
+        return dormBuildingMapper.updateParentCapacity(dormId);
+    }
+
+    /**
+     * 递归更新父节点容量数据
+     *
+     * @param dormId 宿舍ID
+     */
+    @Override
+    public void recursiveUpdateParentCapacity(Long dormId) {
+        if (dormId == null) {
+            return;
+        }
+
+        // 获取父节点ID
+        Long parentId = dormBuildingMapper.getParentId(dormId);
+        if (parentId != null && parentId > 0) {
+            // 更新父节点容量数据
+            int updated = updateParentCapacity(parentId);
+            if (updated > 0) {
+                // 继续递归更新上级父节点
+                recursiveUpdateParentCapacity(parentId);
+            }
+        }
+    }
+
+    /**
+     * 批量更新父节点容量数据
+     *
+     * @param dormIds 需要更新的父节点ID列表
+     * @return 结果
+     */
+    @Override
+    public int batchUpdateParentCapacity(List<Long> dormIds) {
+        if (dormIds == null || dormIds.isEmpty()) {
+            return 0;
+        }
+        return dormBuildingMapper.batchUpdateParentCapacity(dormIds);
     }
 }

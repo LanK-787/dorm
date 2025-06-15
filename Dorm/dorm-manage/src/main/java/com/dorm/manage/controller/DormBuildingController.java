@@ -1,8 +1,11 @@
 package com.dorm.manage.controller;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -220,6 +223,38 @@ public class DormBuildingController extends BaseController
             }
         } catch (Exception e) {
             return error("验证状态一致性失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 同步父子节点容量数据
+     */
+    @PreAuthorize("@ss.hasPermi('dorm:building:edit')")
+    @Log(title = "宿舍管理", businessType = BusinessType.UPDATE)
+    @PostMapping("/syncCapacity")
+    public AjaxResult syncCapacity()
+    {
+        try {
+            // 获取所有有子节点的父节点
+            List<DormBuilding> allDorms = dormBuildingService.selectDormBuildingList(new DormBuilding());
+            Set<Long> parentIds = new HashSet<>();
+
+            for (DormBuilding dorm : allDorms) {
+                if (dorm.getParentId() != null && dorm.getParentId() > 0) {
+                    parentIds.add(dorm.getParentId());
+                }
+            }
+
+            if (parentIds.isEmpty()) {
+                return success("没有需要同步的父节点");
+            }
+
+            // 批量更新父节点容量
+            int updatedCount = dormBuildingService.batchUpdateParentCapacity(new ArrayList<>(parentIds));
+
+            return success("成功同步 " + updatedCount + " 个父节点的容量数据");
+        } catch (Exception e) {
+            return error("同步容量数据失败：" + e.getMessage());
         }
     }
 }

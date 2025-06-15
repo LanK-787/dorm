@@ -191,4 +191,27 @@ public interface IDormBuildingService
      * @param dormId 宿舍ID
      */
     public void recursiveUpdateParentStatus(Long dormId);
+
+    /**
+     * 更新父节点容量数据
+     *
+     * @param dormId 父节点ID
+     * @return 结果
+     */
+    public int updateParentCapacity(Long dormId);
+
+    /**
+     * 递归更新父节点容量数据
+     *
+     * @param dormId 宿舍ID
+     */
+    public void recursiveUpdateParentCapacity(Long dormId);
+
+    /**
+     * 批量更新父节点容量数据
+     *
+     * @param dormIds 需要更新的父节点ID列表
+     * @return 结果
+     */
+    public int batchUpdateParentCapacity(List<Long> dormIds);
 }

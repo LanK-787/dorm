@@ -1,6 +1,8 @@
 package com.dorm.manage.mapper;
 
 import java.util.List;
+import java.util.Map;
+
 import com.dorm.common.core.domain.entity.DormBuilding;
 import org.apache.ibatis.annotations.Param;
 
@@ -201,4 +203,28 @@ public interface DormBuildingMapper
      * @return 结果
      */
     public int updateParentStatus(@Param("dormId") Long dormId, @Param("status") String status);
+
+    /**
+     * 计算并更新父节点容量数据
+     *
+     * @param dormId 父节点ID
+     * @return 结果
+     */
+    public int updateParentCapacity(Long dormId);
+
+    /**
+     * 获取子节点容量统计信息
+     *
+     * @param dormId 父节点ID
+     * @return 容量统计信息 [maxCapacity, currentCount]
+     */
+    public Map<String, Integer> getChildrenCapacitySum(Long dormId);
+
+    /**
+     * 批量更新父节点容量数据
+     *
+     * @param dormIds 需要更新的父节点ID列表
+     * @return 结果
+     */
+    public int batchUpdateParentCapacity(@Param("dormIds") List<Long> dormIds);
 }

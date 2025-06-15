@@ -298,4 +298,60 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         AND del_flag = '0'
         AND status != #{status}
     </update>
+
+    <!-- 获取子节点容量统计信息 -->
+    <select id="getChildrenCapacitySum" parameterType="Long" resultType="map">
+        SELECT
+            IFNULL(SUM(IFNULL(max_capacity, 0)), 0) as maxCapacity,
+            IFNULL(SUM(IFNULL(current_count, 0)), 0) as currentCount
+        FROM dorm_building
+        WHERE parent_id = #{dormId}
+        AND del_flag = '0'
+    </select>
+
+    <!-- 计算并更新父节点容量数据 -->
+    <update id="updateParentCapacity" parameterType="Long">
+        UPDATE dorm_building p
+        INNER JOIN (
+            SELECT
+                c.parent_id,
+                IFNULL(SUM(IFNULL(c.max_capacity, 0)), 0) as total_max_capacity,
+                IFNULL(SUM(IFNULL(c.current_count, 0)), 0) as total_current_count
+            FROM dorm_building c
+            WHERE c.parent_id = #{dormId}
+            AND c.del_flag = '0'
+            GROUP BY c.parent_id
+        ) capacity_sum ON p.dorm_id = capacity_sum.parent_id
+        SET p.max_capacity = capacity_sum.total_max_capacity,
+            p.current_count = capacity_sum.total_current_count,
+            p.update_time = sysdate()
+        WHERE p.dorm_id = #{dormId}
+        AND p.del_flag = '0'
+    </update>
+
+    <!-- 批量更新父节点容量数据 -->
+    <update id="batchUpdateParentCapacity">
+        UPDATE dorm_building p
+        INNER JOIN (
+            SELECT
+                c.parent_id,
+                IFNULL(SUM(IFNULL(c.max_capacity, 0)), 0) as total_max_capacity,
+                IFNULL(SUM(IFNULL(c.current_count, 0)), 0) as total_current_count
+            FROM dorm_building c
+            WHERE c.parent_id IN
+            <foreach collection="dormIds" item="dormId" open="(" close=")" separator=",">
+                #{dormId}
+            </foreach>
+            AND c.del_flag = '0'
+            GROUP BY c.parent_id
+        ) capacity_sum ON p.dorm_id = capacity_sum.parent_id
+        SET p.max_capacity = capacity_sum.total_max_capacity,
+            p.current_count = capacity_sum.total_current_count,
+            p.update_time = sysdate()
+        WHERE p.dorm_id IN
+        <foreach collection="dormIds" item="dormId" open="(" close=")" separator=",">
+            #{dormId}
+        </foreach>
+        AND p.del_flag = '0'
+    </update>
 </mapper>

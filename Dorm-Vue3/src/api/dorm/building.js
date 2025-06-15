@@ -66,3 +66,11 @@ export function validateStatus() {
     method: 'get'
   })
 }
+
+// 同步父子节点容量数据
+export function syncCapacity() {
+  return request({
+    url: '/dorm/building/syncCapacity',
+    method: 'post'
+  })
+}

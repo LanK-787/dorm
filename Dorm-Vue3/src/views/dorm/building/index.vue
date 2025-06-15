@@ -76,6 +76,15 @@
           v-hasPermi="['dorm:building:edit']"
         >修复状态</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="success"
+          plain
+          icon="Refresh"
+          @click="handleSyncCapacity"
+          v-hasPermi="['dorm:building:edit']"
+        >同步容量</el-button>
+      </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -147,23 +156,35 @@
             v-model="form.maxCapacity"
             placeholder="请输入最大入住人数"
             :min="0"
-            :max="20"
             :precision="0"
             controls-position="right"
             style="width: 100%"
             @change="handleMaxCapacityChange"
           />
+          <div class="form-tip" v-if="hasChildren">
+            <el-text type="info" size="small">
+              <el-icon><InfoFilled /></el-icon>
+              父节点容量将自动根据子节点容量计算
+            </el-text>
+          </div>
         </el-form-item>
         <el-form-item label="当前入住人数" prop="currentCount">
           <el-input-number
             v-model="form.currentCount"
             placeholder="请输入当前入住人数"
             :min="0"
-            :max="form.maxCapacity || 20"
+            :max="form.maxCapacity"
             :precision="0"
             controls-position="right"
             style="width: 100%"
+            @change="handleCurrentCountChange"
           />
+          <div class="form-tip" v-if="hasChildren">
+            <el-text type="info" size="small">
+              <el-icon><InfoFilled /></el-icon>
+              父节点当前人数将自动根据子节点人数计算
+            </el-text>
+          </div>
         </el-form-item>
         <el-form-item label="宿舍状态" prop="status">
           <el-select v-model="form.status" placeholder="请选择宿舍状态">
@@ -187,7 +208,7 @@
 </template>
 
 <script setup name="Building">
-import { listBuilding, getBuilding, delBuilding, addBuilding, updateBuilding, batchFixDormStatus, checkStatusConsistency } from "@/api/dorm/building"
+import { listBuilding, getBuilding, delBuilding, addBuilding, updateBuilding, batchFixDormStatus, checkStatusConsistency, syncCapacity } from "@/api/dorm/building"
 
 const { proxy } = getCurrentInstance()
 const { dorm_status } = proxy.useDict('dorm_status')
@@ -200,6 +221,7 @@ const showSearch = ref(true)
 const title = ref("")
 const isExpandAll = ref(true)
 const refreshTable = ref(true)
+const hasChildren = ref(false)
 
 const data = reactive({
   form: {},
@@ -227,8 +249,6 @@ const data = reactive({
           if (value !== null && value !== undefined) {
             if (!Number.isInteger(value) || value < 0) {
               callback(new Error('最大入住人数必须为大于等于0的整数'))
-            } else if (value > 20) {
-              callback(new Error('最大入住人数不能超过20'))
             } else {
               // 当最大容量改变时，重新验证当前入住人数
               if (form.value.currentCount !== null && form.value.currentCount !== undefined) {
@@ -512,6 +532,17 @@ function handleMaxCapacityChange(value) {
     proxy.$refs["buildingRef"]?.validateField('currentCount')
   })
 }
+
+/**
+ * 处理当前入住人数变化事件
+ * @param {Number} value 新的当前入住人数值
+ */
+function handleCurrentCountChange(value) {
+  // 触发表单验证
+  nextTick(() => {
+    proxy.$refs["buildingRef"]?.validateField('currentCount')
+  })
+}
 	
 // 取消按钮
 function cancel() {
@@ -590,6 +621,14 @@ async function handleUpdate(row) {
   if (row != null) {
     form.value.parentId = row.parentId
   }
+
+  // 检查是否有子节点
+  const childrenExist = buildingList.value.some(item =>
+    item.parentId === row.dormId ||
+    (item.children && item.children.length > 0)
+  )
+  hasChildren.value = childrenExist
+
   getBuilding(row.dormId).then(response => {
     form.value = response.data
     open.value = true
@@ -602,10 +641,21 @@ async function submitForm() {
   proxy.$refs["buildingRef"].validate(async (valid) => {
     if (valid) {
       try {
+        let isCapacityOperation = false
+
         if (form.value.dormId != null) {
-          // 编辑模式：直接提交，保持用户输入的fullName
+          // 编辑模式：检查是否涉及容量变更
+          const originalData = await getBuilding(form.value.dormId)
+          const oldMaxCapacity = originalData.data?.maxCapacity
+          const oldCurrentCount = originalData.data?.currentCount
+          const newMaxCapacity = form.value.maxCapacity
+          const newCurrentCount = form.value.currentCount
+
+          isCapacityOperation = oldMaxCapacity !== newMaxCapacity || oldCurrentCount !== newCurrentCount
+
+          // 直接提交，保持用户输入的fullName
           const response = await updateBuilding(form.value)
-          proxy.$modal.msgSuccess("修改成功")
+          proxy.$modal.msgSuccess("修改成功" + (isCapacityOperation ? "，父节点容量已自动更新" : ""))
           open.value = false
           getList()
         } else {
@@ -618,8 +668,11 @@ async function submitForm() {
             fullName: generatedFullName
           }
 
+          // 检查是否有容量数据
+          isCapacityOperation = submitData.maxCapacity > 0 || submitData.currentCount > 0
+
           const response = await addBuilding(submitData)
-          proxy.$modal.msgSuccess("新增成功")
+          proxy.$modal.msgSuccess("新增成功" + (isCapacityOperation ? "，父节点容量已自动更新" : ""))
           open.value = false
           getList()
         }
@@ -727,5 +780,49 @@ async function handleFixStatus() {
   }
 }
 
+/** 同步父子节点容量数据 */
+async function handleSyncCapacity() {
+  console.log('🔄 开始执行容量同步功能')
+
+  try {
+    // 显示确认对话框
+    await proxy.$modal.confirm('是否确认同步所有父子节点的容量数据？此操作将重新计算所有父节点的最大入住人数和当前入住人数。')
+
+    console.log('📡 调用容量同步API...')
+    const response = await syncCapacity()
+    console.log('✅ 容量同步完成，响应:', response)
+
+    if (response && response.code === 200) {
+      proxy.$modal.msgSuccess(response.msg || "容量数据同步成功")
+      // 刷新列表以显示更新后的数据
+      getList()
+    } else {
+      proxy.$modal.msgError(response?.msg || "容量数据同步失败")
+    }
+  } catch (error) {
+    if (error === 'cancel') {
+      console.log('🚫 用户取消容量同步操作')
+      return
+    }
+    console.error('❌ 容量同步失败:', error)
+    proxy.$modal.msgError("容量数据同步失败，请重试")
+  }
+}
+
 getList()
 </script>
+
+<style scoped>
+.form-tip {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #909399;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.form-tip .el-icon {
+  font-size: 14px;
+}
+</style>
