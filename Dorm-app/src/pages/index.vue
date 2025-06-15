@@ -80,87 +80,85 @@
   </view>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from 'vue'
 import NoticeSwiper from '@/components/NoticeSwiper/NoticeSwiper.vue'
 
-export default {
-  components: {
-    NoticeSwiper
+// 响应式数据
+const statusBarHeight = ref(0)
+const newsList = ref([
+  {
+    id: 1,
+    title: '关于宿舍卫生检查的通知',
+    time: '2024-01-15'
   },
-
-  data() {
-    return {
-      statusBarHeight: 0,
-      newsList: [
-        {
-          id: 1,
-          title: '关于宿舍卫生检查的通知',
-          time: '2024-01-15'
-        },
-        {
-          id: 2,
-          title: '春节放假安排及注意事项',
-          time: '2024-01-14'
-        },
-        {
-          id: 3,
-          title: '宿舍网络维护公告',
-          time: '2024-01-13'
-        }
-      ]
-    }
+  {
+    id: 2,
+    title: '春节放假安排及注意事项',
+    time: '2024-01-14'
   },
-
-  onLoad() {
-    this.initPage()
-  },
-
-  onShow() {
-    // 页面显示时刷新数据
-    this.refreshData()
-  },
-
-  methods: {
-    // 初始化页面
-    initPage() {
-      // 获取状态栏高度
-      const systemInfo = uni.getSystemInfoSync()
-      this.statusBarHeight = systemInfo.statusBarHeight || 0
-    },
-
-    // 刷新数据
-    refreshData() {
-      // 这里可以刷新最新动态等数据
-      console.log('刷新首页数据')
-    },
-
-    // 搜索功能
-    handleSearch() {
-      uni.navigateTo({
-        url: '/pages/search/index'
-      })
-    },
-
-    // 页面导航
-    navigateTo(url) {
-      uni.navigateTo({
-        url: url
-      })
-    },
-
-    // 点击新闻项
-    handleNewsClick(item) {
-      uni.navigateTo({
-        url: `/pages/notice/detail?id=${item.id}`
-      })
-    },
-
-    // 滚动到底部
-    onReachBottom() {
-      console.log('到达底部，可以加载更多数据')
-    }
+  {
+    id: 3,
+    title: '宿舍网络维护公告',
+    time: '2024-01-13'
   }
+])
+
+// 方法定义
+// 初始化页面
+const initPage = () => {
+  // 获取状态栏高度
+  const systemInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = systemInfo.statusBarHeight || 0
 }
+
+// 刷新数据
+const refreshData = () => {
+  // 这里可以刷新最新动态等数据
+  console.log('刷新首页数据')
+}
+
+// 搜索功能
+const handleSearch = () => {
+  uni.navigateTo({
+    url: '/pages/search/index'
+  })
+}
+
+// 页面导航
+const navigateTo = (url) => {
+  uni.navigateTo({
+    url: url
+  })
+}
+
+// 点击新闻项
+const handleNewsClick = (item) => {
+  uni.navigateTo({
+    url: `/pages/notice/detail?id=${item.id}`
+  })
+}
+
+// 滚动到底部
+const onReachBottom = () => {
+  console.log('到达底部，可以加载更多数据')
+}
+
+// 生命周期钩子
+onMounted(() => {
+  initPage()
+})
+
+// uni-app 页面生命周期钩子
+const onShow = () => {
+  // 页面显示时刷新数据
+  refreshData()
+}
+
+// 导出页面生命周期钩子
+defineExpose({
+  onShow
+})
 </script>
 
 <style lang="scss" scoped>

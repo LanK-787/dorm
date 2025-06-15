@@ -363,7 +363,7 @@ export default {
 }
 
 .content-container {
-  margin-top: 148rpx;
+  margin-top: 200rpx;
   padding: 0 30rpx;
 }
 
