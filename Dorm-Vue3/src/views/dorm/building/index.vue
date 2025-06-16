@@ -97,7 +97,18 @@
       :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
     >
       <el-table-column label="名称" align="left" prop="buildingName"/>
-      <el-table-column label="全称" align="left" prop="fullName"/>
+      <el-table-column label="全称" align="left" prop="fullName">
+        <template #default="scope">
+          <el-button
+            link
+            type="primary"
+            @click="handleViewDetail(scope.row)"
+            style="text-align: left; padding: 0; height: auto; font-weight: normal;"
+          >
+            {{ scope.row.fullName }}
+          </el-button>
+        </template>
+      </el-table-column>
       <el-table-column label="宿管" align="center" prop="dormManager" />
       <el-table-column label="联系电话" align="center" prop="phone" />
       <el-table-column label="最大入住人数" align="center" prop="maxCapacity" />
@@ -807,6 +818,19 @@ async function handleSyncCapacity() {
     console.error('❌ 容量同步失败:', error)
     proxy.$modal.msgError("容量数据同步失败，请重试")
   }
+}
+
+/** 查看宿舍详情 */
+function handleViewDetail(row) {
+  // 跳转到宿舍详情页面，传递宿舍ID和全称作为参数
+  proxy.$router.push({
+    path: '/dorm/building-detail/index',
+    query: {
+      dormId: row.dormId,
+      fullName: row.fullName,
+      buildingName: row.buildingName
+    }
+  })
 }
 
 getList()

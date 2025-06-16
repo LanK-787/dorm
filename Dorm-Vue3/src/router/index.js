@@ -171,6 +171,20 @@ export const dynamicRoutes = [
         meta: { title: '修改生成配置', activeMenu: '/tool/gen' }
       }
     ]
+  },
+  {
+    path: '/dorm/building-detail',
+    component: Layout,
+    hidden: true,
+    permissions: ['dorm:building:list'],
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/dorm/building/detail'),
+        name: 'BuildingDetail',
+        meta: { title: '宿舍详情', activeMenu: '/dorm/building' }
+      }
+    ]
   }
 ]
 
