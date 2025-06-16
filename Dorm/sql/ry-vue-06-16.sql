@@ -11,7 +11,7 @@
  Target Server Version : 80012 (8.0.12)
  File Encoding         : 65001
 
- Date: 16/06/2025 11:39:58
+ Date: 16/06/2025 14:39:57
 */
 
 SET NAMES utf8mb4;
@@ -556,7 +556,7 @@ CREATE TABLE `sys_logininfor`  (
   PRIMARY KEY (`info_id`) USING BTREE,
   INDEX `idx_sys_logininfor_s`(`status` ASC) USING BTREE,
   INDEX `idx_sys_logininfor_lt`(`login_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 542 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '系统访问记录' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 546 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '系统访问记录' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_logininfor
@@ -1003,6 +1003,10 @@ INSERT INTO `sys_logininfor` VALUES (538, 'admin', '127.0.0.1', '内网IP', 'Chr
 INSERT INTO `sys_logininfor` VALUES (539, 'admin', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '1', '验证码已失效', '2025-06-16 11:34:08');
 INSERT INTO `sys_logininfor` VALUES (540, 'admin', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '1', '验证码错误', '2025-06-16 11:34:23');
 INSERT INTO `sys_logininfor` VALUES (541, 'admin', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-16 11:34:28');
+INSERT INTO `sys_logininfor` VALUES (542, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '1', '验证码已失效', '2025-06-16 12:50:31');
+INSERT INTO `sys_logininfor` VALUES (543, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-16 12:50:35');
+INSERT INTO `sys_logininfor` VALUES (544, 'admin', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-16 13:15:54');
+INSERT INTO `sys_logininfor` VALUES (545, 'admin', '172.18.213.84', '内网IP', 'Chrome Mobile', 'Android 1.x', '0', '登录成功', '2025-06-16 13:17:46');
 
 -- ----------------------------
 -- Table structure for sys_menu
@@ -2021,7 +2025,7 @@ CREATE TABLE `sys_user`  (
 -- ----------------------------
 -- Records of sys_user
 -- ----------------------------
-INSERT INTO `sys_user` VALUES (1, 103, 'admin', '若依', '00', 'ry@163.com', '15888888888', '1', 'http://172.18.34.104:9005/test/2025/06/avatar/b0523dcb7bca4442b447cac98617efd5.png', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '172.18.34.104', '2025-06-16 11:34:29', '2025-06-03 20:44:14', 'admin', '2025-06-03 20:44:14', '', '2025-06-16 11:34:28', '管理员');
+INSERT INTO `sys_user` VALUES (1, 103, 'admin', '若依', '00', 'ry@163.com', '15888888888', '1', 'http://172.18.34.104:9005/test/2025/06/avatar/b0523dcb7bca4442b447cac98617efd5.png', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '172.18.213.84', '2025-06-16 13:17:47', '2025-06-03 20:44:14', 'admin', '2025-06-03 20:44:14', '', '2025-06-16 13:17:46', '管理员');
 INSERT INTO `sys_user` VALUES (2, 105, 'ry', '若依', '00', 'ry@qq.com', '15666666666', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2025-06-03 20:44:14', '2025-06-03 20:44:14', 'admin', '2025-06-03 20:44:14', '', NULL, '测试员');
 INSERT INTO `sys_user` VALUES (101, NULL, '2310305320', '王新瑜', '00', '2559118499@qq.com', '13282973175', '0', '', '$2a$10$KxpBw6D/j92BmWb18xK/xOZ3Iwzv/HkKmPR1/CXgmse6HFrXAKWWS', '0', '0', '172.18.213.84', '2025-06-15 17:15:50', '2025-06-07 12:19:27', '', '2025-06-07 12:19:27', 'admin', '2025-06-15 17:15:49', NULL);
 

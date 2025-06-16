@@ -52,10 +52,29 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
     
     <select id="selectDormBuildingByDormId" parameterType="Long" resultMap="DormBuildingResult">
-        select d.dorm_id, d.parent_id, d.ancestors, d.building_name, d.full_name, d.order_num, d.dorm_manager, d.phone, d.email, d.status, d.max_capacity, d.current_count,
-            (select building_name from dorm_building where dorm_id = d.parent_id) parent_name
-        from dorm_building d
-        where d.dorm_id = #{dormId}
+        SELECT d.dorm_id, d.parent_id, d.ancestors, d.building_name, d.full_name, d.order_num,
+            COALESCE(d.dorm_manager,
+                (SELECT dorm_manager
+                 FROM dorm_building
+                 WHERE FIND_IN_SET(dorm_id, CONCAT(d.ancestors, ',', d.parent_id)) > 0
+                   AND dorm_manager IS NOT NULL
+                   AND dorm_manager != ''
+                 ORDER BY FIND_IN_SET(dorm_id, CONCAT(d.ancestors, ',', d.parent_id)) DESC
+                 LIMIT 1)
+            ) as dorm_manager,
+            COALESCE(d.phone,
+                (SELECT phone
+                 FROM dorm_building
+                 WHERE FIND_IN_SET(dorm_id, CONCAT(d.ancestors, ',', d.parent_id)) > 0
+                   AND phone IS NOT NULL
+                   AND phone != ''
+                 ORDER BY FIND_IN_SET(dorm_id, CONCAT(d.ancestors, ',', d.parent_id)) DESC
+                 LIMIT 1)
+            ) as phone,
+            d.email, d.status, d.max_capacity, d.current_count,
+            (SELECT building_name FROM dorm_building WHERE dorm_id = d.parent_id) parent_name
+        FROM dorm_building d
+        WHERE d.dorm_id = #{dormId}
     </select>
     
     <select id="checkDormExistUser" parameterType="Long" resultType="int">
