@@ -80,26 +80,40 @@
   import { computed, getCurrentInstance, onMounted } from 'vue'
   import useUserStore from '@/store/modules/user'
   import useStudentStore from '@/store/modules/student'
+import useRepairerStore from '@/store/modules/repairer'
 
   // 获取student store实例
   const studentStore = useStudentStore()
 
 
-// 检查用户是否已登录且学生信息是否存在
+// 检查用户是否已登录且获取相应角色信息
 onMounted(async () => {
   const userStore = useUserStore()
-  
+
   // 检查用户是否已登录
   if (userStore.token) {
     try {
-      // 检查是否已有学生信息，没有则获取
+      // 检查维修人员权限并获取维修人员信息（优先处理）
+      if (userStore.roles && userStore.roles.includes('repairer')) {
+        try {
+          const repairerData = await repairerStore.fetchRepairerByUserId(userStore.id)
+          if (repairerData) {
+            console.log('维修人员信息加载成功:', repairerData.name)
+          } else {
+            console.log('维修人员信息不存在，用户可能需要完善信息')
+          }
+        } catch (error) {
+          console.log('维修人员信息获取失败，可能是首次登录:', error)
+          // 如果获取失败，说明可能是首次登录，不做处理，在个人信息页面会引导用户完善信息
+        }
+      }
+
+      // 检查学生权限并获取学生信息
       if (userStore.roles && userStore.roles.includes('student')) {
         await studentStore.fetchStudentDetail()
-      } else {
-        console.log('已有学生信息，无需重新获取')
       }
     } catch (error) {
-      console.error('获取学生信息失败:', error)
+      console.error('获取用户角色信息失败:', error)
       // 可以添加错误处理逻辑
     }
   }
@@ -108,16 +122,21 @@ onMounted(async () => {
   // 获取当前实例以访问全局属性
   const { proxy } = getCurrentInstance()
 
-  // 获取用户store实例
+  // 获取store实例
   const userStore = useUserStore()
+  const repairerStore = useRepairerStore()
 
-  // 计算属性 - 优先使用学生信息中的姓名
+  // 计算属性 - 优先级：维修人员姓名 > 学生姓名 > 用户昵称
   const name = computed(() => {
-    // 如果学生信息存在且姓名不为空，使用学生姓名
+    // 优先使用维修人员信息中的姓名
+    if (repairerStore.currentRepairer && repairerStore.currentRepairer.name) {
+      return repairerStore.currentRepairer.name
+    }
+    // 其次使用学生信息中的姓名
     if (studentStore.currentStudent && studentStore.currentStudent.name) {
       return studentStore.currentStudent.name
     }
-    // 否则使用用户store中的姓名
+    // 最后使用用户store中的姓名
     return userStore.name
   })
   const avatar = computed(() => userStore.avatar)

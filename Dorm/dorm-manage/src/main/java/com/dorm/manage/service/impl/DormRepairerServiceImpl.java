@@ -22,7 +22,7 @@ public class DormRepairerServiceImpl implements IDormRepairerService
 
     /**
      * 查询维修人员管理
-     * 
+     *
      * @param repairerId 维修人员管理主键
      * @return 维修人员管理
      */
@@ -30,6 +30,18 @@ public class DormRepairerServiceImpl implements IDormRepairerService
     public DormRepairer selectDormRepairerByRepairerId(Long repairerId)
     {
         return dormRepairerMapper.selectDormRepairerByRepairerId(repairerId);
+    }
+
+    /**
+     * 根据用户ID查询维修人员管理
+     *
+     * @param userId 用户ID
+     * @return 维修人员管理
+     */
+    @Override
+    public DormRepairer selectDormRepairerByUserId(Long userId)
+    {
+        return dormRepairerMapper.selectDormRepairerByUserId(userId);
     }
 
     /**

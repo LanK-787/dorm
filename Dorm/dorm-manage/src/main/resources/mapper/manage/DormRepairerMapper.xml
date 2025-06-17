@@ -39,6 +39,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where repairer_id = #{repairerId}
     </select>
 
+    <select id="selectDormRepairerByUserId" parameterType="Long" resultMap="DormRepairerResult">
+        <include refid="selectDormRepairerVo"/>
+        where user_id = #{userId}
+    </select>
+
     <insert id="insertDormRepairer" parameterType="DormRepairer" useGeneratedKeys="true" keyProperty="repairerId">
         insert into dorm_repairer
         <trim prefix="(" suffix=")" suffixOverrides=",">

@@ -10,6 +10,7 @@ const useUserStore = defineStore('userStore', {
     token: getToken(),
     id: '',
     name: '',
+    nickName: '',
     avatar: '',
     roles: [],
     permissions: []
@@ -56,6 +57,10 @@ const useUserStore = defineStore('userStore', {
             ? ""
             : user.userName
 
+          const nickName = (user == null || user.nickName == "" || user.nickName == null)
+            ? ""
+            : user.nickName
+
           if (res.roles && res.roles.length > 0) {
             this.roles = res.roles
             this.permissions = res.permissions
@@ -65,6 +70,7 @@ const useUserStore = defineStore('userStore', {
 
           this.id = user.userId
           this.name = username
+          this.nickName = nickName
           this.avatar = avatar
           resolve(res)
         }).catch(error => {
@@ -79,6 +85,7 @@ const useUserStore = defineStore('userStore', {
           this.token = ''
           this.id = ''
           this.name = ''
+          this.nickName = ''
           this.avatar = ''
           this.roles = []
           this.permissions = []
@@ -130,7 +137,7 @@ const useUserStore = defineStore('userStore', {
       }
     },
     // 指定需要持久化的状态字段
-    paths: ['id', 'name', 'avatar', 'roles', 'permissions'],
+    paths: ['id', 'name', 'nickName', 'avatar', 'roles', 'permissions'],
     // 在状态恢复后进行数据处理
     afterRestore: (context) => {
       console.log('用户状态恢复完成')

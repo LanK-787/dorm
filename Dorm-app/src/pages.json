@@ -61,6 +61,11 @@
       "navigationBarTitleText": "关于我们"
     }
   }, {
+    "path": "pages/mine/repairer/setup",
+    "style": {
+      "navigationBarTitleText": "完善维修人员信息"
+    }
+  }, {
     "path": "pages/common/webview/index",
     "style": {
       "navigationBarTitleText": "浏览网页"

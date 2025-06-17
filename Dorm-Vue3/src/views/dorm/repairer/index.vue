@@ -25,8 +25,8 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="状态(0出工,1空闲)" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择状态(0出工,1空闲)" clearable>
+      <el-form-item label="状态" prop="status" style="width: 200px;">
+        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
           <el-option
             v-for="dict in dorm_repairer_status"
             :key="dict.value"
@@ -94,7 +94,7 @@
           <dict-tag :options="dorm_repairer_specialty" :value="scope.row.specialty ? scope.row.specialty.split(',') : []"/>
         </template>
       </el-table-column>
-      <el-table-column label="状态(0出工,1空闲)" align="center" prop="status">
+      <el-table-column label="状态" align="center" prop="status">
         <template #default="scope">
           <dict-tag :options="dorm_repairer_status" :value="scope.row.status"/>
         </template>

@@ -5,7 +5,7 @@
       <uni-list-item
         showExtraIcon="true"
         :extraIcon="{type: 'person-filled'}"
-        :title="hasStudentData ? '姓名' : '昵称'"
+        :title="hasStudentData || hasRepairerData ? '姓名' : '昵称'"
         :rightText="displayName" />
 
       <!-- 手机号码 -->
@@ -22,7 +22,7 @@
         title="邮箱"
         :rightText="displayEmail" />
 
-      <!-- 学号（仅学生）或岗位（非学生） -->
+      <!-- 学号（仅学生）-->
       <uni-list-item
         v-if="hasStudentData && studentNo"
         showExtraIcon="true"
@@ -30,17 +30,25 @@
         title="学号"
         :rightText="studentNo" />
 
-      <!-- 班级（学生）或岗位（非学生） -->
+      <!-- 工号（仅维修人员）-->
+      <uni-list-item
+        v-if="hasRepairerData && repairerNo"
+        showExtraIcon="true"
+        :extraIcon="{type: 'contact-filled'}"
+        title="工号"
+        :rightText="repairerNo" />
+
+      <!-- 班级（学生）、专长（维修人员）或岗位（非学生） -->
       <uni-list-item
         showExtraIcon="true"
-        :extraIcon="{type: hasStudentData ? 'home-filled' : 'auth-filled'}"
+        :extraIcon="{type: hasStudentData ? 'home-filled' : hasRepairerData ? 'gear-filled' : 'auth-filled'}"
         :title="fourthFieldTitle"
         :rightText="className" />
 
-      <!-- 性别（学生）或角色（非学生） -->
+      <!-- 性别（学生）、状态（维修人员）或角色（非学生） -->
       <uni-list-item
         showExtraIcon="true"
-        :extraIcon="{type: hasStudentData ? 'person' : 'staff-filled'}"
+        :extraIcon="{type: hasStudentData ? 'person' : hasRepairerData ? 'checkmarkempty' : 'staff-filled'}"
         :title="fifthFieldTitle"
         :rightText="genderText" />
 
@@ -55,17 +63,23 @@
 </template>
 
 <script setup>
-  import { ref, reactive, computed, onMounted } from 'vue'
+  import { ref, reactive, computed, onMounted, getCurrentInstance } from 'vue'
   import { getUserProfile } from "@/api/system/user"
   import { getStudentInfo } from "@/api/dorm/student"
   import useUserStore from '@/store/modules/user'
+  import useRepairerStore from '@/store/modules/repairer'
 
-  // 获取用户store实例
+  // 获取当前实例以访问全局属性
+  const { proxy } = getCurrentInstance()
+
+  // 获取store实例
   const userStore = useUserStore()
+  const repairerStore = useRepairerStore()
 
   // 响应式数据
   const user = reactive({})
   const student = reactive({})
+  const repairer = reactive({})
   const roleGroup = ref("")
   const postGroup = ref("")
 
@@ -74,22 +88,37 @@
     return userStore.roles && userStore.roles.includes('student')
   })
 
+  // 计算属性 - 判断是否为维修人员模式
+  const isRepairerMode = computed(() => {
+    return userStore.roles && userStore.roles.includes('repairer')
+  })
+
   // 计算属性 - 判断是否有学生数据
   const hasStudentData = computed(() => {
     return isStudentMode.value && student.name
   })
 
+  // 计算属性 - 判断是否有维修人员数据
+  const hasRepairerData = computed(() => {
+    return isRepairerMode.value && repairer.name
+  })
+
   // 计算属性 - 动态显示数据
   const displayName = computed(() => {
-    return hasStudentData.value ? student.name : user.nickName
+    if (hasStudentData.value) return student.name
+    if (hasRepairerData.value) return repairer.name
+    return user.nickName
   })
 
   const displayPhone = computed(() => {
-    return hasStudentData.value ? student.phone : user.phonenumber
+    if (hasStudentData.value) return student.phone
+    if (hasRepairerData.value) return repairer.phone
+    return user.phonenumber
   })
 
   const displayEmail = computed(() => {
-    return hasStudentData.value ? student.email : user.email
+    if (hasStudentData.value) return student.email
+    return user.email
   })
 
   // 学生专用字段
@@ -97,15 +126,28 @@
     return hasStudentData.value ? student.studentNo : ''
   })
 
+  // 维修人员专用字段
+  const repairerNo = computed(() => {
+    return hasRepairerData.value ? repairer.repairerNo : ''
+  })
+
   const className = computed(() => {
-    return hasStudentData.value ? student.className : postGroup.value
+    if (hasStudentData.value) return student.className
+    if (hasRepairerData.value) return repairer.specialtyText || '未设置'
+    return postGroup.value
   })
 
   // 性别文本转换
   const genderText = computed(() => {
-    if (!hasStudentData.value) return roleGroup.value
-    const gender = student.gender
-    return gender === '0' ? '男' : gender === '1' ? '女' : '未知'
+    if (hasStudentData.value) {
+      const gender = student.gender
+      return gender === '0' ? '男' : gender === '1' ? '女' : '未知'
+    }
+    if (hasRepairerData.value) {
+      const status = repairer.status
+      return status === '0' ? '出工' : status === '1' ? '空闲' : '未知'
+    }
+    return roleGroup.value
   })
 
   // 状态文本转换
@@ -123,11 +165,15 @@
 
   // 动态标题
   const fourthFieldTitle = computed(() => {
-    return hasStudentData.value ? '班级' : '岗位'
+    if (hasStudentData.value) return '班级'
+    if (hasRepairerData.value) return '专长领域'
+    return '岗位'
   })
 
   const fifthFieldTitle = computed(() => {
-    return hasStudentData.value ? '性别' : '角色'
+    if (hasStudentData.value) return '性别'
+    if (hasRepairerData.value) return '当前状态'
+    return '角色'
   })
 
   const sixthFieldTitle = computed(() => {
@@ -168,6 +214,49 @@
     })
   }
 
+  const getRepairerData = async () => {
+    try {
+      const repairerData = await repairerStore.fetchRepairerByUserId(userStore.id)
+      if (repairerData) {
+        // 清空并重新赋值repairer对象
+        Object.keys(repairer).forEach(key => delete repairer[key])
+
+        // 处理专长领域文本
+        const specialtyText = repairerData.specialty ?
+          repairerData.specialty.split(',').map(item => {
+            const specialtyMap = {
+              '0': '电工',
+              '1': '水工',
+              '2': '木工',
+              '3': '水泥工'
+            }
+            return specialtyMap[item] || item
+          }).join('、') : '未设置'
+
+        Object.assign(repairer, {
+          repairerId: repairerData.repairerId || '',
+          repairerNo: repairerData.repairerNo || '',
+          name: repairerData.name || '',
+          phone: repairerData.phone || '',
+          specialty: repairerData.specialty || '',
+          specialtyText: specialtyText,
+          status: repairerData.status || '1'
+        })
+      } else {
+        // 如果没有维修人员数据，跳转到信息填写页面
+        proxy.$modal.confirm('检测到您具有维修人员权限，但尚未完善相关信息，是否立即完善？')
+          .then(() => {
+            proxy.$tab.navigateTo('/pages/mine/repairer/setup')
+          })
+          .catch(() => {
+            console.log('用户取消完善维修人员信息')
+          })
+      }
+    } catch (error) {
+      console.error('获取维修人员信息出错:', error)
+    }
+  }
+
   // 生命周期钩子
   onMounted(() => {
     getUser()
@@ -175,6 +264,11 @@
     // 如果是学生模式，获取学生信息
     if (isStudentMode.value) {
       getStudentData()
+    }
+
+    // 如果是维修人员模式，获取维修人员信息
+    if (isRepairerMode.value) {
+      getRepairerData()
     }
   })
 </script>

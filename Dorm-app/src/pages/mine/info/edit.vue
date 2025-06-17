@@ -26,6 +26,48 @@
         </uni-forms-item>
       </uni-forms>
 
+      <!-- 维修人员模式表单 -->
+      <uni-forms v-else-if="isRepairerMode" ref="form" :model="repairer" labelWidth="80px">
+        <uni-forms-item label="工号" name="repairerNo">
+          <uni-easyinput
+            v-model="repairer.repairerNo"
+            placeholder="请输入工号"
+            :disabled="true"
+            :clearable="false"
+          />
+        </uni-forms-item>
+        <uni-forms-item label="姓名" name="name">
+          <uni-easyinput
+            v-model="repairer.name"
+            placeholder="请输入姓名"
+            :disabled="true"
+            :clearable="false"
+          />
+        </uni-forms-item>
+        <uni-forms-item label="联系电话" name="phone">
+          <uni-easyinput
+            v-model="repairer.phone"
+            placeholder="请输入联系电话"
+            :clearable="true"
+          />
+        </uni-forms-item>
+        <uni-forms-item label="专长领域" name="specialty" required>
+          <uni-data-checkbox
+            v-model="repairer.specialty"
+            :localdata="specialtyOptions"
+            multiple
+            :wrap="true"
+          />
+        </uni-forms-item>
+        <uni-forms-item label="当前状态" name="status">
+          <uni-data-checkbox
+            v-model="repairer.status"
+            :localdata="repairerStatusOptions"
+            :disabled="true"
+          />
+        </uni-forms-item>
+      </uni-forms>
+
       <!-- 用户模式表单 -->
       <uni-forms v-else ref="form" :model="user" labelWidth="80px">
         <uni-forms-item label="用户昵称" name="nickName">
@@ -43,7 +85,7 @@
       </uni-forms>
 
       <button type="primary" @click="submit">
-        {{ isStudentMode ? '更新学生信息' : '更新用户信息' }}
+        {{ isStudentMode ? '更新学生信息' : isRepairerMode ? '更新维修人员信息' : '更新用户信息' }}
       </button>
     </view>
   </view>
@@ -54,18 +96,26 @@
   import { getUserProfile } from "@/api/system/user"
   import { updateUserProfile } from "@/api/system/user"
   import { updateStudentInfo, getStudentInfo } from "@/api/dorm/student"
+  import { updateRepairer } from "@/api/manage/repairer"
 
   import useUserStore from '@/store/modules/user'
+  import useRepairerStore from '@/store/modules/repairer'
 
   // 获取当前实例以访问全局属性
   const { proxy } = getCurrentInstance()
 
-  // 获取用户store实例
+  // 获取store实例
   const userStore = useUserStore()
+  const repairerStore = useRepairerStore()
 
   // 计算属性 - 判断是否为学生模式
   const isStudentMode = computed(() => {
     return userStore.roles && userStore.roles.includes('student')
+  })
+
+  // 计算属性 - 判断是否为维修人员模式
+  const isRepairerMode = computed(() => {
+    return userStore.roles && userStore.roles.includes('repairer')
   })
 
   // 响应式数据 - 用户信息
@@ -87,6 +137,16 @@
     email: ""
   })
 
+  // 响应式数据 - 维修人员信息
+  const repairer = reactive({
+    repairerId: "",
+    repairerNo: "",
+    name: "",
+    phone: "",
+    specialty: [],
+    status: ""
+  })
+
   // 性别/状态选项
   const sexs = ref([{
     text: '男',
@@ -101,6 +161,23 @@
     value: "0"
   }, {
     text: '离校',
+    value: "1"
+  }])
+
+  // 维修人员专长领域选项
+  const specialtyOptions = ref([
+    { value: '0', text: '电工' },
+    { value: '1', text: '水工' },
+    { value: '2', text: '木工' },
+    { value: '3', text: '水泥工' }
+  ])
+
+  // 维修人员状态选项
+  const repairerStatusOptions = ref([{
+    text: '出工',
+    value: "0"
+  }, {
+    text: '空闲',
     value: "1"
   }])
 
@@ -189,9 +266,33 @@
     }
   })
 
+  // 维修人员模式验证规则
+  const repairerRules = ref({
+    // 工号字段禁用编辑，不需要验证用户输入
+    // 姓名字段禁用编辑，不需要验证用户输入
+    phone: {
+      rules: [{
+        required: true,
+        errorMessage: '联系电话不能为空'
+      }, {
+        pattern: /^1[3-9]\d{9}$/,
+        errorMessage: '请输入正确的手机号码'
+      }]
+    },
+    specialty: {
+      rules: [{
+        required: true,
+        errorMessage: '请选择专长领域'
+      }]
+    }
+    // 状态字段禁用编辑，不需要验证用户输入
+  })
+
   // 动态规则
   const currentRules = computed(() => {
-    return isStudentMode.value ? studentRules.value : userRules.value
+    if (isStudentMode.value) return studentRules.value
+    if (isRepairerMode.value) return repairerRules.value
+    return userRules.value
   })
 
   // 表单引用
@@ -230,8 +331,51 @@
     })
   }
 
+  const getRepairerData = async () => {
+    try {
+      const repairerData = await repairerStore.fetchRepairerByUserId(userStore.id)
+      if (repairerData) {
+        // 清空并重新赋值repairer对象
+        Object.keys(repairer).forEach(key => delete repairer[key])
+
+        // 处理专长领域数据
+        const specialtyArray = repairerData.specialty ? repairerData.specialty.split(',') : []
+
+        Object.assign(repairer, {
+          repairerId: repairerData.repairerId || '',
+          repairerNo: repairerData.repairerNo || '',
+          name: repairerData.name || '',
+          phone: repairerData.phone || '',
+          specialty: specialtyArray,
+          status: repairerData.status || '1'
+        })
+      } else {
+        proxy.$modal.msgError('获取维修人员信息失败')
+      }
+    } catch (error) {
+      console.error('获取维修人员信息出错:', error)
+      proxy.$modal.msgError('获取维修人员信息失败，请检查网络连接')
+    }
+  }
+
   const submit = () => {
-    form.value.validate().then(res => {
+    // 如果是维修人员模式，先验证禁用字段是否有值
+    if (isRepairerMode.value) {
+      if (!repairer.repairerNo) {
+        proxy.$modal.msgError('工号信息异常，请重新登录')
+        return
+      }
+      if (!repairer.name) {
+        proxy.$modal.msgError('姓名信息异常，请重新登录')
+        return
+      }
+      if (!repairer.status) {
+        proxy.$modal.msgError('状态信息异常，请重新登录')
+        return
+      }
+    }
+
+    form.value.validate().then(() => {
       if (isStudentMode.value) {
         // 学生模式：提交学生信息
         updateStudentInfo(student).then(response => {
@@ -244,6 +388,26 @@
           }
         }).catch(error => {
           console.error('更新学生信息失败:', error)
+          proxy.$modal.msgError("修改失败，请检查网络连接")
+        })
+      } else if (isRepairerMode.value) {
+        // 维修人员模式：提交维修人员信息
+        const submitData = {
+          ...repairer,
+          specialty: repairer.specialty.join(',')
+        }
+        updateRepairer(submitData).then(response => {
+          if (response.code === 200) {
+            proxy.$modal.msgSuccess("维修人员信息修改成功")
+            // 更新store中的维修人员信息
+            repairerStore.setCurrentRepairer(response.data)
+            // 重新获取最新的维修人员信息
+            getRepairerData()
+          } else {
+            proxy.$modal.msgError(response.msg || "修改失败")
+          }
+        }).catch(error => {
+          console.error('更新维修人员信息失败:', error)
           proxy.$modal.msgError("修改失败，请检查网络连接")
         })
       } else {
@@ -269,6 +433,8 @@
     // 根据模式加载不同的数据
     if (isStudentMode.value) {
       getStudentData()
+    } else if (isRepairerMode.value) {
+      getRepairerData()
     } else {
       getUser()
     }

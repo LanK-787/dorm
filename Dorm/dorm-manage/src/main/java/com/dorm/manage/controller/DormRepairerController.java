@@ -70,6 +70,15 @@ public class DormRepairerController extends BaseController
     }
 
     /**
+     * 根据用户ID获取维修人员信息
+     */
+    @GetMapping(value = "/user/{userId}")
+    public AjaxResult getInfoByUserId(@PathVariable("userId") Long userId)
+    {
+        return success(dormRepairerService.selectDormRepairerByUserId(userId));
+    }
+
+    /**
      * 新增维修人员管理
      */
     @PreAuthorize("@ss.hasPermi('manage:repairer:add')")

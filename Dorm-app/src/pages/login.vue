@@ -42,6 +42,7 @@
   import { ref, reactive, getCurrentInstance, onMounted } from 'vue'
   import { getCodeImg } from '@/api/login'
   import useUserStore from '@/store/modules/user'
+  import useRepairerStore from '@/store/modules/repairer'
   import { isStudent, isStudentInfoFilled } from '@/api/dorm/student'
 
 
@@ -65,6 +66,7 @@
 
   // Pinia store
   const userStore = useUserStore()
+  const repairerStore = useRepairerStore()
 
   // 生命周期钩子
   onMounted(() => {
@@ -121,6 +123,36 @@
 
 
 
+  // 检查维修人员权限和信息
+  const checkRepairerInfo = async () => {
+    try {
+      // 检查用户是否具有维修人员权限
+      if (userStore.roles && userStore.roles.includes('repairer')) {
+        console.log('检测到维修人员权限，开始获取维修人员信息')
+
+        // 尝试获取维修人员信息
+        const repairerData = await repairerStore.fetchRepairerByUserId(userStore.id)
+
+        if (!repairerData) {
+          // 没有维修人员信息，引导用户完善
+          proxy.$modal.msgError('检测到您具有维修人员权限，但尚未完善相关信息，请先完善维修人员信息')
+
+          setTimeout(() => {
+            proxy.$tab.reLaunch('/pages/mine/repairer/setup')
+          }, 2000)
+          return false // 返回false表示需要完善信息
+        } else {
+          console.log('维修人员信息获取成功:', repairerData.name)
+          return true // 返回true表示信息完整
+        }
+      }
+      return true // 非维修人员用户，返回true继续正常流程
+    } catch (error) {
+      console.error('检查维修人员信息失败:', error)
+      return true // 出错时继续正常流程，避免阻塞登录
+    }
+  }
+
   // 登录成功后，处理函数
   const loginSuccess = async () => {
     try {
@@ -129,6 +161,12 @@
         try {
           // 在获取用户信息成功后进行学生账号检测
           const studentStatus = await checkIsStudent(loginForm.username)
+
+          // 检查维修人员权限和信息
+          const repairerInfoComplete = await checkRepairerInfo()
+          if (!repairerInfoComplete) {
+            return // 如果维修人员信息不完整，已经跳转到完善页面，直接返回
+          }
 
           // 根据检测结果显示不同的成功提示消息
           if (studentStatus) {
@@ -154,14 +192,18 @@
               return // 提前返回，不执行后续的首页跳转逻辑
             }
           } else {
-            // 非学生账号（管理员等）
-            proxy.$modal.msgSuccess('管理员账号登录成功')
+            // 非学生账号，检查是否为维修人员
+            if (userStore.roles && userStore.roles.includes('repairer')) {
+              proxy.$modal.msgSuccess('维修人员账号登录成功')
+            } else {
+              proxy.$modal.msgSuccess('管理员账号登录成功')
+            }
 
-            // 非学生账号（管理员等）的处理逻辑
+            // 跳转到首页
             proxy.$tab.reLaunch('/pages/index')
           }
         } catch (detectionError) {
-          console.error('学生账号检测失败:', detectionError)
+          console.error('账号检测失败:', detectionError)
           // 如果检测失败，默认按普通用户处理
           proxy.$modal.msgSuccess('登录成功')
           proxy.$tab.reLaunch('/pages/index')
