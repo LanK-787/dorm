@@ -11,7 +11,7 @@
  Target Server Version : 80012 (8.0.12)
  File Encoding         : 65001
 
- Date: 16/06/2025 14:39:57
+ Date: 16/06/2025 19:48:10
 */
 
 SET NAMES utf8mb4;
@@ -45,11 +45,11 @@ CREATE TABLE `dorm_building`  (
 -- ----------------------------
 -- Records of dorm_building
 -- ----------------------------
-INSERT INTO `dorm_building` VALUES (100, 0, '0', '瓯江口', NULL, 0, '', '', '', 48, 13, '0', '0', 'admin', '2025-06-03 20:44:14', 'admin', '2025-06-15 21:40:11');
-INSERT INTO `dorm_building` VALUES (237, 100, '0,100', '人工智能学院', '瓯江口 - 人工智能学院', 0, NULL, NULL, NULL, 48, 13, '0', '0', 'admin', '2025-06-09 20:09:54', 'admin', '2025-06-15 21:40:11');
-INSERT INTO `dorm_building` VALUES (238, 237, '0,100,237', '观潮公寓', '瓯江口 - 人工智能学院 - 观潮公寓', 0, NULL, NULL, NULL, 48, 13, '0', '0', 'admin', '2025-06-09 20:10:10', 'admin', '2025-06-15 21:40:11');
+INSERT INTO `dorm_building` VALUES (100, 0, '0', '瓯江口', NULL, 0, '', '', '', 48, 13, '0', '0', 'admin', '2025-06-03 20:44:14', 'admin', '2025-06-16 19:19:10');
+INSERT INTO `dorm_building` VALUES (237, 100, '0,100', '人工智能学院', '瓯江口 - 人工智能学院', 0, NULL, NULL, NULL, 48, 13, '0', '0', 'admin', '2025-06-09 20:09:54', 'admin', '2025-06-16 19:19:10');
+INSERT INTO `dorm_building` VALUES (238, 237, '0,100,237', '观潮公寓', '瓯江口 - 人工智能学院 - 观潮公寓', 0, NULL, NULL, NULL, 48, 13, '0', '0', 'admin', '2025-06-09 20:10:10', 'admin', '2025-06-16 19:19:10');
 INSERT INTO `dorm_building` VALUES (239, 238, '0,100,237,238', 'A栋', '瓯江口 - 人工智能学院 - 观潮公寓 - A栋', 0, '李阿姨', '18867944856', NULL, 12, 6, '0', '0', 'admin', '2025-06-09 20:10:21', 'admin', '2025-06-15 21:40:11');
-INSERT INTO `dorm_building` VALUES (240, 238, '0,100,237,238', 'B栋', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋', 1, '朱阿姨', '13256489846', NULL, 36, 7, '0', '0', 'admin', '2025-06-09 20:10:44', 'admin', '2025-06-15 21:34:42');
+INSERT INTO `dorm_building` VALUES (240, 238, '0,100,237,238', 'B栋', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋', 1, '朱阿姨', '13256489846', NULL, 36, 7, '0', '0', 'admin', '2025-06-09 20:10:44', 'admin', '2025-06-16 19:19:10');
 INSERT INTO `dorm_building` VALUES (241, 238, '0,100,237,238', 'C栋', '瓯江口 - 人工智能学院 - 观潮公寓 - C栋', 2, NULL, NULL, NULL, 0, 0, '0', '0', 'admin', '2025-06-09 20:11:16', 'admin', '2025-06-15 17:55:15');
 INSERT INTO `dorm_building` VALUES (242, 100, '0,100', '光电制造学院', '瓯江口 - 光电制造学院', 1, NULL, NULL, NULL, 0, 0, '0', '0', 'admin', '2025-06-09 20:11:41', 'admin', '2025-06-15 21:34:42');
 INSERT INTO `dorm_building` VALUES (243, 242, '0,100,242', '听涛公寓', '瓯江口 - 光电制造学院 - 听涛公寓', 0, NULL, NULL, NULL, 0, 0, '0', '0', 'admin', '2025-06-09 20:12:43', 'admin', '2025-06-15 21:34:42');
@@ -64,13 +64,13 @@ INSERT INTO `dorm_building` VALUES (252, 239, '0,100,237,238,239', '五楼', '�
 INSERT INTO `dorm_building` VALUES (253, 240, '0,100,237,238,240', '一楼', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 一楼', 0, NULL, NULL, NULL, 0, 0, '0', '0', 'admin', '2025-06-09 20:16:38', 'admin', '2025-06-15 17:54:52');
 INSERT INTO `dorm_building` VALUES (254, 247, '0,100,237,238,239,247', '101', '瓯江口 - 人工智能学院 - 观潮公寓 - A栋 - 一楼 - 101', 0, NULL, NULL, NULL, 6, 6, '1', '0', 'admin', '2025-06-09 20:18:32', 'admin', '2025-06-15 17:48:36');
 INSERT INTO `dorm_building` VALUES (255, 240, '0,100,237,238,240', '二楼', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 二楼', 1, NULL, NULL, NULL, 0, 0, '0', '0', 'admin', '2025-06-09 20:37:28', 'admin', '2025-06-15 17:55:00');
-INSERT INTO `dorm_building` VALUES (256, 240, '0,100,237,238,240', '三楼', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 三楼', 2, NULL, NULL, NULL, 36, 7, '0', '0', 'admin', '2025-06-09 20:37:49', 'admin', '2025-06-15 21:34:42');
+INSERT INTO `dorm_building` VALUES (256, 240, '0,100,237,238,240', '三楼', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 三楼', 2, NULL, NULL, NULL, 36, 7, '0', '0', 'admin', '2025-06-09 20:37:49', 'admin', '2025-06-16 19:19:10');
 INSERT INTO `dorm_building` VALUES (257, 256, '0,100,237,238,240,256', '301', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 三楼 - 301', 0, NULL, NULL, NULL, 6, 0, '0', '0', 'admin', '2025-06-09 20:38:20', 'admin', '2025-06-10 21:39:05');
 INSERT INTO `dorm_building` VALUES (258, 256, '0,100,237,238,240,256', '302', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 三楼 - 302', 1, NULL, NULL, NULL, 6, 0, '0', '0', 'admin', '2025-06-09 20:38:27', 'admin', '2025-06-10 20:57:41');
 INSERT INTO `dorm_building` VALUES (259, 256, '0,100,237,238,240,256', '303', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 三楼 - 303', 2, NULL, NULL, NULL, 6, 0, '0', '0', 'admin', '2025-06-09 20:38:52', 'admin', '2025-06-10 20:57:41');
 INSERT INTO `dorm_building` VALUES (260, 256, '0,100,237,238,240,256', '304', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 三楼 - 304', 3, NULL, NULL, NULL, 6, 0, '0', '0', 'admin', '2025-06-09 20:39:08', 'admin', '2025-06-10 21:32:24');
 INSERT INTO `dorm_building` VALUES (261, 256, '0,100,237,238,240,256', '305', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 三楼 - 305', 4, NULL, NULL, NULL, 6, 1, '0', '0', 'admin', '2025-06-09 20:39:17', 'admin', '2025-06-11 00:03:32');
-INSERT INTO `dorm_building` VALUES (262, 256, '0,100,237,238,240,256', '306', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 三楼 - 306', 5, NULL, NULL, NULL, 6, 6, '1', '0', 'admin', '2025-06-09 20:39:25', 'admin', '2025-06-11 00:03:32');
+INSERT INTO `dorm_building` VALUES (262, 256, '0,100,237,238,240,256', '306', '瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 三楼 - 306', 5, '朱阿姨', '13256489846', NULL, 6, 6, '1', '0', 'admin', '2025-06-09 20:39:25', 'admin', '2025-06-16 19:19:16');
 INSERT INTO `dorm_building` VALUES (263, 248, '0,100,237,238,239,248', '201', '瓯江口 - 人工智能学院 - 观潮公寓 - A栋 - 二楼 - 201', 1, NULL, NULL, NULL, 6, 0, '0', '0', 'admin', '2025-06-12 13:09:48', 'admin', '2025-06-15 21:40:11');
 
 -- ----------------------------
@@ -556,7 +556,7 @@ CREATE TABLE `sys_logininfor`  (
   PRIMARY KEY (`info_id`) USING BTREE,
   INDEX `idx_sys_logininfor_s`(`status` ASC) USING BTREE,
   INDEX `idx_sys_logininfor_lt`(`login_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 546 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '系统访问记录' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 563 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '系统访问记录' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_logininfor
@@ -1007,6 +1007,23 @@ INSERT INTO `sys_logininfor` VALUES (542, 'admin', '127.0.0.1', '内网IP', 'Chr
 INSERT INTO `sys_logininfor` VALUES (543, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-16 12:50:35');
 INSERT INTO `sys_logininfor` VALUES (544, 'admin', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-16 13:15:54');
 INSERT INTO `sys_logininfor` VALUES (545, 'admin', '172.18.213.84', '内网IP', 'Chrome Mobile', 'Android 1.x', '0', '登录成功', '2025-06-16 13:17:46');
+INSERT INTO `sys_logininfor` VALUES (546, 'admin', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-16 14:50:50');
+INSERT INTO `sys_logininfor` VALUES (547, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-16 14:53:46');
+INSERT INTO `sys_logininfor` VALUES (548, 'admin', '172.18.213.84', '内网IP', 'Chrome Mobile', 'Android 1.x', '1', '验证码错误', '2025-06-16 15:14:00');
+INSERT INTO `sys_logininfor` VALUES (549, 'admin', '172.18.213.84', '内网IP', 'Chrome Mobile', 'Android 1.x', '0', '登录成功', '2025-06-16 15:14:02');
+INSERT INTO `sys_logininfor` VALUES (550, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-16 15:35:16');
+INSERT INTO `sys_logininfor` VALUES (551, 'admin', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '退出成功', '2025-06-16 15:40:14');
+INSERT INTO `sys_logininfor` VALUES (552, '2310305320', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-16 15:40:26');
+INSERT INTO `sys_logininfor` VALUES (553, '2310305320', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-16 15:42:25');
+INSERT INTO `sys_logininfor` VALUES (554, '2310305320', '172.18.213.84', '内网IP', 'Chrome Mobile', 'Android 1.x', '0', '登录成功', '2025-06-16 16:13:36');
+INSERT INTO `sys_logininfor` VALUES (555, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-16 16:18:27');
+INSERT INTO `sys_logininfor` VALUES (556, 'admin', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-16 18:28:17');
+INSERT INTO `sys_logininfor` VALUES (557, 'admin', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '退出成功', '2025-06-16 18:28:30');
+INSERT INTO `sys_logininfor` VALUES (558, '2310305320', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-16 18:28:46');
+INSERT INTO `sys_logininfor` VALUES (559, '2310305320', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-16 18:39:38');
+INSERT INTO `sys_logininfor` VALUES (560, '2310305320', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-16 18:42:29');
+INSERT INTO `sys_logininfor` VALUES (561, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-16 19:18:21');
+INSERT INTO `sys_logininfor` VALUES (562, 'admin', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-16 19:23:46');
 
 -- ----------------------------
 -- Table structure for sys_menu
@@ -1194,7 +1211,7 @@ CREATE TABLE `sys_oper_log`  (
   INDEX `idx_sys_oper_log_bt`(`business_type` ASC) USING BTREE,
   INDEX `idx_sys_oper_log_s`(`status` ASC) USING BTREE,
   INDEX `idx_sys_oper_log_ot`(`oper_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 716 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '操作日志记录' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 725 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '操作日志记录' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_oper_log
@@ -1815,6 +1832,15 @@ INSERT INTO `sys_oper_log` VALUES (712, '宿舍管理', 2, 'com.dorm.manage.cont
 INSERT INTO `sys_oper_log` VALUES (713, '宿舍管理', 2, 'com.dorm.manage.controller.DormBuildingController.batchFixStatus()', 'POST', 1, 'admin', '研发部门', '/dorm/building/batchFixStatus', '127.0.0.1', '内网IP', '', '{\"msg\":\"所有宿舍状态与容量一致，无需修复\",\"code\":200}', 0, NULL, '2025-06-15 21:39:53', 41);
 INSERT INTO `sys_oper_log` VALUES (714, '宿舍管理', 2, 'com.dorm.manage.controller.DormBuildingController.edit()', 'PUT', 1, 'admin', '研发部门', '/dorm/building', '127.0.0.1', '内网IP', '{\"ancestors\":\"0,100,237,238,239,248\",\"buildingName\":\"201\",\"children\":[],\"currentCount\":6,\"dormId\":263,\"fullName\":\"瓯江口 - 人工智能学院 - 观潮公寓 - A栋 - 二楼 - 201\",\"maxCapacity\":6,\"orderNum\":1,\"params\":{},\"parentId\":248,\"parentName\":\"二楼\",\"status\":\"0\",\"updateBy\":\"admin\",\"updateTime\":\"2025-06-15 21:40:04\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-15 21:40:05', 137);
 INSERT INTO `sys_oper_log` VALUES (715, '宿舍管理', 2, 'com.dorm.manage.controller.DormBuildingController.edit()', 'PUT', 1, 'admin', '研发部门', '/dorm/building', '127.0.0.1', '内网IP', '{\"ancestors\":\"0,100,237,238,239,248\",\"buildingName\":\"201\",\"children\":[],\"currentCount\":0,\"dormId\":263,\"fullName\":\"瓯江口 - 人工智能学院 - 观潮公寓 - A栋 - 二楼 - 201\",\"maxCapacity\":6,\"orderNum\":1,\"params\":{},\"parentId\":248,\"parentName\":\"二楼\",\"status\":\"0\",\"updateBy\":\"admin\",\"updateTime\":\"2025-06-15 21:40:11\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-15 21:40:11', 127);
+INSERT INTO `sys_oper_log` VALUES (716, '用户管理', 1, 'com.dorm.web.controller.system.SysUserController.add()', 'POST', 1, 'admin', '研发部门', '/system/user', '127.0.0.1', '内网IP', '{\"admin\":false,\"email\":\"123@qq.com\",\"nickName\":\"2310305106\",\"params\":{},\"phonenumber\":\"13282973175\",\"postIds\":[],\"roleIds\":[100],\"sex\":\"0\",\"status\":\"0\",\"userName\":\"徐涛\"}', '{\"msg\":\"新增用户\'徐涛\'失败，手机号码已存在\",\"code\":500}', 0, NULL, '2025-06-16 15:37:47', 7);
+INSERT INTO `sys_oper_log` VALUES (717, '用户管理', 1, 'com.dorm.web.controller.system.SysUserController.add()', 'POST', 1, 'admin', '研发部门', '/system/user', '127.0.0.1', '内网IP', '{\"admin\":false,\"createBy\":\"admin\",\"email\":\"123@qq.com\",\"nickName\":\"2310305106\",\"params\":{},\"phonenumber\":\"13282973174\",\"postIds\":[],\"roleIds\":[100],\"sex\":\"0\",\"status\":\"0\",\"userId\":102,\"userName\":\"徐涛\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-16 15:37:55', 123);
+INSERT INTO `sys_oper_log` VALUES (718, '用户管理', 3, 'com.dorm.web.controller.system.SysUserController.remove()', 'DELETE', 1, 'admin', '研发部门', '/system/user/102', '127.0.0.1', '内网IP', '[102]', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-16 15:38:16', 89);
+INSERT INTO `sys_oper_log` VALUES (719, '用户管理', 1, 'com.dorm.web.controller.system.SysUserController.add()', 'POST', 1, 'admin', '研发部门', '/system/user', '127.0.0.1', '内网IP', '{\"admin\":false,\"createBy\":\"admin\",\"email\":\"123@qq.com\",\"nickName\":\"徐涛\",\"params\":{},\"phonenumber\":\"13282973174\",\"postIds\":[],\"roleIds\":[],\"sex\":\"0\",\"status\":\"0\",\"userId\":103,\"userName\":\"2310305106\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-16 15:38:59', 162);
+INSERT INTO `sys_oper_log` VALUES (720, '角色管理', 2, 'com.dorm.web.controller.system.SysRoleController.edit()', 'PUT', 1, 'admin', '研发部门', '/system/role', '127.0.0.1', '内网IP', '{\"admin\":false,\"createTime\":\"2025-06-07 12:20:49\",\"dataScope\":\"1\",\"delFlag\":\"0\",\"deptCheckStrictly\":true,\"flag\":false,\"menuCheckStrictly\":true,\"menuIds\":[2000,2001,2031,2007,2002,2032,2008,2009,2010],\"params\":{},\"roleId\":100,\"roleKey\":\"student\",\"roleName\":\"学生\",\"roleSort\":1,\"status\":\"0\",\"updateBy\":\"admin\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-16 15:42:05', 132);
+INSERT INTO `sys_oper_log` VALUES (721, '宿舍管理', 2, 'com.dorm.manage.controller.DormBuildingController.edit()', 'PUT', 1, 'admin', '研发部门', '/dorm/building', '127.0.0.1', '内网IP', '{\"ancestors\":\"0,100,237,238,240,256\",\"buildingName\":\"306\",\"children\":[],\"currentCount\":6,\"dormId\":262,\"dormManager\":\"朱阿姨\",\"fullName\":\"瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 三楼 - 306\",\"maxCapacity\":7,\"orderNum\":5,\"params\":{},\"parentId\":256,\"parentName\":\"三楼\",\"phone\":\"13256489846\",\"status\":\"1\",\"updateBy\":\"admin\",\"updateTime\":\"2025-06-16 19:18:44\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-16 19:18:45', 264);
+INSERT INTO `sys_oper_log` VALUES (722, '宿舍管理', 2, 'com.dorm.manage.controller.DormBuildingController.batchFixStatus()', 'POST', 1, 'admin', '研发部门', '/dorm/building/batchFixStatus', '127.0.0.1', '内网IP', '', '{\"msg\":\"成功修复 1 个宿舍的状态\",\"code\":200}', 0, NULL, '2025-06-16 19:18:51', 79);
+INSERT INTO `sys_oper_log` VALUES (723, '宿舍管理', 2, 'com.dorm.manage.controller.DormBuildingController.edit()', 'PUT', 1, 'admin', '研发部门', '/dorm/building', '127.0.0.1', '内网IP', '{\"ancestors\":\"0,100,237,238,240,256\",\"buildingName\":\"306\",\"children\":[],\"currentCount\":6,\"dormId\":262,\"dormManager\":\"朱阿姨\",\"fullName\":\"瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 三楼 - 306\",\"maxCapacity\":6,\"orderNum\":5,\"params\":{},\"parentId\":256,\"parentName\":\"三楼\",\"phone\":\"13256489846\",\"status\":\"0\",\"updateBy\":\"admin\",\"updateTime\":\"2025-06-16 19:19:09\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-16 19:19:10', 195);
+INSERT INTO `sys_oper_log` VALUES (724, '宿舍管理', 2, 'com.dorm.manage.controller.DormBuildingController.batchFixStatus()', 'POST', 1, 'admin', '研发部门', '/dorm/building/batchFixStatus', '127.0.0.1', '内网IP', '', '{\"msg\":\"成功修复 1 个宿舍的状态\",\"code\":200}', 0, NULL, '2025-06-16 19:19:16', 75);
 
 -- ----------------------------
 -- Table structure for sys_post
@@ -1869,7 +1895,7 @@ CREATE TABLE `sys_role`  (
 -- ----------------------------
 INSERT INTO `sys_role` VALUES (1, '超级管理员', 'admin', 1, '1', 1, 1, '0', '0', 'admin', '2025-06-03 20:44:14', '', NULL, '超级管理员');
 INSERT INTO `sys_role` VALUES (2, '普通角色', 'common', 2, '2', 1, 1, '0', '0', 'admin', '2025-06-03 20:44:14', '', NULL, '普通角色');
-INSERT INTO `sys_role` VALUES (100, '学生', 'student', 1, '1', 1, 1, '0', '0', 'admin', '2025-06-07 12:20:49', 'admin', '2025-06-14 10:48:47', NULL);
+INSERT INTO `sys_role` VALUES (100, '学生', 'student', 1, '1', 1, 1, '0', '0', 'admin', '2025-06-07 12:20:49', 'admin', '2025-06-16 15:42:05', NULL);
 
 -- ----------------------------
 -- Table structure for sys_role_dept
@@ -1987,6 +2013,8 @@ INSERT INTO `sys_role_menu` VALUES (2, 1058);
 INSERT INTO `sys_role_menu` VALUES (2, 1059);
 INSERT INTO `sys_role_menu` VALUES (2, 1060);
 INSERT INTO `sys_role_menu` VALUES (100, 2000);
+INSERT INTO `sys_role_menu` VALUES (100, 2001);
+INSERT INTO `sys_role_menu` VALUES (100, 2002);
 INSERT INTO `sys_role_menu` VALUES (100, 2007);
 INSERT INTO `sys_role_menu` VALUES (100, 2008);
 INSERT INTO `sys_role_menu` VALUES (100, 2009);
@@ -2020,14 +2048,16 @@ CREATE TABLE `sys_user`  (
   `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`user_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 102 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '用户信息表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 104 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '用户信息表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_user
 -- ----------------------------
-INSERT INTO `sys_user` VALUES (1, 103, 'admin', '若依', '00', 'ry@163.com', '15888888888', '1', 'http://172.18.34.104:9005/test/2025/06/avatar/b0523dcb7bca4442b447cac98617efd5.png', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '172.18.213.84', '2025-06-16 13:17:47', '2025-06-03 20:44:14', 'admin', '2025-06-03 20:44:14', '', '2025-06-16 13:17:46', '管理员');
+INSERT INTO `sys_user` VALUES (1, 103, 'admin', '若依', '00', 'ry@163.com', '15888888888', '1', 'http://172.18.34.104:9005/test/2025/06/avatar/b0523dcb7bca4442b447cac98617efd5.png', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '172.18.34.104', '2025-06-16 19:23:46', '2025-06-03 20:44:14', 'admin', '2025-06-03 20:44:14', '', '2025-06-16 19:23:46', '管理员');
 INSERT INTO `sys_user` VALUES (2, 105, 'ry', '若依', '00', 'ry@qq.com', '15666666666', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2025-06-03 20:44:14', '2025-06-03 20:44:14', 'admin', '2025-06-03 20:44:14', '', NULL, '测试员');
-INSERT INTO `sys_user` VALUES (101, NULL, '2310305320', '王新瑜', '00', '2559118499@qq.com', '13282973175', '0', '', '$2a$10$KxpBw6D/j92BmWb18xK/xOZ3Iwzv/HkKmPR1/CXgmse6HFrXAKWWS', '0', '0', '172.18.213.84', '2025-06-15 17:15:50', '2025-06-07 12:19:27', '', '2025-06-07 12:19:27', 'admin', '2025-06-15 17:15:49', NULL);
+INSERT INTO `sys_user` VALUES (101, NULL, '2310305320', '王新瑜', '00', '2559118499@qq.com', '13282973175', '0', '', '$2a$10$KxpBw6D/j92BmWb18xK/xOZ3Iwzv/HkKmPR1/CXgmse6HFrXAKWWS', '0', '0', '172.18.34.104', '2025-06-16 18:42:29', '2025-06-07 12:19:27', '', '2025-06-07 12:19:27', 'admin', '2025-06-16 18:42:28', NULL);
+INSERT INTO `sys_user` VALUES (102, NULL, '徐涛', '2310305106', '00', '123@qq.com', '13282973174', '0', '', '$2a$10$d4Wdk7dqlSLcWkGwo5h1semiwHB4Rgyyx7nAb1Pt1PaebRNTEXNrO', '0', '2', '', NULL, NULL, 'admin', '2025-06-16 15:37:55', '', NULL, NULL);
+INSERT INTO `sys_user` VALUES (103, NULL, '2310305106', '徐涛', '00', '123@qq.com', '13282973174', '0', '', '$2a$10$2OimFFryRxIYfx.G.CLjRejHC20zz/ye/ksSpXYsR7e/sT3pNM9.u', '0', '0', '', NULL, NULL, 'admin', '2025-06-16 15:38:59', '', NULL, NULL);
 
 -- ----------------------------
 -- Table structure for sys_user_post
@@ -2061,5 +2091,26 @@ CREATE TABLE `sys_user_role`  (
 INSERT INTO `sys_user_role` VALUES (1, 1);
 INSERT INTO `sys_user_role` VALUES (2, 2);
 INSERT INTO `sys_user_role` VALUES (101, 100);
+
+-- ----------------------------
+-- Table structure for sys_user_shortcut
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_user_shortcut`;
+CREATE TABLE `sys_user_shortcut`  (
+  `shortcut_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '快捷方式ID',
+  `user_id` bigint(20) NOT NULL COMMENT '用户ID',
+  `title` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '快捷方式标题',
+  `icon` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '图标',
+  `url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '链接地址',
+  `sort` int(4) NULL DEFAULT 0 COMMENT '排序',
+  `status` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT '0' COMMENT '状态（0正常 1停用）',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
+  `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`shortcut_id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 100 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户快捷方式表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of sys_user_shortcut
+-- ----------------------------
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -87,7 +87,7 @@
       "navigationBarTitleText": "通告详情",
       "navigationStyle": "custom"
     }
-  }, {
+      }, {
     "path": "pages/dorm/info",
     "style": {
       "navigationBarTitleText": "宿舍信息",

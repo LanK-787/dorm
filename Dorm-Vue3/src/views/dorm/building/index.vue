@@ -97,13 +97,13 @@
       :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
     >
       <el-table-column label="名称" align="left" prop="buildingName"/>
-      <el-table-column label="全称" align="left" prop="fullName">
+      <el-table-column label="全称" align="left" prop="fullName" width="250">
         <template #default="scope">
           <el-button
             link
             type="primary"
             @click="handleViewDetail(scope.row)"
-            style="text-align: left; padding: 0; height: auto; font-weight: normal;"
+            class="full-name-button"
           >
             {{ scope.row.fullName }}
           </el-button>
@@ -118,7 +118,7 @@
           <dict-tag :options="dorm_status" :value="scope.row.status"/>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="300">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['dorm:building:edit']">修改</el-button>
           <el-button link type="primary" icon="Plus" @click="handleAdd(scope.row)" v-hasPermi="['dorm:building:add']">新增</el-button>
@@ -848,5 +848,71 @@ getList()
 
 .form-tip .el-icon {
   font-size: 14px;
+}
+
+/* 全称列按钮样式 - 支持文本换行 */
+.full-name-button {
+  text-align: left !important;
+  padding: 0 !important;
+  height: auto !important;
+  font-weight: normal !important;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  word-break: break-all !important;
+  line-height: 1.4 !important;
+  min-height: 20px !important;
+  display: block !important;
+  width: 100% !important;
+  color: var(--el-color-primary) !important;
+}
+
+/* 全称列按钮悬停效果 */
+.full-name-button:hover {
+  color: var(--el-color-primary-light-3) !important;
+}
+
+/* 确保表格单元格支持换行 */
+:deep(.el-table .el-table__cell) {
+  padding: 8px 0;
+}
+
+/* 全称列单元格特殊样式 - 支持换行 */
+:deep(.el-table .el-table__body .el-table__row .el-table__cell:nth-child(2)) {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  word-break: break-all !important;
+  line-height: 1.4 !important;
+  padding: 12px 0 !important;
+  vertical-align: top !important;
+}
+
+/* 全称列表头单元格样式 */
+:deep(.el-table .el-table__header .el-table__row .el-table__cell:nth-child(2)) {
+  white-space: normal !important;
+  vertical-align: middle !important;
+}
+
+/* 操作按钮容器样式 */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+/* 操作按钮样式优化 */
+.action-buttons .el-button {
+  margin: 0 !important;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  height: auto !important;
+  min-height: 24px !important;
+}
+
+/* 操作列单元格样式 - 确保按钮不换行 */
+:deep(.el-table .el-table__body .el-table__row .el-table__cell:last-child) {
+  padding: 8px 4px !important;
+  vertical-align: middle !important;
 }
 </style>
