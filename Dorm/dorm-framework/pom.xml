@@ -65,6 +65,12 @@
             <artifactId>dorm-system</artifactId>
         </dependency>
 
+        <!-- RabbitMQ消息队列 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

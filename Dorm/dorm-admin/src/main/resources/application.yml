@@ -92,6 +92,46 @@ spring:
         # #连接池最大阻塞等待时间（使用负值表示没有限制）
         max-wait: -1ms
 
+  # RabbitMQ 配置
+  rabbitmq:
+    # 服务器地址
+    host: 172.18.34.104
+    # 端口
+    port: 5672
+    # 用户名
+    username: root
+    # 密码
+    password: 123456
+    # 虚拟主机
+    virtual-host: /
+    # 连接超时时间
+    connection-timeout: 15000
+    # 发送确认
+    publisher-confirm-type: correlated
+    # 发送失败退回
+    publisher-returns: true
+    # 手动ack
+    listener:
+      simple:
+        acknowledge-mode: manual
+        # 并发消费者数量
+        concurrency: 3
+        # 最大并发消费者数量
+        max-concurrency: 10
+        # 预取数量
+        prefetch: 1
+        # 重试机制
+        retry:
+          enabled: true
+          # 最大重试次数
+          max-attempts: 3
+          # 重试间隔
+          initial-interval: 1000
+          # 重试间隔倍数
+          multiplier: 2
+          # 最大重试间隔
+          max-interval: 10000
+
 # token配置
 token:
   # 令牌自定义标识
