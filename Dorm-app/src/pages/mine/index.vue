@@ -1,245 +1,580 @@
 <template>
-  <view class="mine-container" :style="{height: `${windowHeight}px`}">
-    <!--顶部个人信息栏-->
-    <view class="header-section">
-      <view class="flex padding justify-between">
-        <view class="flex align-center">
-          <view v-if="!avatar" class="cu-avatar xl round bg-white">
-            <view class="iconfont icon-people text-gray icon"></view>
-          </view>
-          <image v-if="avatar" @click="handleToAvatar" :src="avatar" class="cu-avatar xl round" mode="widthFix">
-          </image>
-          <view v-if="!name" @click="handleToLogin" class="login-tip">
-            点击登录
-          </view>
-          <view v-if="name" @click="handleToInfo" class="user-info">
-            <view class="u_title">
-              姓名：{{ name }}
+  <view class="page-container">
+    <!-- 自定义导航栏 -->
+    <view class="custom-navbar" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="navbar-content">
+        <view class="navbar-title">
+          <text>个人中心</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 主要内容 -->
+    <scroll-view 
+      class="main-content" 
+      scroll-y="true" 
+      :refresher-enabled="true"
+      :refresher-triggered="isRefreshing"
+      @refresherrefresh="onRefresh"
+    >
+      <!-- 个人信息卡片 -->
+      <view class="profile-card">
+        <view class="profile-header">
+          <view class="avatar-wrapper" @click="handleToAvatar">
+            <view class="avatar-section">
+              <image v-if="avatar" :src="avatar" class="avatar-image" mode="aspectFill"></image>
+              <view v-else class="avatar-placeholder">
+                <text class="iconfont icon-people"></text>
+              </view>
+            </view>
+            <view class="avatar-edit-badge">
+              <text class="iconfont icon-camera"></text>
             </view>
           </view>
-        </view>
-        <view @click="handleToInfo" class="flex align-center">
-          <text>个人信息</text>
-          <view class="iconfont icon-right"></view>
-        </view>
-      </view>
-    </view>
-
-    <view class="content-section">
-      <view class="mine-actions grid col-4 text-center">
-        <view class="action-item" @click="handleJiaoLiuQun">
-          <view class="iconfont icon-friendfill text-pink icon"></view>
-          <text class="text">交流群</text>
-        </view>
-        <view class="action-item" @click="handleBuilding">
-          <view class="iconfont icon-service text-blue icon"></view>
-          <text class="text">在线客服</text>
-        </view>
-        <view class="action-item" @click="handleBuilding">
-          <view class="iconfont icon-community text-mauve icon"></view>
-          <text class="text">反馈社区</text>
-        </view>
-        <view class="action-item" @click="handleBuilding">
-          <view class="iconfont icon-dianzan text-green icon"></view>
-          <text class="text">点赞我们</text>
+          <view class="profile-info" @click="name ? handleToInfo : handleToLogin">
+            <text class="profile-name">{{ name || '点击登录' }}</text>
+            <text v-if="name" class="profile-role">{{ getUserRole() }}</text>
+            <text v-if="name" class="profile-id">ID: {{ userStore.id }}</text>
+          </view>
+          <view class="profile-edit" @click="handleToInfo">
+            <text class="iconfont icon-right"></text>
+          </view>
         </view>
       </view>
 
+      <!-- 统计卡片 -->
+      <view class="stats-card">
+        <view class="stats-item">
+          <text class="stats-value">{{ leaveCount || 0 }}</text>
+          <text class="stats-label">离校申请</text>
+        </view>
+        <view class="stats-item">
+          <text class="stats-value">{{ repairCount || 0 }}</text>
+          <text class="stats-label">报修记录</text>
+        </view>
+        <view class="stats-item">
+          <text class="stats-value">{{ noticeCount || 0 }}</text>
+          <text class="stats-label">未读通知</text>
+        </view>
+      </view>
+
+      <!-- 快捷功能区 -->
+      <view class="quick-actions">
+        <view class="action-item" hover-class="action-item-hover" @click="handleJiaoLiuQun">
+          <view class="action-icon-wrapper icon-friendfill-bg">
+            <text class="iconfont icon-friendfill"></text>
+          </view>
+          <text>交流群</text>
+        </view>
+        <view class="action-item" hover-class="action-item-hover" @click="handleBuilding">
+          <view class="action-icon-wrapper icon-service-bg">
+            <text class="iconfont icon-service"></text>
+          </view>
+          <text>在线客服</text>
+        </view>
+        <view class="action-item" hover-class="action-item-hover" @click="handleBuilding">
+          <view class="action-icon-wrapper icon-community-bg">
+            <text class="iconfont icon-community"></text>
+          </view>
+          <text>反馈社区</text>
+        </view>
+        <view class="action-item" hover-class="action-item-hover" @click="handleBuilding">
+          <view class="action-icon-wrapper icon-dianzan-bg">
+            <text class="iconfont icon-dianzan"></text>
+          </view>
+          <text>点赞我们</text>
+        </view>
+      </view>
+
+      <!-- 菜单列表 -->
       <view class="menu-list">
-        <view class="list-cell list-cell-arrow" @click="handleToEditInfo">
-          <view class="menu-item-box">
-            <view class="iconfont icon-user menu-icon"></view>
-            <view>编辑资料</view>
+        <view class="menu-item" hover-class="menu-item-hover" @click="handleToEditInfo">
+          <view class="menu-item-left">
+            <view class="menu-icon-wrapper icon-user-bg">
+              <text class="iconfont icon-user"></text>
+            </view>
+            <text>编辑资料</text>
           </view>
+          <text class="iconfont icon-right"></text>
         </view>
-        <view class="list-cell list-cell-arrow" @click="handleHelp">
-          <view class="menu-item-box">
-            <view class="iconfont icon-help menu-icon"></view>
-            <view>常见问题</view>
+        <view class="menu-item" hover-class="menu-item-hover" @click="handleHelp">
+          <view class="menu-item-left">
+            <view class="menu-icon-wrapper icon-help-bg">
+              <text class="iconfont icon-help"></text>
+            </view>
+            <text>常见问题</text>
           </view>
+          <text class="iconfont icon-right"></text>
         </view>
-        <view class="list-cell list-cell-arrow" @click="handleAbout">
-          <view class="menu-item-box">
-            <view class="iconfont icon-aixin menu-icon"></view>
-            <view>关于我们</view>
+        <view class="menu-item" hover-class="menu-item-hover" @click="handleAbout">
+          <view class="menu-item-left">
+            <view class="menu-icon-wrapper icon-aixin-bg">
+              <text class="iconfont icon-aixin"></text>
+            </view>
+            <text>关于我们</text>
           </view>
+          <text class="iconfont icon-right"></text>
         </view>
-        <view class="list-cell list-cell-arrow" @click="handleToSetting">
-          <view class="menu-item-box">
-            <view class="iconfont icon-setting menu-icon"></view>
-            <view>应用设置</view>
+        <view class="menu-item" hover-class="menu-item-hover" @click="handleToSetting">
+          <view class="menu-item-left">
+            <view class="menu-icon-wrapper icon-setting-bg">
+              <text class="iconfont icon-setting"></text>
+            </view>
+            <text>应用设置</text>
           </view>
+          <text class="iconfont icon-right"></text>
         </view>
       </view>
 
-    </view>
+      <!-- 版本信息 -->
+      <view class="version-info">
+        <text>当前版本 v1.0.0</text>
+      </view>
+    </scroll-view>
   </view>
 </template>
 
 <script setup>
-  import { computed, getCurrentInstance, onMounted } from 'vue'
-  import useUserStore from '@/store/modules/user'
-  import useStudentStore from '@/store/modules/student'
+import { ref, computed, getCurrentInstance, onMounted } from 'vue'
+import useUserStore from '@/store/modules/user'
+import useStudentStore from '@/store/modules/student'
 import useRepairerStore from '@/store/modules/repairer'
 
-  // 获取student store实例
-  const studentStore = useStudentStore()
+// 获取当前实例以访问全局属性
+const { proxy } = getCurrentInstance()
 
+// 获取store实例
+const userStore = useUserStore()
+const studentStore = useStudentStore()
+const repairerStore = useRepairerStore()
 
-// 检查用户是否已登录且获取相应角色信息
-onMounted(async () => {
-  const userStore = useUserStore()
+// 统计数据
+const leaveCount = ref(0)
+const repairCount = ref(0)
+const noticeCount = ref(0)
+const isRefreshing = ref(false)
 
-  // 检查用户是否已登录
-  if (userStore.token) {
-    try {
-      // 检查维修人员权限并获取维修人员信息（优先处理）
-      if (userStore.roles && userStore.roles.includes('repairer')) {
-        try {
-          const repairerData = await repairerStore.fetchRepairerByUserId(userStore.id)
-          if (repairerData) {
-            console.log('维修人员信息加载成功:', repairerData.name)
-          } else {
-            console.log('维修人员信息不存在，用户可能需要完善信息')
-          }
-        } catch (error) {
-          console.log('维修人员信息获取失败，可能是首次登录:', error)
-          // 如果获取失败，说明可能是首次登录，不做处理，在个人信息页面会引导用户完善信息
-        }
-      }
-
-      // 检查学生权限并获取学生信息
-      if (userStore.roles && userStore.roles.includes('student')) {
-        await studentStore.fetchStudentDetail()
-      }
-    } catch (error) {
-      console.error('获取用户角色信息失败:', error)
-      // 可以添加错误处理逻辑
-    }
+// 计算属性 - 优先级：维修人员姓名 > 学生姓名 > 用户昵称
+const name = computed(() => {
+  if (repairerStore.currentRepairer?.name) {
+    return repairerStore.currentRepairer.name
   }
+  if (studentStore.currentStudent?.name) {
+    return studentStore.currentStudent.name
+  }
+  return userStore.name
 })
 
-  // 获取当前实例以访问全局属性
-  const { proxy } = getCurrentInstance()
+const avatar = computed(() => userStore.avatar)
+const statusBarHeight = ref(uni.getSystemInfoSync().statusBarHeight || 0)
 
-  // 获取store实例
-  const userStore = useUserStore()
-  const repairerStore = useRepairerStore()
+// 获取用户角色显示文本
+const getUserRole = () => {
+  if (userStore.roles?.includes('repairer')) {
+    return '维修人员'
+  }
+  if (userStore.roles?.includes('student')) {
+    return '学生'
+  }
+  return '普通用户'
+}
 
-  // 计算属性 - 优先级：维修人员姓名 > 学生姓名 > 用户昵称
-  const name = computed(() => {
-    // 优先使用维修人员信息中的姓名
-    if (repairerStore.currentRepairer && repairerStore.currentRepairer.name) {
-      return repairerStore.currentRepairer.name
+// 初始化数据
+const initData = async () => {
+  if (!userStore.token) return
+
+  try {
+    // 加载用户角色信息
+    if (userStore.roles?.includes('repairer')) {
+      const repairerData = await repairerStore.fetchRepairerByUserId(userStore.id)
+      if (repairerData) {
+        // TODO: 获取维修人员相关统计数据
+        repairCount.value = 0 // 待处理的维修工单数
+      }
     }
-    // 其次使用学生信息中的姓名
-    if (studentStore.currentStudent && studentStore.currentStudent.name) {
-      return studentStore.currentStudent.name
+
+    if (userStore.roles?.includes('student')) {
+      await studentStore.fetchStudentDetail()
+      // TODO: 获取学生相关统计数据
+      leaveCount.value = 0 // 进行中的离校申请数
     }
-    // 最后使用用户store中的姓名
-    return userStore.name
-  })
-  const avatar = computed(() => userStore.avatar)
-  const windowHeight = computed(() => uni.getSystemInfoSync().windowHeight - 50)
 
-  // 方法定义
-  const handleToInfo = () => {
-    proxy.$tab.navigateTo('/pages/mine/info/index')
+    // TODO: 获取未读通知数
+    noticeCount.value = 0
+  } catch (error) {
+    console.error('获取用户数据失败:', error)
+    proxy.$modal.msgError('数据加载失败，请稍后重试')
   }
+}
 
-  const handleToEditInfo = () => {
-    proxy.$tab.navigateTo('/pages/mine/info/edit')
+// 下拉刷新
+const onRefresh = async () => {
+  if (isRefreshing.value) return
+  
+  isRefreshing.value = true
+  try {
+    await initData()
+    proxy.$modal.msgSuccess('刷新成功')
+  } catch (error) {
+    console.error('刷新数据失败:', error)
+    proxy.$modal.msgError('刷新失败，请稍后重试')
+  } finally {
+    isRefreshing.value = false
   }
+}
 
-  const handleToSetting = () => {
-    proxy.$tab.navigateTo('/pages/mine/setting/index')
-  }
+// 页面跳转方法
+const handleToInfo = () => {
+  proxy.$tab.navigateTo('/pages/mine/info/index')
+}
 
-  const handleToLogin = () => {
-    proxy.$tab.reLaunch('/pages/login')
-  }
+const handleToEditInfo = () => {
+  proxy.$tab.navigateTo('/pages/mine/info/edit')
+}
 
-  const handleToAvatar = () => {
-    proxy.$tab.navigateTo('/pages/mine/avatar/index')
-  }
+const handleToSetting = () => {
+  proxy.$tab.navigateTo('/pages/mine/setting/index')
+}
 
-  const handleHelp = () => {
-    proxy.$tab.navigateTo('/pages/mine/help/index')
-  }
+const handleToLogin = () => {
+  proxy.$tab.reLaunch('/pages/login')
+}
 
-  const handleAbout = () => {
-    proxy.$tab.navigateTo('/pages/mine/about/index')
-  }
+const handleToAvatar = () => {
+  proxy.$tab.navigateTo('/pages/mine/avatar/index')
+}
 
-  const handleJiaoLiuQun = () => {
-    proxy.$modal.showToast('QQ群：①133713780(满)、②146013835(满)、③189091635')
-  }
+const handleHelp = () => {
+  proxy.$tab.navigateTo('/pages/mine/help/index')
+}
 
-  const handleBuilding = () => {
-    proxy.$modal.showToast('模块建设中~')
-  }
+const handleAbout = () => {
+  proxy.$tab.navigateTo('/pages/mine/about/index')
+}
+
+const handleJiaoLiuQun = () => {
+  proxy.$modal.showToast('QQ群：①133713780(满)、②146013835(满)、③189091635')
+}
+
+const handleBuilding = () => {
+  proxy.$modal.showToast('模块建设中~')
+}
+
+// 生命周期钩子
+onMounted(() => {
+  initData()
+})
 </script>
 
 <style lang="scss" scoped>
-  page {
-    background-color: #f5f6f7;
+.page-container {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.custom-navbar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+
+  .navbar-content {
+    height: 88rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  .mine-container {
-    width: 100%;
-    height: 100%;
-
-
-    .header-section {
-      padding: 15px 15px 45px 15px;
-      background-color: #3c96f3;
+  .navbar-title {
+    text {
       color: white;
+      font-size: 36rpx;
+      font-weight: bold;
+    }
+  }
+}
 
-      .login-tip {
-        font-size: 18px;
-        margin-left: 10px;
+.main-content {
+  margin-top: calc(88rpx + var(--status-bar-height));
+  padding: 30rpx;
+}
+
+.profile-card {
+  background: white;
+  border-radius: 20rpx;
+  padding: 40rpx 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+
+  .profile-header {
+    display: flex;
+    align-items: center;
+  }
+
+  .avatar-wrapper {
+    position: relative;
+    margin-right: 30rpx;
+
+    .avatar-section {
+      width: 120rpx;
+      height: 120rpx;
+      border-radius: 60rpx;
+      overflow: hidden;
+      background: #f0f2f5;
+      border: 4rpx solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+
+      &:active {
+        transform: scale(0.95);
       }
 
-      .cu-avatar {
-        border: 2px solid #eaeaea;
-
-        .icon {
-          font-size: 40px;
-        }
+      .avatar-image {
+        width: 100%;
+        height: 100%;
       }
 
-      .user-info {
-        margin-left: 15px;
-
-        .u_title {
-          font-size: 18px;
-          line-height: 30px;
+      .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        .iconfont {
+          font-size: 60rpx;
+          color: #999;
         }
       }
     }
 
-    .content-section {
-      position: relative;
-      top: -50px;
+    .avatar-edit-badge {
+      position: absolute;
+      right: -6rpx;
+      bottom: -6rpx;
+      width: 40rpx;
+      height: 40rpx;
+      background: #667eea;
+      border-radius: 20rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
 
-      .mine-actions {
-        margin: 15px 15px;
-        padding: 20px 0px;
-        border-radius: 8px;
-        background-color: white;
-
-        .action-item {
-          .icon {
-            font-size: 28px;
-          }
-
-          .text {
-            display: block;
-            font-size: 13px;
-            margin: 8px 0px;
-          }
-        }
+      .iconfont {
+        color: white;
+        font-size: 24rpx;
       }
     }
   }
+
+  .profile-info {
+    flex: 1;
+
+    .profile-name {
+      font-size: 36rpx;
+      font-weight: bold;
+      color: #333;
+      display: block;
+      margin-bottom: 10rpx;
+    }
+
+    .profile-role {
+      font-size: 24rpx;
+      color: #667eea;
+      background: rgba(102, 126, 234, 0.1);
+      padding: 4rpx 16rpx;
+      border-radius: 20rpx;
+      display: inline-block;
+      margin-bottom: 8rpx;
+    }
+
+    .profile-id {
+      font-size: 24rpx;
+      color: #999;
+      display: block;
+    }
+  }
+
+  .profile-edit {
+    padding: 20rpx;
+    
+    .iconfont {
+      color: #999;
+      font-size: 32rpx;
+    }
+  }
+}
+
+.stats-card {
+  display: flex;
+  justify-content: space-around;
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+
+  .stats-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8rpx;
+
+    .stats-value {
+      font-size: 40rpx;
+      font-weight: bold;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      color: transparent;
+      line-height: 1;
+    }
+
+    .stats-label {
+      font-size: 24rpx;
+      color: #666;
+    }
+  }
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20rpx;
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+
+  .action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12rpx;
+
+    .action-icon-wrapper {
+      width: 80rpx;
+      height: 80rpx;
+      border-radius: 30rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+
+      &.icon-friendfill-bg { background: rgba(255, 107, 107, 0.1); }
+      &.icon-service-bg { background: rgba(77, 171, 247, 0.1); }
+      &.icon-community-bg { background: rgba(132, 94, 247, 0.1); }
+      &.icon-dianzan-bg { background: rgba(81, 207, 102, 0.1); }
+
+      .iconfont {
+        font-size: 44rpx;
+        
+        &.icon-friendfill { color: #ff6b6b; }
+        &.icon-service { color: #4dabf7; }
+        &.icon-community { color: #845ef7; }
+        &.icon-dianzan { color: #51cf66; }
+      }
+    }
+
+    text {
+      font-size: 24rpx;
+      color: #666;
+    }
+  }
+}
+
+.action-item-hover {
+  .action-icon-wrapper {
+    transform: scale(0.9);
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+  }
+}
+
+.menu-list {
+  background: white;
+  border-radius: 20rpx;
+  padding: 0 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 30rpx 0;
+    border-bottom: 2rpx solid #f5f6f7;
+    transition: background-color 0.3s ease;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .menu-item-left {
+      display: flex;
+      align-items: center;
+      gap: 20rpx;
+
+      .menu-icon-wrapper {
+        width: 64rpx;
+        height: 64rpx;
+        border-radius: 20rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+
+        &.icon-user-bg { background: rgba(77, 171, 247, 0.1); }
+        &.icon-help-bg { background: rgba(132, 94, 247, 0.1); }
+        &.icon-aixin-bg { background: rgba(255, 107, 107, 0.1); }
+        &.icon-setting-bg { background: rgba(81, 207, 102, 0.1); }
+
+        .iconfont {
+          font-size: 36rpx;
+          
+          &.icon-user { color: #4dabf7; }
+          &.icon-help { color: #845ef7; }
+          &.icon-aixin { color: #ff6b6b; }
+          &.icon-setting { color: #51cf66; }
+        }
+      }
+
+      text {
+        font-size: 28rpx;
+        color: #333;
+      }
+    }
+
+    .iconfont.icon-right {
+      color: #999;
+      font-size: 32rpx;
+      transition: transform 0.3s ease;
+    }
+  }
+}
+
+.menu-item-hover {
+  background-color: rgba(0, 0, 0, 0.02);
+
+  .menu-icon-wrapper {
+    transform: scale(0.9);
+  }
+
+  .iconfont.icon-right {
+    transform: translateX(4rpx);
+  }
+}
+
+.version-info {
+  text-align: center;
+  padding: 30rpx 0;
+  
+  text {
+    font-size: 24rpx;
+    color: #999;
+  }
+}
 </style>
+
