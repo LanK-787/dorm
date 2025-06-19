@@ -116,6 +116,24 @@
       "navigationBarTitleText": "报修详情",
       "navigationStyle": "custom"
     }
+  }, {
+    "path": "pages/leave/registration",
+    "style": {
+      "navigationBarTitleText": "离校登记",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/leave/list",
+    "style": {
+      "navigationBarTitleText": "离校记录",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/leave/detail",
+    "style": {
+      "navigationBarTitleText": "申请详情",
+      "navigationStyle": "custom"
+    }
   }],
   "tabBar": {
     "color": "#000000",

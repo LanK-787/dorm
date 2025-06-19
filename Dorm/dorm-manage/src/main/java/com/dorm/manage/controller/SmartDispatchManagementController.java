@@ -4,6 +4,7 @@ import com.dorm.common.annotation.Log;
 import com.dorm.common.core.controller.BaseController;
 import com.dorm.common.core.domain.AjaxResult;
 import com.dorm.common.enums.BusinessType;
+import com.dorm.common.utils.TypeConvertUtils;
 import com.dorm.manage.domain.DormRepairRequest;
 import com.dorm.manage.service.IDormRepairRequestService;
 import com.dorm.manage.service.ISmartDispatchService;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,8 +57,11 @@ public class SmartDispatchManagementController extends BaseController {
     @PreAuthorize("@ss.hasPermi('dorm:dispatch:manage')")
     @Log(title = "智能派单管理", businessType = BusinessType.OTHER)
     @PostMapping("/batch-redispatch")
-    public AjaxResult batchRedispatch(@RequestBody List<Long> requestIds) {
+    public AjaxResult batchRedispatch(@RequestBody List<Object> rawRequestIds) {
         try {
+            // 安全地处理requestIds类型转换，支持Integer和Long类型
+            List<Long> requestIds = TypeConvertUtils.convertToLongList(rawRequestIds);
+
             if (requestIds == null || requestIds.isEmpty()) {
                 return error("请选择要重新派单的工单");
             }

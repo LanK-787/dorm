@@ -53,11 +53,11 @@
             </view>
             <text class="action-text">{{ isRepairer ? '工单处理' : '报修服务' }}</text>
           </view>
-          <view class="action-item" @click="navigateTo('/pages/user/profile')">
-            <view class="action-icon profile-icon">
-              <text class="iconfont icon-user"></text>
+          <view class="action-item" @click="handleLeaveRegistration" @longpress="handleLeaveRecords">
+            <view class="action-icon leave-icon">
+              <text class="iconfont icon-leave"></text>
             </view>
-            <text class="action-text">个人中心</text>
+            <text class="action-text">离校登记</text>
           </view>
         </view>
       </view>
@@ -119,6 +119,11 @@ const isRepairer = computed(() => {
   return userStore.roles && userStore.roles.includes('repairer')
 })
 
+// 计算属性：判断是否为学生
+const isStudent = computed(() => {
+  return userStore.roles && userStore.roles.includes('student')
+})
+
 // 方法定义
 // 初始化页面
 const initPage = () => {
@@ -168,6 +173,55 @@ const navigateTo = (url) => {
 const handleNewsClick = (item) => {
   uni.navigateTo({
     url: `/pages/notice/detail?id=${item.id}`
+  })
+}
+
+// 处理离校登记功能
+const handleLeaveRegistration = () => {
+  // 检查用户角色权限
+  if (!isStudent.value) {
+    uni.showToast({
+      title: '此功能仅限学生使用',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+
+  // 跳转到离校记录列表页面
+  uni.navigateTo({
+    url: '/pages/leave/list'
+  })
+}
+
+// 处理离校记录查看功能（长按触发）
+const handleLeaveRecords = () => {
+  // 检查用户角色权限
+  if (!isStudent.value) {
+    uni.showToast({
+      title: '此功能仅限学生使用',
+      icon: 'none',
+      duration: 2000
+    })
+    return
+  }
+
+  // 显示操作选择
+  uni.showActionSheet({
+    itemList: ['查看离校记录', '新建离校申请'],
+    success: (res) => {
+      if (res.tapIndex === 0) {
+        // 查看离校记录
+        uni.navigateTo({
+          url: '/pages/leave/list'
+        })
+      } else if (res.tapIndex === 1) {
+        // 新建离校申请
+        uni.navigateTo({
+          url: '/pages/leave/registration'
+        })
+      }
+    }
   })
 }
 
@@ -330,8 +384,8 @@ defineExpose({
   background: linear-gradient(135deg, #feca57, #ff9ff3);
 }
 
-.profile-icon {
-  background: linear-gradient(135deg, #a8edea, #fed6e3);
+.leave-icon {
+  background: linear-gradient(135deg, #74b9ff, #0984e3);
 }
 
 .action-icon .iconfont {
@@ -446,6 +500,10 @@ defineExpose({
 
 .icon-user::before {
   content: '👤';
+}
+
+.icon-leave::before {
+  content: '🚪';
 }
 
 .icon-arrow-right::before {
