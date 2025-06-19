@@ -26,6 +26,10 @@ public class DormRepairRequest extends BaseEntity
     @Excel(name = "报修学生ID")
     private Long studentId;
 
+    /** 用户ID */
+    @Excel(name = "用户ID")
+    private Long userId;
+
     /** 宿舍ID */
     @Excel(name = "宿舍ID")
     private Long dormId;
@@ -50,9 +54,16 @@ public class DormRepairRequest extends BaseEntity
     @Excel(name = "图片URL，多个以逗号分隔")
     private String images;
 
-    /** 状态（0-待派单，1-已派单，2-维修中，3-已完成，4-已取消） */
-    @Excel(name = "状态", readConverterExp = "0=-待派单，1-已派单，2-维修中，3-已完成，4-已取消")
+    /** 状态（0-待派单，1-已派单，2-维修中，3-已完成，4-已取消，5-等待人工派单） */
+    @Excel(name = "状态", readConverterExp = "0=待派单,1=已派单,2=维修中,3=已完成,4=已取消,5=等待人工派单")
     private String status;
+
+    /** 派单尝试次数 */
+    @Excel(name = "派单尝试次数")
+    private Integer attemptCount;
+
+    /** 宿舍完整名称（关联查询字段，不存储在数据库） */
+    private String dormName;
 
     public void setRequestId(Long requestId) 
     {
@@ -79,12 +90,22 @@ public class DormRepairRequest extends BaseEntity
         this.studentId = studentId;
     }
 
-    public Long getStudentId() 
+    public Long getStudentId()
     {
         return studentId;
     }
 
-    public void setDormId(Long dormId) 
+    public void setUserId(Long userId)
+    {
+        this.userId = userId;
+    }
+
+    public Long getUserId()
+    {
+        return userId;
+    }
+
+    public void setDormId(Long dormId)
     {
         this.dormId = dormId;
     }
@@ -149,9 +170,29 @@ public class DormRepairRequest extends BaseEntity
         this.status = status;
     }
 
-    public String getStatus() 
+    public String getStatus()
     {
         return status;
+    }
+
+    public void setDormName(String dormName)
+    {
+        this.dormName = dormName;
+    }
+
+    public String getDormName()
+    {
+        return dormName;
+    }
+
+    public void setAttemptCount(Integer attemptCount)
+    {
+        this.attemptCount = attemptCount;
+    }
+
+    public Integer getAttemptCount()
+    {
+        return attemptCount;
     }
 
     @Override
@@ -160,6 +201,7 @@ public class DormRepairRequest extends BaseEntity
             .append("requestId", getRequestId())
             .append("requestNo", getRequestNo())
             .append("studentId", getStudentId())
+            .append("userId", getUserId())
             .append("dormId", getDormId())
             .append("specialty", getSpecialty())
             .append("description", getDescription())
@@ -167,6 +209,7 @@ public class DormRepairRequest extends BaseEntity
             .append("contactPhone", getContactPhone())
             .append("images", getImages())
             .append("status", getStatus())
+            .append("attemptCount", getAttemptCount())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

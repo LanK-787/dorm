@@ -99,6 +99,11 @@
           <dict-tag :options="dorm_repairer_status" :value="scope.row.status"/>
         </template>
       </el-table-column>
+      <el-table-column label="已接单数量" align="center" prop="orderCount" width="120">
+        <template #default="scope">
+          <el-tag type="info" size="small">{{ scope.row.orderCount || 0 }}</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['manage:repairer:edit']">修改</el-button>
@@ -149,6 +154,9 @@
               :value="dict.value"
             ></el-option>
           </el-select>
+        </el-form-item>
+        <el-form-item label="已接单数量" prop="orderCount">
+          <el-input-number v-model="form.orderCount" :min="0" :max="9999" placeholder="已接单数量" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -235,6 +243,7 @@ function reset() {
     phone: null,
     specialty: [],
     status: null,
+    orderCount: 0,
     createBy: null,
     createTime: null,
     updateBy: null,

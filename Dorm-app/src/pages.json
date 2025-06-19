@@ -98,6 +98,24 @@
       "navigationBarTitleText": "宿舍信息",
       "navigationStyle": "custom"
     }
+  }, {
+    "path": "pages/repair/list",
+    "style": {
+      "navigationBarTitleText": "报修服务",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/repair/add",
+    "style": {
+      "navigationBarTitleText": "提交报修",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/repair/detail",
+    "style": {
+      "navigationBarTitleText": "报修详情",
+      "navigationStyle": "custom"
+    }
   }],
   "tabBar": {
     "color": "#000000",
@@ -126,5 +144,11 @@
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "RuoYi",
     "navigationBarBackgroundColor": "#FFFFFF"
+  },
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+    }
   }
 }

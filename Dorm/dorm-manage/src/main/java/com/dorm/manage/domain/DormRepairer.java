@@ -41,6 +41,10 @@ public class DormRepairer extends BaseEntity
     @Excel(name = "状态(0出工,1空闲)")
     private String status;
 
+    /** 已接单数量 */
+    @Excel(name = "已接单数量")
+    private Integer orderCount;
+
     public void setRepairerId(Long repairerId) 
     {
         this.repairerId = repairerId;
@@ -106,9 +110,19 @@ public class DormRepairer extends BaseEntity
         this.status = status;
     }
 
-    public String getStatus() 
+    public String getStatus()
     {
         return status;
+    }
+
+    public void setOrderCount(Integer orderCount)
+    {
+        this.orderCount = orderCount;
+    }
+
+    public Integer getOrderCount()
+    {
+        return orderCount;
     }
 
     @Override
@@ -121,6 +135,7 @@ public class DormRepairer extends BaseEntity
             .append("phone", getPhone())
             .append("specialty", getSpecialty())
             .append("status", getStatus())
+            .append("orderCount", getOrderCount())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

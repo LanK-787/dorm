@@ -16,6 +16,7 @@ import com.dorm.common.annotation.Log;
 import com.dorm.common.core.controller.BaseController;
 import com.dorm.common.core.domain.AjaxResult;
 import com.dorm.common.enums.BusinessType;
+import com.dorm.common.utils.SecurityUtils;
 import com.dorm.manage.domain.DormRepairRequest;
 import com.dorm.manage.service.IDormRepairRequestService;
 import com.dorm.common.utils.poi.ExcelUtil;
@@ -42,6 +43,17 @@ public class DormRepairRequestController extends BaseController
     public TableDataInfo list(DormRepairRequest dormRepairRequest)
     {
         startPage();
+
+        // 基于用户角色的权限控制
+        if (!SecurityUtils.hasRole("admin")) {
+            // 非管理员用户，只能查看自己的工单
+            dormRepairRequest.setUserId(SecurityUtils.getUserId());
+            logger.debug("非管理员用户[{}]查询自己的报修工单", SecurityUtils.getUsername());
+        } else {
+            // 管理员用户可以查看所有工单，不设置userId过滤条件
+            logger.debug("管理员用户[{}]查询所有报修工单", SecurityUtils.getUsername());
+        }
+
         List<DormRepairRequest> list = dormRepairRequestService.selectDormRepairRequestList(dormRepairRequest);
         return getDataTable(list);
     }
@@ -54,6 +66,16 @@ public class DormRepairRequestController extends BaseController
     @PostMapping("/export")
     public void export(HttpServletResponse response, DormRepairRequest dormRepairRequest)
     {
+        // 基于用户角色的权限控制
+        if (!SecurityUtils.hasRole("admin")) {
+            // 非管理员用户，只能导出自己的工单
+            dormRepairRequest.setUserId(SecurityUtils.getUserId());
+            logger.debug("非管理员用户[{}]导出自己的报修工单", SecurityUtils.getUsername());
+        } else {
+            // 管理员用户可以导出所有工单
+            logger.debug("管理员用户[{}]导出所有报修工单", SecurityUtils.getUsername());
+        }
+
         List<DormRepairRequest> list = dormRepairRequestService.selectDormRepairRequestList(dormRepairRequest);
         ExcelUtil<DormRepairRequest> util = new ExcelUtil<DormRepairRequest>(DormRepairRequest.class);
         util.exportExcel(response, list, "报修工单数据");
@@ -66,7 +88,23 @@ public class DormRepairRequestController extends BaseController
     @GetMapping(value = "/{requestId}")
     public AjaxResult getInfo(@PathVariable("requestId") Long requestId)
     {
-        return success(dormRepairRequestService.selectDormRepairRequestByRequestId(requestId));
+        DormRepairRequest repairRequest = dormRepairRequestService.selectDormRepairRequestByRequestId(requestId);
+
+        if (repairRequest == null) {
+            return error("工单不存在");
+        }
+
+        // 基于用户角色的权限控制
+        if (!SecurityUtils.hasRole("admin")) {
+            // 非管理员用户，只能查看自己的工单详情
+            Long currentUserId = SecurityUtils.getUserId();
+            if (!currentUserId.equals(repairRequest.getUserId())) {
+                logger.warn("用户[{}]尝试访问其他用户的工单[{}]", SecurityUtils.getUsername(), requestId);
+                return error("无权限访问此工单");
+            }
+        }
+
+        return success(repairRequest);
     }
 
     /**
@@ -77,6 +115,8 @@ public class DormRepairRequestController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody DormRepairRequest dormRepairRequest)
     {
+        // 自动设置当前用户ID
+        dormRepairRequest.setUserId(SecurityUtils.getUserId());
         return toAjax(dormRepairRequestService.insertDormRepairRequest(dormRepairRequest));
     }
 
@@ -88,6 +128,24 @@ public class DormRepairRequestController extends BaseController
     @PutMapping
     public AjaxResult edit(@RequestBody DormRepairRequest dormRepairRequest)
     {
+        // 基于用户角色的权限控制
+        if (!SecurityUtils.hasRole("admin")) {
+            // 非管理员用户，只能修改自己的工单
+            DormRepairRequest existingRequest = dormRepairRequestService.selectDormRepairRequestByRequestId(dormRepairRequest.getRequestId());
+            if (existingRequest == null) {
+                return error("工单不存在");
+            }
+
+            Long currentUserId = SecurityUtils.getUserId();
+            if (!currentUserId.equals(existingRequest.getUserId())) {
+                logger.warn("用户[{}]尝试修改其他用户的工单[{}]", SecurityUtils.getUsername(), dormRepairRequest.getRequestId());
+                return error("无权限修改此工单");
+            }
+
+            // 确保用户ID不被篡改
+            dormRepairRequest.setUserId(currentUserId);
+        }
+
         return toAjax(dormRepairRequestService.updateDormRepairRequest(dormRepairRequest));
     }
 
@@ -96,9 +154,27 @@ public class DormRepairRequestController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('dorm:request:remove')")
     @Log(title = "报修工单", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{requestIds}")
+    @DeleteMapping("/{requestIds}")
     public AjaxResult remove(@PathVariable Long[] requestIds)
     {
+        // 基于用户角色的权限控制
+        if (!SecurityUtils.hasRole("admin")) {
+            // 非管理员用户，只能删除自己的工单
+            Long currentUserId = SecurityUtils.getUserId();
+
+            for (Long requestId : requestIds) {
+                DormRepairRequest existingRequest = dormRepairRequestService.selectDormRepairRequestByRequestId(requestId);
+                if (existingRequest == null) {
+                    return error("工单[" + requestId + "]不存在");
+                }
+
+                if (!currentUserId.equals(existingRequest.getUserId())) {
+                    logger.warn("用户[{}]尝试删除其他用户的工单[{}]", SecurityUtils.getUsername(), requestId);
+                    return error("无权限删除工单[" + requestId + "]");
+                }
+            }
+        }
+
         return toAjax(dormRepairRequestService.deleteDormRepairRequestByRequestIds(requestIds));
     }
 }

@@ -52,6 +52,21 @@ public class RabbitMQConfig {
      */
     public static final String NOTIFICATION_QUEUE = "dorm.notification.queue";
 
+    /**
+     * 智能派单队列
+     */
+    public static final String SMART_DISPATCH_QUEUE = "dorm.smart.dispatch.queue";
+
+    /**
+     * 重新派单队列
+     */
+    public static final String REDISPATCH_QUEUE = "dorm.redispatch.queue";
+
+    /**
+     * 派单状态更新队列
+     */
+    public static final String DISPATCH_STATUS_UPDATE_QUEUE = "dorm.dispatch.status.update.queue";
+
     // ==================== 路由键定义 ====================
     
     /**
@@ -73,6 +88,21 @@ public class RabbitMQConfig {
      * 通知消息路由键
      */
     public static final String NOTIFICATION_ROUTING_KEY = "dorm.notification";
+
+    /**
+     * 智能派单路由键
+     */
+    public static final String SMART_DISPATCH_ROUTING_KEY = "dorm.smart.dispatch";
+
+    /**
+     * 重新派单路由键
+     */
+    public static final String REDISPATCH_ROUTING_KEY = "dorm.redispatch";
+
+    /**
+     * 派单状态更新路由键
+     */
+    public static final String DISPATCH_STATUS_UPDATE_ROUTING_KEY = "dorm.dispatch.status.update";
 
     // ==================== 交换机Bean ====================
     
@@ -149,6 +179,44 @@ public class RabbitMQConfig {
                 .build();
     }
 
+    /**
+     * 智能派单队列
+     */
+    @Bean
+    public Queue smartDispatchQueue() {
+        return QueueBuilder
+                .durable(SMART_DISPATCH_QUEUE)
+                .withArgument("x-dead-letter-exchange", DORM_DLX_EXCHANGE)
+                .withArgument("x-dead-letter-routing-key", "dlx." + SMART_DISPATCH_ROUTING_KEY)
+                .withArgument("x-message-ttl", 600000) // 10分钟TTL
+                .build();
+    }
+
+    /**
+     * 重新派单队列（延时队列）
+     */
+    @Bean
+    public Queue redispatchQueue() {
+        return QueueBuilder
+                .durable(REDISPATCH_QUEUE)
+                .withArgument("x-dead-letter-exchange", DORM_DLX_EXCHANGE)
+                .withArgument("x-dead-letter-routing-key", "dlx." + REDISPATCH_ROUTING_KEY)
+                .withArgument("x-message-ttl", 300000) // 5分钟延时
+                .build();
+    }
+
+    /**
+     * 派单状态更新队列
+     */
+    @Bean
+    public Queue dispatchStatusUpdateQueue() {
+        return QueueBuilder
+                .durable(DISPATCH_STATUS_UPDATE_QUEUE)
+                .withArgument("x-dead-letter-exchange", DORM_DLX_EXCHANGE)
+                .withArgument("x-dead-letter-routing-key", "dlx." + DISPATCH_STATUS_UPDATE_ROUTING_KEY)
+                .build();
+    }
+
     // ==================== 绑定关系 ====================
     
     /**
@@ -193,6 +261,39 @@ public class RabbitMQConfig {
                 .bind(notificationQueue())
                 .to(dormExchange())
                 .with(NOTIFICATION_ROUTING_KEY);
+    }
+
+    /**
+     * 绑定智能派单队列到交换机
+     */
+    @Bean
+    public Binding smartDispatchBinding() {
+        return BindingBuilder
+                .bind(smartDispatchQueue())
+                .to(dormExchange())
+                .with(SMART_DISPATCH_ROUTING_KEY);
+    }
+
+    /**
+     * 绑定重新派单队列到交换机
+     */
+    @Bean
+    public Binding redispatchBinding() {
+        return BindingBuilder
+                .bind(redispatchQueue())
+                .to(dormExchange())
+                .with(REDISPATCH_ROUTING_KEY);
+    }
+
+    /**
+     * 绑定派单状态更新队列到交换机
+     */
+    @Bean
+    public Binding dispatchStatusUpdateBinding() {
+        return BindingBuilder
+                .bind(dispatchStatusUpdateQueue())
+                .to(dormExchange())
+                .with(DISPATCH_STATUS_UPDATE_ROUTING_KEY);
     }
 
     // ==================== 消息转换器 ====================

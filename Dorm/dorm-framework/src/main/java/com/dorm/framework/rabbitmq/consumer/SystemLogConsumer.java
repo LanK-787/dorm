@@ -66,11 +66,11 @@ public class SystemLogConsumer {
 
     /**
      * 处理系统日志消息的具体业务逻辑
-     * 
+     *
      * @param message 系统日志消息
      */
     private void processSystemLogMessage(SystemLogMessage message) {
-        // TODO: 实现系统日志处理的业务逻辑
+        // 实现系统日志处理的业务逻辑
         // 1. 将日志写入数据库
         // 2. 进行日志分析
         // 3. 异常日志告警
@@ -121,7 +121,7 @@ public class SystemLogConsumer {
      */
     private void handleInsertLog(SystemLogMessage message) {
         logger.debug("处理新增操作日志: 模块={}, 操作人={}", message.getModule(), message.getOperName());
-        // TODO: 新增操作特殊处理
+        // 新增操作特殊处理
     }
 
     /**
@@ -129,7 +129,7 @@ public class SystemLogConsumer {
      */
     private void handleUpdateLog(SystemLogMessage message) {
         logger.debug("处理修改操作日志: 模块={}, 操作人={}", message.getModule(), message.getOperName());
-        // TODO: 修改操作特殊处理
+        // 修改操作特殊处理
     }
 
     /**
@@ -137,7 +137,7 @@ public class SystemLogConsumer {
      */
     private void handleDeleteLog(SystemLogMessage message) {
         logger.debug("处理删除操作日志: 模块={}, 操作人={}", message.getModule(), message.getOperName());
-        // TODO: 删除操作特殊处理，可能需要特别关注
+        // 删除操作特殊处理，可能需要特别关注
     }
 
     /**
@@ -177,7 +177,7 @@ public class SystemLogConsumer {
      */
     private void handleGenerateCodeLog(SystemLogMessage message) {
         logger.debug("处理生成代码操作日志: 模块={}, 操作人={}", message.getModule(), message.getOperName());
-        // TODO: 生成代码操作特殊处理
+        // 生成代码操作特殊处理
     }
 
     /**
@@ -185,7 +185,7 @@ public class SystemLogConsumer {
      */
     private void handleClearDataLog(SystemLogMessage message) {
         logger.warn("处理清空数据操作日志: 模块={}, 操作人={}", message.getModule(), message.getOperName());
-        // TODO: 清空数据操作特殊处理，高风险操作
+        // 清空数据操作特殊处理，高风险操作
     }
 
     /**
@@ -193,7 +193,7 @@ public class SystemLogConsumer {
      */
     private void handleOtherLog(SystemLogMessage message) {
         logger.debug("处理其他操作日志: 模块={}, 操作人={}", message.getModule(), message.getOperName());
-        // TODO: 其他操作特殊处理
+        // 其他操作特殊处理
     }
 
     /**

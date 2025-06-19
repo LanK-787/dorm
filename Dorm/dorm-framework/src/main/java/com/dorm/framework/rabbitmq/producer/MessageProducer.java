@@ -55,7 +55,7 @@ public class MessageProducer {
 
     /**
      * 发送通知消息
-     * 
+     *
      * @param message 消息内容
      */
     public void sendNotificationMessage(BaseMessage message) {
@@ -63,8 +63,55 @@ public class MessageProducer {
     }
 
     /**
+     * 发送智能派单消息
+     *
+     * @param message 消息内容
+     */
+    public void sendSmartDispatchMessage(BaseMessage message) {
+        sendMessage(RabbitMQConfig.DORM_EXCHANGE, RabbitMQConfig.SMART_DISPATCH_ROUTING_KEY, message);
+    }
+
+    /**
+     * 发送重新派单消息
+     *
+     * @param message 消息内容
+     */
+    public void sendRedispatchMessage(BaseMessage message) {
+        sendMessage(RabbitMQConfig.DORM_EXCHANGE, RabbitMQConfig.REDISPATCH_ROUTING_KEY, message);
+    }
+
+    /**
+     * 安全发送重新派单消息（不抛异常）
+     *
+     * @param message 消息内容
+     * @return 发送是否成功
+     */
+    public boolean sendRedispatchMessageSafely(BaseMessage message) {
+        return sendMessageSafely(RabbitMQConfig.DORM_EXCHANGE, RabbitMQConfig.REDISPATCH_ROUTING_KEY, message);
+    }
+
+    /**
+     * 发送派单状态更新消息
+     *
+     * @param message 消息内容
+     */
+    public void sendDispatchStatusUpdateMessage(BaseMessage message) {
+        sendMessage(RabbitMQConfig.DORM_EXCHANGE, RabbitMQConfig.DISPATCH_STATUS_UPDATE_ROUTING_KEY, message);
+    }
+
+    /**
+     * 安全发送派单状态更新消息（不抛异常）
+     *
+     * @param message 消息内容
+     * @return 发送是否成功
+     */
+    public boolean sendDispatchStatusUpdateMessageSafely(BaseMessage message) {
+        return sendMessageSafely(RabbitMQConfig.DORM_EXCHANGE, RabbitMQConfig.DISPATCH_STATUS_UPDATE_ROUTING_KEY, message);
+    }
+
+    /**
      * 发送消息到指定交换机和路由键
-     * 
+     *
      * @param exchange   交换机
      * @param routingKey 路由键
      * @param message    消息内容
@@ -73,18 +120,46 @@ public class MessageProducer {
         try {
             // 创建关联数据，用于消息确认
             CorrelationData correlationData = new CorrelationData(UUID.randomUUID().toString());
-            
-            logger.info("发送消息到交换机: {}, 路由键: {}, 消息ID: {}, 消息类型: {}", 
+
+            logger.info("发送消息到交换机: {}, 路由键: {}, 消息ID: {}, 消息类型: {}",
                     exchange, routingKey, message.getMessageId(), message.getMessageType());
-            
+
             // 发送消息
             rabbitTemplate.convertAndSend(exchange, routingKey, message, correlationData);
-            
+
             logger.info("消息发送成功: {}", message.getMessageId());
-            
+
         } catch (Exception e) {
             logger.error("消息发送失败: {}, 错误信息: {}", message.getMessageId(), e.getMessage(), e);
             throw new RuntimeException("消息发送失败", e);
+        }
+    }
+
+    /**
+     * 安全发送消息到指定交换机和路由键（不抛异常）
+     *
+     * @param exchange   交换机
+     * @param routingKey 路由键
+     * @param message    消息内容
+     * @return 发送是否成功
+     */
+    public boolean sendMessageSafely(String exchange, String routingKey, BaseMessage message) {
+        try {
+            // 创建关联数据，用于消息确认
+            CorrelationData correlationData = new CorrelationData(UUID.randomUUID().toString());
+
+            logger.info("安全发送消息到交换机: {}, 路由键: {}, 消息ID: {}, 消息类型: {}",
+                    exchange, routingKey, message.getMessageId(), message.getMessageType());
+
+            // 发送消息
+            rabbitTemplate.convertAndSend(exchange, routingKey, message, correlationData);
+
+            logger.info("安全消息发送成功: {}", message.getMessageId());
+            return true;
+
+        } catch (Exception e) {
+            logger.error("安全消息发送失败: {}, 错误信息: {}", message.getMessageId(), e.getMessage(), e);
+            return false;
         }
     }
 

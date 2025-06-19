@@ -33,10 +33,10 @@ public class DormRepairerServiceImpl implements IDormRepairerService
     }
 
     /**
-     * 根据用户ID查询维修人员管理
+     * 根据用户ID查询维修人员
      *
      * @param userId 用户ID
-     * @return 维修人员管理
+     * @return 维修人员
      */
     @Override
     public DormRepairer selectDormRepairerByUserId(Long userId)
@@ -96,7 +96,7 @@ public class DormRepairerServiceImpl implements IDormRepairerService
 
     /**
      * 删除维修人员管理信息
-     * 
+     *
      * @param repairerId 维修人员管理主键
      * @return 结果
      */
@@ -104,5 +104,29 @@ public class DormRepairerServiceImpl implements IDormRepairerService
     public int deleteDormRepairerByRepairerId(Long repairerId)
     {
         return dormRepairerMapper.deleteDormRepairerByRepairerId(repairerId);
+    }
+
+    /**
+     * 增加维修人员接单数量
+     *
+     * @param repairerId 维修人员ID
+     * @return 结果
+     */
+    @Override
+    public int incrementOrderCount(Long repairerId)
+    {
+        return dormRepairerMapper.incrementOrderCount(repairerId);
+    }
+
+    /**
+     * 减少维修人员接单数量
+     *
+     * @param repairerId 维修人员ID
+     * @return 结果
+     */
+    @Override
+    public int decrementOrderCount(Long repairerId)
+    {
+        return dormRepairerMapper.decrementOrderCount(repairerId);
     }
 }

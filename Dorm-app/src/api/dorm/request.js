@@ -42,3 +42,11 @@ export function delRequest(requestId) {
     method: 'delete'
   })
 }
+
+// 查询宿舍下拉树结构（用于报修表单）
+export function dormTreeSelect() {
+  return request({
+    url: '/dorm/student/dormTree',
+    method: 'get'
+  })
+}

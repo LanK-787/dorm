@@ -1,12 +1,15 @@
 package com.dorm.framework.rabbitmq.consumer;
 
 import com.dorm.framework.config.RabbitMQConfig;
+import com.dorm.framework.event.RepairOrderEvent;
 import com.dorm.framework.rabbitmq.message.RepairOrderMessage;
 import com.rabbitmq.client.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -20,6 +23,9 @@ import java.io.IOException;
 public class RepairOrderConsumer {
 
     private static final Logger logger = LoggerFactory.getLogger(RepairOrderConsumer.class);
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     /**
      * 处理维修工单消息
@@ -97,15 +103,14 @@ public class RepairOrderConsumer {
      * 处理创建工单
      */
     private void handleCreateOrder(RepairOrderMessage message) {
-        logger.info("处理创建工单: 工单号={}, 申请人={}, 宿舍号={}", 
+        logger.info("处理创建工单: 工单号={}, 申请人={}, 宿舍号={}",
                 message.getOrderNo(), message.getApplicantName(), message.getDormNo());
-        
-        // TODO: 实现创建工单的业务逻辑
+
+        // 实现创建工单的业务逻辑
         // 1. 发送通知给管理员
         // 2. 记录操作日志
         // 3. 更新统计数据
-        
-        // 模拟处理时间
+
         try {
             Thread.sleep(100);
         } catch (InterruptedException e) {
@@ -118,8 +123,8 @@ public class RepairOrderConsumer {
      */
     private void handleUpdateOrder(RepairOrderMessage message) {
         logger.info("处理更新工单: 工单号={}, 状态={}", message.getOrderNo(), message.getOrderStatus());
-        
-        // TODO: 实现更新工单的业务逻辑
+
+        // 实现更新工单的业务逻辑
         // 1. 发送状态变更通知
         // 2. 记录操作日志
     }
@@ -129,11 +134,14 @@ public class RepairOrderConsumer {
      */
     private void handleAssignOrder(RepairOrderMessage message) {
         logger.info("处理分配工单: 工单号={}, 维修人员={}", message.getOrderNo(), message.getRepairerName());
-        
+
         // TODO: 实现分配工单的业务逻辑
         // 1. 发送通知给维修人员
         // 2. 发送通知给申请人
         // 3. 记录操作日志
+
+        // 4. 发布工单分配事件，更新维修人员接单统计
+        eventPublisher.publishEvent(new RepairOrderEvent(this, RepairOrderEvent.EventType.ASSIGNED, message));
     }
 
     /**
@@ -141,11 +149,15 @@ public class RepairOrderConsumer {
      */
     private void handleCompleteOrder(RepairOrderMessage message) {
         logger.info("处理完成工单: 工单号={}, 维修人员={}", message.getOrderNo(), message.getRepairerName());
-        
+
         // TODO: 实现完成工单的业务逻辑
         // 1. 发送完成通知给申请人
         // 2. 更新维修人员工作统计
         // 3. 记录操作日志
+
+        // 4. 发布工单完成事件（根据业务需求决定是否减少计数）
+        // 这里设置为false，表示完成的工单仍然计入统计
+        eventPublisher.publishEvent(new RepairOrderEvent(this, RepairOrderEvent.EventType.COMPLETED, message, false));
     }
 
     /**
@@ -153,10 +165,15 @@ public class RepairOrderConsumer {
      */
     private void handleCancelOrder(RepairOrderMessage message) {
         logger.info("处理取消工单: 工单号={}, 原因={}", message.getOrderNo(), message.getRemark());
-        
+
         // TODO: 实现取消工单的业务逻辑
         // 1. 发送取消通知
         // 2. 释放维修人员资源
         // 3. 记录操作日志
+
+        // 4. 如果工单已分配给维修人员，发布取消分配事件
+        if (message.getRepairerId() != null) {
+            eventPublisher.publishEvent(new RepairOrderEvent(this, RepairOrderEvent.EventType.UNASSIGNED, message));
+        }
     }
 }

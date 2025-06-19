@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dorm.manage.mapper.DormRepairDispatchHistoryMapper">
+    
+    <resultMap type="DormRepairDispatchHistory" id="DormRepairDispatchHistoryResult">
+        <result property="historyId"    column="history_id"    />
+        <result property="requestId"    column="request_id"    />
+        <result property="requestNo"    column="request_no"    />
+        <result property="specialty"    column="specialty"    />
+        <result property="dispatchType"    column="dispatch_type"    />
+        <result property="selectedRepairerId"    column="selected_repairer_id"    />
+        <result property="selectedRepairerName"    column="selected_repairer_name"    />
+        <result property="candidateCount"    column="candidate_count"    />
+        <result property="dispatchResult"    column="dispatch_result"    />
+        <result property="failureReason"    column="failure_reason"    />
+        <result property="dispatchTime"    column="dispatch_time"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+    </resultMap>
+
+    <sql id="selectDormRepairDispatchHistoryVo">
+        select history_id, request_id, request_no, specialty, dispatch_type, selected_repairer_id, selected_repairer_name, candidate_count, dispatch_result, failure_reason, dispatch_time, create_by, create_time from dorm_repair_dispatch_history
+    </sql>
+
+    <select id="selectDormRepairDispatchHistoryList" parameterType="DormRepairDispatchHistory" resultMap="DormRepairDispatchHistoryResult">
+        <include refid="selectDormRepairDispatchHistoryVo"/>
+        <where>  
+            <if test="requestId != null "> and request_id = #{requestId}</if>
+            <if test="requestNo != null  and requestNo != ''"> and request_no like concat('%', #{requestNo}, '%')</if>
+            <if test="specialty != null  and specialty != ''"> and specialty = #{specialty}</if>
+            <if test="dispatchType != null  and dispatchType != ''"> and dispatch_type = #{dispatchType}</if>
+            <if test="selectedRepairerId != null "> and selected_repairer_id = #{selectedRepairerId}</if>
+            <if test="selectedRepairerName != null  and selectedRepairerName != ''"> and selected_repairer_name like concat('%', #{selectedRepairerName}, '%')</if>
+            <if test="dispatchResult != null  and dispatchResult != ''"> and dispatch_result = #{dispatchResult}</if>
+            <if test="dispatchTime != null "> and dispatch_time = #{dispatchTime}</if>
+        </where>
+        order by dispatch_time desc
+    </select>
+    
+    <select id="selectDormRepairDispatchHistoryByHistoryId" parameterType="Long" resultMap="DormRepairDispatchHistoryResult">
+        <include refid="selectDormRepairDispatchHistoryVo"/>
+        where history_id = #{historyId}
+    </select>
+
+    <select id="selectDispatchHistoryByRequestId" parameterType="Long" resultMap="DormRepairDispatchHistoryResult">
+        <include refid="selectDormRepairDispatchHistoryVo"/>
+        where request_id = #{requestId}
+        order by dispatch_time desc
+    </select>
+        
+    <insert id="insertDormRepairDispatchHistory" parameterType="DormRepairDispatchHistory" useGeneratedKeys="true" keyProperty="historyId">
+        insert into dorm_repair_dispatch_history
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="requestId != null">request_id,</if>
+            <if test="requestNo != null and requestNo != ''">request_no,</if>
+            <if test="specialty != null and specialty != ''">specialty,</if>
+            <if test="dispatchType != null and dispatchType != ''">dispatch_type,</if>
+            <if test="selectedRepairerId != null">selected_repairer_id,</if>
+            <if test="selectedRepairerName != null and selectedRepairerName != ''">selected_repairer_name,</if>
+            <if test="candidateCount != null">candidate_count,</if>
+            <if test="dispatchResult != null and dispatchResult != ''">dispatch_result,</if>
+            <if test="failureReason != null">failure_reason,</if>
+            <if test="dispatchTime != null">dispatch_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="requestId != null">#{requestId},</if>
+            <if test="requestNo != null and requestNo != ''">#{requestNo},</if>
+            <if test="specialty != null and specialty != ''">#{specialty},</if>
+            <if test="dispatchType != null and dispatchType != ''">#{dispatchType},</if>
+            <if test="selectedRepairerId != null">#{selectedRepairerId},</if>
+            <if test="selectedRepairerName != null and selectedRepairerName != ''">#{selectedRepairerName},</if>
+            <if test="candidateCount != null">#{candidateCount},</if>
+            <if test="dispatchResult != null and dispatchResult != ''">#{dispatchResult},</if>
+            <if test="failureReason != null">#{failureReason},</if>
+            <if test="dispatchTime != null">#{dispatchTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateDormRepairDispatchHistory" parameterType="DormRepairDispatchHistory">
+        update dorm_repair_dispatch_history
+        <trim prefix="SET " suffixOverrides=",">
+            <if test="requestId != null">request_id = #{requestId},</if>
+            <if test="requestNo != null and requestNo != ''">request_no = #{requestNo},</if>
+            <if test="specialty != null and specialty != ''">specialty = #{specialty},</if>
+            <if test="dispatchType != null and dispatchType != ''">dispatch_type = #{dispatchType},</if>
+            <if test="selectedRepairerId != null">selected_repairer_id = #{selectedRepairerId},</if>
+            <if test="selectedRepairerName != null and selectedRepairerName != ''">selected_repairer_name = #{selectedRepairerName},</if>
+            <if test="candidateCount != null">candidate_count = #{candidateCount},</if>
+            <if test="dispatchResult != null and dispatchResult != ''">dispatch_result = #{dispatchResult},</if>
+            <if test="failureReason != null">failure_reason = #{failureReason},</if>
+            <if test="dispatchTime != null">dispatch_time = #{dispatchTime},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+        </trim>
+        where history_id = #{historyId}
+    </update>
+
+    <delete id="deleteDormRepairDispatchHistoryByHistoryId" parameterType="Long">
+        delete from dorm_repair_dispatch_history where history_id = #{historyId}
+    </delete>
+
+    <delete id="deleteDormRepairDispatchHistoryByHistoryIds" parameterType="String">
+        delete from dorm_repair_dispatch_history where history_id in 
+        <foreach item="historyId" collection="array" open="(" separator="," close=")">
+            #{historyId}
+        </foreach>
+    </delete>
+</mapper>

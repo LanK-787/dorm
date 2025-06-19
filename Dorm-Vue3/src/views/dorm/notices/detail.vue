@@ -237,7 +237,6 @@ function getInfo(noticeId) {
     pageLoading.value = false
 
   }).catch(error => {
-    console.error('获取公告详情失败:', error)
     pageLoading.value = false
     proxy.$modal.msgError(`获取公告详情失败: ${error.message || '请检查ID是否正确'}`)
 

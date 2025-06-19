@@ -39,6 +39,23 @@ public class RedisConfig extends CachingConfigurerSupport
         return template;
     }
 
+    @Bean("customStringRedisTemplate")
+    public RedisTemplate<String, String> customStringRedisTemplate(RedisConnectionFactory connectionFactory)
+    {
+        RedisTemplate<String, String> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+
+        // 使用StringRedisSerializer来序列化和反序列化redis的key和value
+        StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();
+        template.setKeySerializer(stringRedisSerializer);
+        template.setValueSerializer(stringRedisSerializer);
+        template.setHashKeySerializer(stringRedisSerializer);
+        template.setHashValueSerializer(stringRedisSerializer);
+
+        template.afterPropertiesSet();
+        return template;
+    }
+
     @Bean
     public DefaultRedisScript<Long> limitScript()
     {

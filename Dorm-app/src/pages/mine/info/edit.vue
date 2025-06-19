@@ -347,7 +347,8 @@
           name: repairerData.name || '',
           phone: repairerData.phone || '',
           specialty: specialtyArray,
-          status: repairerData.status || '1'
+          status: repairerData.status || '1',
+          orderCount: repairerData.orderCount || 0
         })
       } else {
         proxy.$modal.msgError('获取维修人员信息失败')

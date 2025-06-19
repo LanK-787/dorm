@@ -58,6 +58,14 @@
         :extraIcon="{type: hasStudentData ? 'checkmarkempty' : 'calendar-filled'}"
         :title="sixthFieldTitle"
         :rightText="statusText" />
+
+      <!-- 已接单数量（仅维修人员） -->
+      <uni-list-item
+        v-if="hasRepairerData"
+        showExtraIcon="true"
+        :extraIcon="{type: 'list-filled'}"
+        title="已接单数量"
+        :rightText="orderCountText" />
     </uni-list>
   </view>
 </template>
@@ -180,6 +188,15 @@
     return hasStudentData.value ? '状态' : '创建日期'
   })
 
+  // 已接单数量文本
+  const orderCountText = computed(() => {
+    if (hasRepairerData.value) {
+      const count = repairer.orderCount || 0
+      return `${count} 单`
+    }
+    return '0 单'
+  })
+
   // 方法定义
   const getUser = () => {
     getUserProfile().then(response => {
@@ -240,7 +257,8 @@
           phone: repairerData.phone || '',
           specialty: repairerData.specialty || '',
           specialtyText: specialtyText,
-          status: repairerData.status || '1'
+          status: repairerData.status || '1',
+          orderCount: repairerData.orderCount || 0
         })
       } else {
         // 如果没有维修人员数据，跳转到信息填写页面

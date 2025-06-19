@@ -53,9 +53,17 @@ public interface DormRepairRequestMapper
 
     /**
      * 批量删除报修工单
-     * 
+     *
      * @param requestIds 需要删除的数据主键集合
      * @return 结果
      */
     public int deleteDormRepairRequestByRequestIds(Long[] requestIds);
+
+    /**
+     * 查询指定日期的最大工单编号
+     *
+     * @param dateKey 日期键（YYYYMMDD格式）
+     * @return 最大工单编号
+     */
+    public String selectMaxRequestNoByDate(String dateKey);
 }

@@ -20,10 +20,10 @@ public interface DormRepairerMapper
     public DormRepairer selectDormRepairerByRepairerId(Long repairerId);
 
     /**
-     * 根据用户ID查询维修人员管理
+     * 根据用户ID查询维修人员
      *
      * @param userId 用户ID
-     * @return 维修人员管理
+     * @return 维修人员
      */
     public DormRepairer selectDormRepairerByUserId(Long userId);
 
@@ -61,9 +61,25 @@ public interface DormRepairerMapper
 
     /**
      * 批量删除维修人员管理
-     * 
+     *
      * @param repairerIds 需要删除的数据主键集合
      * @return 结果
      */
     public int deleteDormRepairerByRepairerIds(Long[] repairerIds);
+
+    /**
+     * 增加维修人员接单数量
+     *
+     * @param repairerId 维修人员ID
+     * @return 结果
+     */
+    public int incrementOrderCount(Long repairerId);
+
+    /**
+     * 减少维修人员接单数量
+     *
+     * @param repairerId 维修人员ID
+     * @return 结果
+     */
+    public int decrementOrderCount(Long repairerId);
 }

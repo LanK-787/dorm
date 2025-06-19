@@ -28,7 +28,7 @@
       <el-form-item label="报修项目" prop="specialty">
         <el-select v-model="queryParams.specialty" placeholder="请选择报修项目" clearable>
           <el-option
-            v-for="dict in dorm_repairer_status"
+            v-for="dict in dorm_repairer_specialty"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -125,7 +125,12 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="requestList" @selection-change="handleSelectionChange">
+    <el-table
+      v-loading="loading"
+      :data="requestList"
+      @selection-change="handleSelectionChange"
+      @sort-change="handleSortChange"
+    >
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="工单ID" align="center" prop="requestId" />
       <el-table-column label="工单编号" align="center" prop="requestNo" />
@@ -133,7 +138,7 @@
       <el-table-column label="宿舍ID" align="center" prop="dormId" />
       <el-table-column label="报修项目" align="center" prop="specialty">
         <template #default="scope">
-          <dict-tag :options="dorm_repairer_status" :value="scope.row.specialty"/>
+          <dict-tag :options="dorm_repairer_specialty" :value="scope.row.specialty"/>
         </template>
       </el-table-column>
       <el-table-column label="问题描述" align="center" prop="description" />
@@ -145,14 +150,14 @@
           <dict-tag :options="repair_request_status" :value="scope.row.status"/>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
+      <el-table-column label="创建时间" align="center" prop="createTime" width="200" sortable="custom">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
+          <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="更新时间" align="center" prop="updateTime" width="180">
+      <el-table-column label="更新时间" align="center" prop="updateTime" width="200" sortable="custom">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.updateTime, '{y}-{m}-{d}') }}</span>
+          <span>{{ parseTime(scope.row.updateTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -186,7 +191,7 @@
         <el-form-item label="报修项目" prop="specialty">
           <el-select v-model="form.specialty" placeholder="请选择报修项目">
             <el-option
-              v-for="dict in dorm_repairer_status"
+              v-for="dict in dorm_repairer_specialty"
               :key="dict.value"
               :label="dict.label"
               :value="dict.value"
@@ -230,7 +235,7 @@
 import { listRequest, getRequest, delRequest, addRequest, updateRequest } from "@/api/dorm/request"
 
 const { proxy } = getCurrentInstance()
-const { repair_request_status, dorm_repairer_status } = proxy.useDict('repair_request_status', 'dorm_repairer_status')
+const { repair_request_status, dorm_repairer_specialty } = proxy.useDict('repair_request_status', 'dorm_repairer_specialty')
 
 const requestList = ref([])
 const open = ref(false)
@@ -258,6 +263,8 @@ const data = reactive({
     status: null,
     createTime: null,
     updateTime: null,
+    orderByColumn: 'create_time',
+    isAsc: 'desc',
   },
   rules: {
     requestNo: [
@@ -330,6 +337,9 @@ function handleQuery() {
 /** 重置按钮操作 */
 function resetQuery() {
   proxy.resetForm("queryRef")
+  // 恢复默认排序
+  queryParams.value.orderByColumn = 'create_time'
+  queryParams.value.isAsc = 'desc'
   handleQuery()
 }
 
@@ -338,6 +348,24 @@ function handleSelectionChange(selection) {
   ids.value = selection.map(item => item.requestId)
   single.value = selection.length != 1
   multiple.value = !selection.length
+}
+
+/** 排序变更处理 */
+function handleSortChange({ prop, order }) {
+  if (!prop) {
+    // 清除排序，恢复默认排序（按创建时间降序）
+    queryParams.value.orderByColumn = 'create_time'
+    queryParams.value.isAsc = 'desc'
+  } else {
+    // 设置排序字段和顺序
+    queryParams.value.orderByColumn = prop === 'createTime' ? 'create_time' :
+                                     prop === 'updateTime' ? 'update_time' : prop
+    queryParams.value.isAsc = order === 'ascending' ? 'asc' : 'desc'
+  }
+
+  // 重新查询数据
+  queryParams.value.pageNum = 1
+  getList()
 }
 
 /** 新增按钮操作 */
@@ -363,13 +391,13 @@ function submitForm() {
   proxy.$refs["requestRef"].validate(valid => {
     if (valid) {
       if (form.value.requestId != null) {
-        updateRequest(form.value).then(response => {
+        updateRequest(form.value).then(() => {
           proxy.$modal.msgSuccess("修改成功")
           open.value = false
           getList()
         })
       } else {
-        addRequest(form.value).then(response => {
+        addRequest(form.value).then(() => {
           proxy.$modal.msgSuccess("新增成功")
           open.value = false
           getList()

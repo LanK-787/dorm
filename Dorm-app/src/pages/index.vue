@@ -46,8 +46,12 @@
           <view class="action-item" @click="navigateTo('/pages/repair/list')">
             <view class="action-icon repair-icon">
               <text class="iconfont icon-tool"></text>
+              <!-- 维修人员未读工单提醒 -->
+              <view v-if="isRepairer && unreadCount > 0" class="badge">
+                <text class="badge-text">{{ unreadCount > 99 ? '99+' : unreadCount }}</text>
+              </view>
             </view>
-            <text class="action-text">报修服务</text>
+            <text class="action-text">{{ isRepairer ? '工单处理' : '报修服务' }}</text>
           </view>
           <view class="action-item" @click="navigateTo('/pages/user/profile')">
             <view class="action-icon profile-icon">
@@ -81,11 +85,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import NoticeSwiper from '@/components/NoticeSwiper/NoticeSwiper.vue'
+import { getUnreadCount } from '@/api/repairer/workorder'
+import useUserStore from '@/store/modules/user'
+
+// 获取用户store
+const userStore = useUserStore()
 
 // 响应式数据
 const statusBarHeight = ref(0)
+const unreadCount = ref(0)
 const newsList = ref([
   {
     id: 1,
@@ -104,6 +114,11 @@ const newsList = ref([
   }
 ])
 
+// 计算属性：判断是否为维修人员
+const isRepairer = computed(() => {
+  return userStore.roles && userStore.roles.includes('repairer')
+})
+
 // 方法定义
 // 初始化页面
 const initPage = () => {
@@ -113,9 +128,26 @@ const initPage = () => {
 }
 
 // 刷新数据
-const refreshData = () => {
+const refreshData = async () => {
   // 这里可以刷新最新动态等数据
   console.log('刷新首页数据')
+
+  // 如果是维修人员，获取未读工单数量
+  if (isRepairer.value) {
+    await loadUnreadCount()
+  }
+}
+
+// 获取未读工单数量
+const loadUnreadCount = async () => {
+  try {
+    const response = await getUnreadCount()
+    if (response.code === 200) {
+      unreadCount.value = response.data || 0
+    }
+  } catch (error) {
+    console.error('获取未读工单数量失败:', error)
+  }
 }
 
 // 搜索功能
@@ -147,6 +179,7 @@ const onReachBottom = () => {
 // 生命周期钩子
 onMounted(() => {
   initPage()
+  refreshData()
 })
 
 // uni-app 页面生命周期钩子
@@ -282,6 +315,7 @@ defineExpose({
   align-items: center;
   justify-content: center;
   margin-bottom: 16rpx;
+  position: relative;
 }
 
 .notice-icon {
@@ -309,6 +343,28 @@ defineExpose({
   font-size: 24rpx;
   color: #666;
   text-align: center;
+}
+
+.badge {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  background: #ff4757;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2rpx solid white;
+}
+
+.badge-text {
+  color: white;
+  font-size: 20rpx;
+  font-weight: bold;
+  line-height: 1;
+  padding: 0 6rpx;
 }
 
 .latest-news {

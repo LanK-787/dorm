@@ -11,7 +11,7 @@
  Target Server Version : 80012 (8.0.12)
  File Encoding         : 65001
 
- Date: 18/06/2025 10:16:01
+ Date: 18/06/2025 19:23:27
 */
 
 SET NAMES utf8mb4;
@@ -171,6 +171,75 @@ INSERT INTO `dorm_notice_like` VALUES (8, 3, 101, '2025-06-16 20:39:40');
 INSERT INTO `dorm_notice_like` VALUES (9, 9, 101, '2025-06-17 17:33:24');
 
 -- ----------------------------
+-- Table structure for dorm_repair_assignment
+-- ----------------------------
+DROP TABLE IF EXISTS `dorm_repair_assignment`;
+CREATE TABLE `dorm_repair_assignment`  (
+  `assignment_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '分配ID',
+  `request_id` bigint(20) NOT NULL COMMENT '工单ID',
+  `request_no` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '工单编号',
+  `repairer_id` bigint(20) NOT NULL COMMENT '维修人员ID',
+  `repairer_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '维修人员姓名',
+  `specialty` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '维修项目（0电工，1水工，2木工，3水泥工）',
+  `assign_time` datetime NOT NULL COMMENT '分配时间',
+  `process_status` varchar(2) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '0' COMMENT '处理状态（0-待接单，1-处理中，2-已完成，3-已拒绝）',
+  `accept_time` datetime NULL DEFAULT NULL COMMENT '接单时间',
+  `complete_time` datetime NULL DEFAULT NULL COMMENT '完成时间',
+  `reject_time` datetime NULL DEFAULT NULL COMMENT '拒绝时间',
+  `reject_reason` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '拒绝原因',
+  `process_remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '处理备注',
+  `create_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT '' COMMENT '创建者',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT '' COMMENT '更新者',
+  `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
+  `images` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '图片URL，多个以逗号分隔，用于完成维修后图片上传',
+  PRIMARY KEY (`assignment_id`) USING BTREE,
+  INDEX `idx_request_id`(`request_id` ASC) USING BTREE,
+  INDEX `idx_request_no`(`request_no` ASC) USING BTREE,
+  INDEX `idx_repairer_id`(`repairer_id` ASC) USING BTREE,
+  INDEX `idx_process_status`(`process_status` ASC) USING BTREE,
+  CONSTRAINT `fk_assignment_repairer` FOREIGN KEY (`repairer_id`) REFERENCES `dorm_repairer` (`repairer_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_assignment_request` FOREIGN KEY (`request_id`) REFERENCES `dorm_repair_request` (`request_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '工单分配表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of dorm_repair_assignment
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for dorm_repair_request
+-- ----------------------------
+DROP TABLE IF EXISTS `dorm_repair_request`;
+CREATE TABLE `dorm_repair_request`  (
+  `request_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '工单ID',
+  `request_no` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '工单编号',
+  `student_id` bigint(20) NULL DEFAULT NULL COMMENT '报修学生ID',
+  `dorm_id` bigint(20) NOT NULL COMMENT '宿舍ID',
+  `specialty` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '报修项目（0电工，1水工，2木工，3水泥工）',
+  `description` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '问题描述',
+  `reporter_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '报修人',
+  `contact_phone` varchar(11) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '联系方式',
+  `images` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '图片URL，多个以逗号分隔',
+  `status` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '0' COMMENT '状态（0-待派单，1-已派单，2-维修中，3-已完成，4-已取消）',
+  `create_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '创建者',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '更新者',
+  `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
+  `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`request_id`) USING BTREE,
+  UNIQUE INDEX `uk_repair_request_no`(`request_no` ASC) USING BTREE,
+  INDEX `idx_repair_student`(`student_id` ASC) USING BTREE,
+  INDEX `idx_repair_dorm`(`dorm_id` ASC) USING BTREE,
+  INDEX `idx_repair_status`(`status` ASC) USING BTREE,
+  INDEX `idx_repair_item`(`specialty` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '报修工单表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of dorm_repair_request
+-- ----------------------------
+INSERT INTO `dorm_repair_request` VALUES (4, 'REQ202506180001', NULL, 262, '1', '下水道堵住了.......', '王新瑜', '13282973175', '', '0', NULL, '2025-06-18 18:31:32', NULL, NULL, NULL);
+
+-- ----------------------------
 -- Table structure for dorm_repairer
 -- ----------------------------
 DROP TABLE IF EXISTS `dorm_repairer`;
@@ -187,13 +256,15 @@ CREATE TABLE `dorm_repairer`  (
   `update_by` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL COMMENT '更新者',
   `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL COMMENT '备注',
+  `order_count` int(11) NULL DEFAULT 0 COMMENT '已接单数量',
   PRIMARY KEY (`repairer_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 103 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '宿舍维修人员表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 104 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '宿舍维修人员表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of dorm_repairer
 -- ----------------------------
-INSERT INTO `dorm_repairer` VALUES (102, 104, 2310305321, '陈炫霖', '13282973175', '0,1,2,3', '1', NULL, '2025-06-17 21:42:46', NULL, NULL, NULL);
+INSERT INTO `dorm_repairer` VALUES (102, 104, 2310305321, '陈炫霖', '13282973175', '0,1,2,3', '1', NULL, '2025-06-17 21:42:46', NULL, NULL, NULL, 0);
+INSERT INTO `dorm_repairer` VALUES (103, 105, 2310305109, '杨豪', '13282973171', '0,1,2,3', '1', NULL, '2025-06-18 16:03:44', NULL, NULL, NULL, 0);
 
 -- ----------------------------
 -- Table structure for dorm_student
@@ -269,7 +340,7 @@ CREATE TABLE `gen_table`  (
   `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`table_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '代码生成业务表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '代码生成业务表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of gen_table
@@ -278,6 +349,8 @@ INSERT INTO `gen_table` VALUES (2, 'dorm_building', '宿舍楼表', '', '', 'Dor
 INSERT INTO `gen_table` VALUES (3, 'dorm_student', '学生表', NULL, NULL, 'DormStudent', 'crud', 'element-plus', 'com.dorm.manage', 'dorm', 'student', '学生管理', '王新瑜', '0', '/', '{\"parentMenuId\":2000}', 'admin', '2025-06-04 13:45:59', '', '2025-06-04 13:53:01', NULL);
 INSERT INTO `gen_table` VALUES (4, 'dorm_notice', '宿舍公告表', NULL, NULL, 'DormNotice', 'crud', 'element-plus', 'com.dorm.manage', 'dorm', 'notices', '宿舍公告', '王新瑜', '0', '/', '{\"parentMenuId\":2000}', 'admin', '2025-06-06 14:09:18', '', '2025-06-06 15:45:53', NULL);
 INSERT INTO `gen_table` VALUES (5, 'dorm_repairer', '宿舍维修人员表', '', '', 'DormRepairer', 'crud', 'element-plus', 'com.dorm.manage', 'manage', 'repairer', '维修人员管理', '王新瑜', '0', '/', '{\"parentMenuId\":2000}', 'admin', '2025-06-16 22:55:53', '', '2025-06-17 10:09:36', NULL);
+INSERT INTO `gen_table` VALUES (7, 'dorm_repair_request', '报修工单表', NULL, NULL, 'DormRepairRequest', 'crud', 'element-plus', 'com.dorm.manage', 'dorm', 'request', '报修工单', '王新瑜', '0', '/', '{\"parentMenuId\":2000}', 'admin', '2025-06-18 13:26:24', '', '2025-06-18 15:22:38', NULL);
+INSERT INTO `gen_table` VALUES (8, 'dorm_repair_assignment', '工单分配表', NULL, NULL, 'DormRepairAssignment', 'crud', 'element-plus', 'com.dorm.manage', 'dorm', 'assignment', '工单分配', '王新瑜', '0', '/', '{\"parentMenuId\":2000}', 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05', NULL);
 
 -- ----------------------------
 -- Table structure for gen_table_column
@@ -307,7 +380,7 @@ CREATE TABLE `gen_table_column`  (
   `update_by` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT '' COMMENT '更新者',
   `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`column_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 69 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '代码生成业务表字段' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 119 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '代码生成业务表字段' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of gen_table_column
@@ -365,6 +438,39 @@ INSERT INTO `gen_table_column` VALUES (65, 5, 'update_by', '更新者', 'varchar
 INSERT INTO `gen_table_column` VALUES (66, 5, 'update_time', '更新时间', 'datetime', 'Date', 'updateTime', '0', '0', '0', '0', '0', NULL, NULL, 'EQ', 'datetime', '', 11, 'admin', '2025-06-16 22:55:53', '', '2025-06-17 10:09:36');
 INSERT INTO `gen_table_column` VALUES (67, 5, 'remark', '备注', 'varchar(500)', 'String', 'remark', '0', '0', '0', '0', '0', '0', NULL, 'EQ', 'textarea', '', 12, 'admin', '2025-06-16 22:55:53', '', '2025-06-17 10:09:36');
 INSERT INTO `gen_table_column` VALUES (68, 5, 'repairer_no', '工号', 'bigint(20)', 'Long', 'repairerNo', '0', '0', '1', '1', '1', '1', '1', 'EQ', 'input', '', 3, '', '2025-06-17 10:02:45', '', '2025-06-17 10:09:36');
+INSERT INTO `gen_table_column` VALUES (85, 7, 'request_id', '工单ID', 'bigint(20)', 'Long', 'requestId', '1', '1', '0', '0', NULL, NULL, NULL, 'EQ', 'input', '', 1, 'admin', '2025-06-18 13:26:24', '', '2025-06-18 15:22:38');
+INSERT INTO `gen_table_column` VALUES (86, 7, 'request_no', '工单编号', 'varchar(30)', 'String', 'requestNo', '0', '0', '1', '1', '1', '1', '1', 'EQ', 'input', '', 2, 'admin', '2025-06-18 13:26:24', '', '2025-06-18 15:22:38');
+INSERT INTO `gen_table_column` VALUES (87, 7, 'student_id', '报修学生ID', 'bigint(20)', 'Long', 'studentId', '0', '0', '0', '1', '1', '1', '1', 'EQ', 'input', '', 3, 'admin', '2025-06-18 13:26:24', '', '2025-06-18 15:22:38');
+INSERT INTO `gen_table_column` VALUES (88, 7, 'dorm_id', '宿舍ID', 'bigint(20)', 'Long', 'dormId', '0', '0', '1', '1', '1', '1', '1', 'EQ', 'input', '', 4, 'admin', '2025-06-18 13:26:24', '', '2025-06-18 15:22:38');
+INSERT INTO `gen_table_column` VALUES (89, 7, 'specialty', '报修项目（0电工，1水工，2木工，3水泥工）', 'varchar(50)', 'String', 'specialty', '0', '0', '1', '1', '1', '1', '1', 'EQ', 'select', 'dorm_repairer_specialty', 5, 'admin', '2025-06-18 13:26:24', '', '2025-06-18 15:22:38');
+INSERT INTO `gen_table_column` VALUES (90, 7, 'description', '问题描述', 'varchar(500)', 'String', 'description', '0', '0', '0', '1', '1', '1', '1', 'EQ', 'textarea', '', 6, 'admin', '2025-06-18 13:26:24', '', '2025-06-18 15:22:38');
+INSERT INTO `gen_table_column` VALUES (91, 7, 'reporter_name', '报修人', 'varchar(50)', 'String', 'reporterName', '0', '0', '1', '1', '1', '1', '1', 'LIKE', 'input', '', 7, 'admin', '2025-06-18 13:26:24', '', '2025-06-18 15:22:38');
+INSERT INTO `gen_table_column` VALUES (92, 7, 'contact_phone', '联系方式', 'varchar(11)', 'String', 'contactPhone', '0', '0', '1', '1', '1', '1', '1', 'EQ', 'input', '', 8, 'admin', '2025-06-18 13:26:24', '', '2025-06-18 15:22:38');
+INSERT INTO `gen_table_column` VALUES (93, 7, 'images', '图片URL，多个以逗号分隔', 'varchar(1000)', 'String', 'images', '0', '0', '0', '1', '1', '1', '1', 'EQ', 'textarea', '', 9, 'admin', '2025-06-18 13:26:24', '', '2025-06-18 15:22:38');
+INSERT INTO `gen_table_column` VALUES (94, 7, 'status', '状态（0-待派单，1-已派单，2-维修中，3-已完成，4-已取消）', 'char(1)', 'String', 'status', '0', '0', '1', '1', '1', '1', '1', 'EQ', 'select', 'repair_request_status', 10, 'admin', '2025-06-18 13:26:24', '', '2025-06-18 15:22:38');
+INSERT INTO `gen_table_column` VALUES (96, 7, 'create_by', '创建者', 'varchar(64)', 'String', 'createBy', '0', '0', '0', '0', NULL, NULL, NULL, 'EQ', 'input', '', 11, 'admin', '2025-06-18 13:26:24', '', '2025-06-18 15:22:38');
+INSERT INTO `gen_table_column` VALUES (97, 7, 'create_time', '创建时间', 'datetime', 'Date', 'createTime', '0', '0', '0', '0', NULL, '1', '1', 'EQ', 'datetime', '', 12, 'admin', '2025-06-18 13:26:24', '', '2025-06-18 15:22:38');
+INSERT INTO `gen_table_column` VALUES (98, 7, 'update_by', '更新者', 'varchar(64)', 'String', 'updateBy', '0', '0', '0', '0', '0', NULL, NULL, 'EQ', 'input', '', 13, 'admin', '2025-06-18 13:26:24', '', '2025-06-18 15:22:38');
+INSERT INTO `gen_table_column` VALUES (99, 7, 'update_time', '更新时间', 'datetime', 'Date', 'updateTime', '0', '0', '0', '0', '0', '1', '1', 'EQ', 'datetime', '', 14, 'admin', '2025-06-18 13:26:24', '', '2025-06-18 15:22:38');
+INSERT INTO `gen_table_column` VALUES (100, 7, 'remark', '备注', 'varchar(500)', 'String', 'remark', '0', '0', '0', '0', '0', '0', NULL, 'EQ', 'textarea', '', 15, 'admin', '2025-06-18 13:26:24', '', '2025-06-18 15:22:38');
+INSERT INTO `gen_table_column` VALUES (101, 8, 'assignment_id', '分配ID', 'bigint(20)', 'Long', 'assignmentId', '1', '1', '0', '0', NULL, NULL, NULL, 'EQ', 'input', '', 1, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (102, 8, 'request_id', '工单ID', 'bigint(20)', 'Long', 'requestId', '0', '0', '1', '0', '0', '1', '1', 'EQ', 'input', '', 2, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (103, 8, 'request_no', '工单编号', 'varchar(30)', 'String', 'requestNo', '0', '0', '1', '0', '0', '1', '1', 'EQ', 'input', '', 3, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (104, 8, 'repairer_id', '维修人员ID', 'bigint(20)', 'Long', 'repairerId', '0', '0', '1', '0', '0', '1', '1', 'EQ', 'input', '', 4, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (105, 8, 'repairer_name', '维修人员姓名', 'varchar(50)', 'String', 'repairerName', '0', '0', '1', '0', '0', '1', '1', 'LIKE', 'input', '', 5, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (106, 8, 'specialty', '维修项目（0电工，1水工，2木工，3水泥工）', 'varchar(10)', 'String', 'specialty', '0', '0', '1', '1', '1', '1', '1', 'LIKE', 'select', 'dorm_repairer_specialty', 6, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (107, 8, 'assign_time', '分配时间', 'datetime', 'Date', 'assignTime', '0', '0', '1', '0', '0', '1', '1', 'EQ', 'datetime', '', 7, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (108, 8, 'process_status', '处理状态（0-待接单，1-处理中，2-已完成，3-已拒绝）', 'varchar(2)', 'String', 'processStatus', '0', '0', '1', '0', '1', '1', '1', 'EQ', 'radio', 'process_status', 8, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (109, 8, 'accept_time', '接单时间', 'datetime', 'Date', 'acceptTime', '0', '0', '0', '0', '1', '1', '1', 'EQ', 'datetime', '', 9, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (110, 8, 'complete_time', '完成时间', 'datetime', 'Date', 'completeTime', '0', '0', '0', '0', '1', '1', '1', 'EQ', 'datetime', '', 10, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (111, 8, 'reject_time', '拒绝时间', 'datetime', 'Date', 'rejectTime', '0', '0', '0', '0', '1', '1', '1', 'EQ', 'datetime', '', 11, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (112, 8, 'reject_reason', '拒绝原因', 'varchar(500)', 'String', 'rejectReason', '0', '0', '0', '0', '1', '1', '1', 'EQ', 'textarea', '', 12, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (113, 8, 'process_remark', '处理备注', 'varchar(500)', 'String', 'processRemark', '0', '0', '0', '1', '1', '1', '1', 'EQ', 'textarea', '', 14, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (114, 8, 'create_by', '创建者', 'varchar(64)', 'String', 'createBy', '0', '0', '0', '0', NULL, NULL, NULL, 'EQ', 'input', '', 15, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (115, 8, 'create_time', '创建时间', 'datetime', 'Date', 'createTime', '0', '0', '0', '0', NULL, '1', NULL, 'EQ', 'datetime', '', 16, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (116, 8, 'update_by', '更新者', 'varchar(64)', 'String', 'updateBy', '0', '0', '0', '0', '0', '0', NULL, 'EQ', 'input', '', 17, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (117, 8, 'update_time', '更新时间', 'datetime', 'Date', 'updateTime', '0', '0', '0', '0', '0', '1', '0', 'EQ', 'datetime', '', 18, 'admin', '2025-06-18 15:49:13', '', '2025-06-18 19:18:05');
+INSERT INTO `gen_table_column` VALUES (118, 8, 'images', '图片URL，多个以逗号分隔，用于完成维修后图片上传', 'varchar(1000)', 'String', 'images', '0', '0', '0', '0', '1', '1', '1', 'EQ', 'textarea', '', 13, '', '2025-06-18 19:14:18', '', '2025-06-18 19:18:05');
 
 -- ----------------------------
 -- Table structure for sys_config
@@ -455,7 +561,7 @@ CREATE TABLE `sys_dict_data`  (
   `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`dict_code`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 118 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '字典数据表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 127 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '字典数据表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_dict_data
@@ -502,6 +608,15 @@ INSERT INTO `sys_dict_data` VALUES (114, 0, '电工', '0', 'dorm_repairer_specia
 INSERT INTO `sys_dict_data` VALUES (115, 0, '水工', '1', 'dorm_repairer_specialty', NULL, 'info', 'N', '0', 'admin', '2025-06-16 23:56:20', '', NULL, NULL);
 INSERT INTO `sys_dict_data` VALUES (116, 0, '木工', '2', 'dorm_repairer_specialty', NULL, 'info', 'N', '0', 'admin', '2025-06-16 23:56:31', '', NULL, NULL);
 INSERT INTO `sys_dict_data` VALUES (117, 0, '水泥工', '3', 'dorm_repairer_specialty', NULL, 'info', 'N', '0', 'admin', '2025-06-16 23:56:51', '', NULL, NULL);
+INSERT INTO `sys_dict_data` VALUES (118, 0, '待派单', '0', 'repair_request_status', NULL, 'default', 'N', '0', 'admin', '2025-06-18 10:31:06', '', NULL, NULL);
+INSERT INTO `sys_dict_data` VALUES (119, 0, '已派单', '1', 'repair_request_status', NULL, 'info', 'N', '0', 'admin', '2025-06-18 10:31:22', 'admin', '2025-06-18 10:32:33', NULL);
+INSERT INTO `sys_dict_data` VALUES (120, 0, '维修中', '2', 'repair_request_status', NULL, 'primary', 'N', '0', 'admin', '2025-06-18 10:31:44', 'admin', '2025-06-18 10:32:27', NULL);
+INSERT INTO `sys_dict_data` VALUES (121, 0, '已完成', '3', 'repair_request_status', NULL, 'success', 'N', '0', 'admin', '2025-06-18 10:32:19', '', NULL, NULL);
+INSERT INTO `sys_dict_data` VALUES (122, 0, '已取消', '4', 'repair_request_status', NULL, 'danger', 'N', '0', 'admin', '2025-06-18 10:33:05', 'admin', '2025-06-18 10:33:19', NULL);
+INSERT INTO `sys_dict_data` VALUES (123, 0, '待接单', '0', 'process_status', NULL, 'warning', 'N', '0', 'admin', '2025-06-18 15:51:49', '', NULL, NULL);
+INSERT INTO `sys_dict_data` VALUES (124, 0, '处理中', '1', 'process_status', NULL, 'primary', 'N', '0', 'admin', '2025-06-18 15:52:27', '', NULL, NULL);
+INSERT INTO `sys_dict_data` VALUES (125, 0, '已完成', '2', 'process_status', NULL, 'success', 'N', '0', 'admin', '2025-06-18 15:52:43', 'admin', '2025-06-18 19:05:27', NULL);
+INSERT INTO `sys_dict_data` VALUES (126, 0, '已拒绝', '3', 'process_status', NULL, 'danger', 'N', '0', 'admin', '2025-06-18 15:52:55', 'admin', '2025-06-18 19:05:35', NULL);
 
 -- ----------------------------
 -- Table structure for sys_dict_type
@@ -519,7 +634,7 @@ CREATE TABLE `sys_dict_type`  (
   `remark` varchar(500) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`dict_id`) USING BTREE,
   UNIQUE INDEX `dict_type`(`dict_type` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 106 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '字典类型表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 108 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '字典类型表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_dict_type
@@ -539,6 +654,8 @@ INSERT INTO `sys_dict_type` VALUES (101, '宿舍通知类型', 'dorm_notice_type
 INSERT INTO `sys_dict_type` VALUES (103, '轮播图是否展示', 'is_carousel', '0', 'admin', '2025-06-13 23:13:31', '', NULL, NULL);
 INSERT INTO `sys_dict_type` VALUES (104, '维修人员状态', 'dorm_repairer_status', '0', 'admin', '2025-06-16 22:57:57', '', NULL, NULL);
 INSERT INTO `sys_dict_type` VALUES (105, '维修人员专长领域', 'dorm_repairer_specialty', '0', 'admin', '2025-06-16 23:00:19', '', NULL, NULL);
+INSERT INTO `sys_dict_type` VALUES (106, '报修工单状态', 'repair_request_status', '0', 'admin', '2025-06-18 10:30:37', '', NULL, NULL);
+INSERT INTO `sys_dict_type` VALUES (107, '处理状态', 'process_status', '0', 'admin', '2025-06-18 15:51:13', '', NULL, NULL);
 
 -- ----------------------------
 -- Table structure for sys_job
@@ -605,7 +722,7 @@ CREATE TABLE `sys_logininfor`  (
   PRIMARY KEY (`info_id`) USING BTREE,
   INDEX `idx_sys_logininfor_s`(`status` ASC) USING BTREE,
   INDEX `idx_sys_logininfor_lt`(`login_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 615 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '系统访问记录' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 633 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '系统访问记录' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_logininfor
@@ -1125,6 +1242,24 @@ INSERT INTO `sys_logininfor` VALUES (611, 'admin', '127.0.0.1', '内网IP', 'Chr
 INSERT INTO `sys_logininfor` VALUES (612, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-17 22:15:42');
 INSERT INTO `sys_logininfor` VALUES (613, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-18 10:00:35');
 INSERT INTO `sys_logininfor` VALUES (614, '2310305321', '172.18.34.104', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-18 10:00:53');
+INSERT INTO `sys_logininfor` VALUES (615, '2310305320', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-18 12:42:09');
+INSERT INTO `sys_logininfor` VALUES (616, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-18 12:43:00');
+INSERT INTO `sys_logininfor` VALUES (617, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-18 13:25:05');
+INSERT INTO `sys_logininfor` VALUES (618, '2310305321', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-18 14:00:41');
+INSERT INTO `sys_logininfor` VALUES (619, '2310305321', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '退出成功', '2025-06-18 14:01:22');
+INSERT INTO `sys_logininfor` VALUES (620, '2310305320', '172.18.34.104', '内网IP', 'Chrome Mobile', 'Android 6.x', '0', '登录成功', '2025-06-18 14:01:42');
+INSERT INTO `sys_logininfor` VALUES (621, '2310305320', '172.18.34.104', '内网IP', 'Mobile Safari', 'Mac OS X (iPhone)', '0', '登录成功', '2025-06-18 14:33:35');
+INSERT INTO `sys_logininfor` VALUES (622, '2310305320', '172.18.34.104', '内网IP', 'Mobile Safari', 'Mac OS X (iPhone)', '0', '登录成功', '2025-06-18 14:33:52');
+INSERT INTO `sys_logininfor` VALUES (623, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-18 14:35:01');
+INSERT INTO `sys_logininfor` VALUES (624, '2310305320', '172.18.34.104', '内网IP', 'Mobile Safari', 'Mac OS X (iPhone)', '0', '登录成功', '2025-06-18 14:35:59');
+INSERT INTO `sys_logininfor` VALUES (625, '2310305320', '172.18.34.104', '内网IP', 'Mobile Safari', 'Mac OS X (iPhone)', '0', '登录成功', '2025-06-18 14:41:08');
+INSERT INTO `sys_logininfor` VALUES (626, '2310305320', '172.18.34.104', '内网IP', 'Mobile Safari', 'Mac OS X (iPhone)', '0', '登录成功', '2025-06-18 14:51:24');
+INSERT INTO `sys_logininfor` VALUES (627, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-18 15:21:44');
+INSERT INTO `sys_logininfor` VALUES (628, '2310305109', '172.18.34.104', '内网IP', 'Mobile Safari', 'Mac OS X (iPhone)', '0', '登录成功', '2025-06-18 16:03:24');
+INSERT INTO `sys_logininfor` VALUES (629, '2310305320', '172.18.34.104', '内网IP', 'Mobile Safari', 'Mac OS X (iPhone)', '0', '登录成功', '2025-06-18 18:19:05');
+INSERT INTO `sys_logininfor` VALUES (630, 'admin', '127.0.0.1', '内网IP', 'Chrome 13', 'Windows 10', '0', '登录成功', '2025-06-18 18:21:17');
+INSERT INTO `sys_logininfor` VALUES (631, '2310305320', '172.18.34.104', '内网IP', 'Mobile Safari', 'Mac OS X (iPhone)', '0', '登录成功', '2025-06-18 18:30:03');
+INSERT INTO `sys_logininfor` VALUES (632, '2310305320', '172.18.34.104', '内网IP', 'Mobile Safari', 'Mac OS X (iPhone)', '0', '登录成功', '2025-06-18 18:46:17');
 
 -- ----------------------------
 -- Table structure for sys_menu
@@ -1152,7 +1287,7 @@ CREATE TABLE `sys_menu`  (
   `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT '' COMMENT '备注',
   PRIMARY KEY (`menu_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2043 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '菜单权限表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2055 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '菜单权限表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_menu
@@ -1267,6 +1402,18 @@ INSERT INTO `sys_menu` VALUES (2039, '维修人员管理新增', 2037, 2, '#', '
 INSERT INTO `sys_menu` VALUES (2040, '维修人员管理修改', 2037, 3, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'manage:repairer:edit', '#', 'admin', '2025-06-17 10:10:39', '', NULL, '');
 INSERT INTO `sys_menu` VALUES (2041, '维修人员管理删除', 2037, 4, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'manage:repairer:remove', '#', 'admin', '2025-06-17 10:10:39', '', NULL, '');
 INSERT INTO `sys_menu` VALUES (2042, '维修人员管理导出', 2037, 5, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'manage:repairer:export', '#', 'admin', '2025-06-17 10:10:39', '', NULL, '');
+INSERT INTO `sys_menu` VALUES (2043, '报修工单', 2000, 1, 'request', 'dorm/request/index', NULL, '', 1, 0, 'C', '0', '0', 'dorm:request:list', '#', 'admin', '2025-06-18 13:33:39', '', NULL, '报修工单菜单');
+INSERT INTO `sys_menu` VALUES (2044, '报修工单查询', 2043, 1, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'dorm:request:query', '#', 'admin', '2025-06-18 13:33:39', '', NULL, '');
+INSERT INTO `sys_menu` VALUES (2045, '报修工单新增', 2043, 2, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'dorm:request:add', '#', 'admin', '2025-06-18 13:33:39', '', NULL, '');
+INSERT INTO `sys_menu` VALUES (2046, '报修工单修改', 2043, 3, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'dorm:request:edit', '#', 'admin', '2025-06-18 13:33:39', '', NULL, '');
+INSERT INTO `sys_menu` VALUES (2047, '报修工单删除', 2043, 4, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'dorm:request:remove', '#', 'admin', '2025-06-18 13:33:39', '', NULL, '');
+INSERT INTO `sys_menu` VALUES (2048, '报修工单导出', 2043, 5, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'dorm:request:export', '#', 'admin', '2025-06-18 13:33:39', '', NULL, '');
+INSERT INTO `sys_menu` VALUES (2049, '工单分配', 2000, 1, 'assignment', 'dorm/assignment/index', NULL, '', 1, 0, 'C', '0', '0', 'dorm:assignment:list', '#', 'admin', '2025-06-18 15:57:17', '', NULL, '工单分配菜单');
+INSERT INTO `sys_menu` VALUES (2050, '工单分配查询', 2049, 1, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'dorm:assignment:query', '#', 'admin', '2025-06-18 15:57:17', '', NULL, '');
+INSERT INTO `sys_menu` VALUES (2051, '工单分配新增', 2049, 2, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'dorm:assignment:add', '#', 'admin', '2025-06-18 15:57:17', '', NULL, '');
+INSERT INTO `sys_menu` VALUES (2052, '工单分配修改', 2049, 3, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'dorm:assignment:edit', '#', 'admin', '2025-06-18 15:57:17', '', NULL, '');
+INSERT INTO `sys_menu` VALUES (2053, '工单分配删除', 2049, 4, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'dorm:assignment:remove', '#', 'admin', '2025-06-18 15:57:17', '', NULL, '');
+INSERT INTO `sys_menu` VALUES (2054, '工单分配导出', 2049, 5, '#', '', NULL, '', 1, 0, 'F', '0', '0', 'dorm:assignment:export', '#', 'admin', '2025-06-18 15:57:17', '', NULL, '');
 
 -- ----------------------------
 -- Table structure for sys_notice
@@ -1318,7 +1465,7 @@ CREATE TABLE `sys_oper_log`  (
   INDEX `idx_sys_oper_log_bt`(`business_type` ASC) USING BTREE,
   INDEX `idx_sys_oper_log_s`(`status` ASC) USING BTREE,
   INDEX `idx_sys_oper_log_ot`(`oper_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 755 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '操作日志记录' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 802 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '操作日志记录' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_oper_log
@@ -1978,6 +2125,53 @@ INSERT INTO `sys_oper_log` VALUES (751, '维修人员管理', 3, 'com.dorm.manag
 INSERT INTO `sys_oper_log` VALUES (752, '维修人员管理', 1, 'com.dorm.manage.controller.DormRepairerController.add()', 'POST', 1, '2310305321', NULL, '/manage/repairer', '172.18.34.104', '内网IP', '{\"createTime\":\"2025-06-17 21:19:38\",\"name\":\"陈炫霖\",\"params\":{},\"phone\":\"13282973175\",\"repairerId\":101,\"repairerNo\":2310305321,\"specialty\":\"0,1,2,3\",\"status\":\"1\",\"userId\":104}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-17 21:19:38', 24);
 INSERT INTO `sys_oper_log` VALUES (753, '维修人员管理', 3, 'com.dorm.manage.controller.DormRepairerController.remove()', 'DELETE', 1, 'admin', '研发部门', '/manage/repairer/101', '127.0.0.1', '内网IP', '[101]', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-17 21:42:12', 98);
 INSERT INTO `sys_oper_log` VALUES (754, '维修人员管理', 1, 'com.dorm.manage.controller.DormRepairerController.add()', 'POST', 1, '2310305321', NULL, '/manage/repairer', '172.18.34.104', '内网IP', '{\"createTime\":\"2025-06-17 21:42:45\",\"name\":\"陈炫霖\",\"params\":{},\"phone\":\"13282973175\",\"repairerId\":102,\"repairerNo\":2310305321,\"specialty\":\"0,1,2,3\",\"status\":\"1\",\"userId\":104}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-17 21:42:45', 46);
+INSERT INTO `sys_oper_log` VALUES (755, '代码生成', 6, 'com.dorm.generator.controller.GenController.importTableSave()', 'POST', 1, 'admin', '研发部门', '/tool/gen/importTable', '127.0.0.1', '内网IP', '{\"tables\":\"repair_request\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 10:25:22', 128);
+INSERT INTO `sys_oper_log` VALUES (756, '字典类型', 1, 'com.dorm.web.controller.system.SysDictTypeController.add()', 'POST', 1, 'admin', '研发部门', '/system/dict/type', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"dictName\":\"报修工单状态\",\"dictType\":\"repair_request_status\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 10:30:37', 76);
+INSERT INTO `sys_oper_log` VALUES (757, '字典数据', 1, 'com.dorm.web.controller.system.SysDictDataController.add()', 'POST', 1, 'admin', '研发部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"default\":false,\"dictLabel\":\"待派单\",\"dictSort\":0,\"dictType\":\"repair_request_status\",\"dictValue\":\"0\",\"listClass\":\"default\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 10:31:06', 45);
+INSERT INTO `sys_oper_log` VALUES (758, '字典数据', 1, 'com.dorm.web.controller.system.SysDictDataController.add()', 'POST', 1, 'admin', '研发部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"default\":false,\"dictLabel\":\"已派单\",\"dictSort\":0,\"dictType\":\"repair_request_status\",\"dictValue\":\"1\",\"listClass\":\"primary\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 10:31:22', 76);
+INSERT INTO `sys_oper_log` VALUES (759, '字典数据', 1, 'com.dorm.web.controller.system.SysDictDataController.add()', 'POST', 1, 'admin', '研发部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"default\":false,\"dictLabel\":\"2\",\"dictSort\":0,\"dictType\":\"repair_request_status\",\"dictValue\":\"维修中\",\"listClass\":\"success\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 10:31:45', 28);
+INSERT INTO `sys_oper_log` VALUES (760, '字典数据', 2, 'com.dorm.web.controller.system.SysDictDataController.edit()', 'PUT', 1, 'admin', '研发部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"createTime\":\"2025-06-18 10:31:44\",\"default\":false,\"dictCode\":120,\"dictLabel\":\"维修中\",\"dictSort\":0,\"dictType\":\"repair_request_status\",\"dictValue\":\"2\",\"isDefault\":\"N\",\"listClass\":\"success\",\"params\":{},\"status\":\"0\",\"updateBy\":\"admin\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 10:31:56', 90);
+INSERT INTO `sys_oper_log` VALUES (761, '字典数据', 1, 'com.dorm.web.controller.system.SysDictDataController.add()', 'POST', 1, 'admin', '研发部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"default\":false,\"dictLabel\":\"已完成\",\"dictSort\":0,\"dictType\":\"repair_request_status\",\"dictValue\":\"3\",\"listClass\":\"success\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 10:32:20', 97);
+INSERT INTO `sys_oper_log` VALUES (762, '字典数据', 2, 'com.dorm.web.controller.system.SysDictDataController.edit()', 'PUT', 1, 'admin', '研发部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"createTime\":\"2025-06-18 10:31:44\",\"default\":false,\"dictCode\":120,\"dictLabel\":\"维修中\",\"dictSort\":0,\"dictType\":\"repair_request_status\",\"dictValue\":\"2\",\"isDefault\":\"N\",\"listClass\":\"primary\",\"params\":{},\"status\":\"0\",\"updateBy\":\"admin\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 10:32:27', 31);
+INSERT INTO `sys_oper_log` VALUES (763, '字典数据', 2, 'com.dorm.web.controller.system.SysDictDataController.edit()', 'PUT', 1, 'admin', '研发部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"createTime\":\"2025-06-18 10:31:22\",\"default\":false,\"dictCode\":119,\"dictLabel\":\"已派单\",\"dictSort\":0,\"dictType\":\"repair_request_status\",\"dictValue\":\"1\",\"isDefault\":\"N\",\"listClass\":\"info\",\"params\":{},\"status\":\"0\",\"updateBy\":\"admin\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 10:32:33', 39);
+INSERT INTO `sys_oper_log` VALUES (764, '字典数据', 1, 'com.dorm.web.controller.system.SysDictDataController.add()', 'POST', 1, 'admin', '研发部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"default\":false,\"dictLabel\":\"已撤回\",\"dictSort\":0,\"dictType\":\"repair_request_status\",\"dictValue\":\"4\",\"listClass\":\"danger\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 10:33:05', 62);
+INSERT INTO `sys_oper_log` VALUES (765, '字典数据', 2, 'com.dorm.web.controller.system.SysDictDataController.edit()', 'PUT', 1, 'admin', '研发部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"createTime\":\"2025-06-18 10:33:05\",\"default\":false,\"dictCode\":122,\"dictLabel\":\"已取消\",\"dictSort\":0,\"dictType\":\"repair_request_status\",\"dictValue\":\"4\",\"isDefault\":\"N\",\"listClass\":\"danger\",\"params\":{},\"status\":\"0\",\"updateBy\":\"admin\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 10:33:19', 15);
+INSERT INTO `sys_oper_log` VALUES (766, '代码生成', 2, 'com.dorm.generator.controller.GenController.synchDb()', 'GET', 1, 'admin', '研发部门', '/tool/gen/synchDb/repair_request', '127.0.0.1', '内网IP', '{}', NULL, 1, '同步数据失败，原表结构不存在', '2025-06-18 13:26:15', 60);
+INSERT INTO `sys_oper_log` VALUES (767, '代码生成', 3, 'com.dorm.generator.controller.GenController.remove()', 'DELETE', 1, 'admin', '研发部门', '/tool/gen/6', '127.0.0.1', '内网IP', '[6]', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 13:26:20', 24);
+INSERT INTO `sys_oper_log` VALUES (768, '代码生成', 6, 'com.dorm.generator.controller.GenController.importTableSave()', 'POST', 1, 'admin', '研发部门', '/tool/gen/importTable', '127.0.0.1', '内网IP', '{\"tables\":\"dorm_repair_request\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 13:26:24', 159);
+INSERT INTO `sys_oper_log` VALUES (769, '代码生成', 2, 'com.dorm.generator.controller.GenController.synchDb()', 'GET', 1, 'admin', '研发部门', '/tool/gen/synchDb/dorm_repair_request', '127.0.0.1', '内网IP', '{}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 13:27:47', 81);
+INSERT INTO `sys_oper_log` VALUES (770, '代码生成', 2, 'com.dorm.generator.controller.GenController.editSave()', 'PUT', 1, 'admin', '研发部门', '/tool/gen', '127.0.0.1', '内网IP', '{\"businessName\":\"request\",\"className\":\"DormRepairRequest\",\"columns\":[{\"capJavaField\":\"RequestId\",\"columnComment\":\"工单ID\",\"columnId\":85,\"columnName\":\"request_id\",\"columnType\":\"bigint(20)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 13:26:24\",\"dictType\":\"\",\"edit\":false,\"htmlType\":\"input\",\"increment\":true,\"insert\":false,\"isIncrement\":\"1\",\"isInsert\":\"0\",\"isPk\":\"1\",\"isRequired\":\"0\",\"javaField\":\"requestId\",\"javaType\":\"Long\",\"list\":false,\"params\":{},\"pk\":true,\"query\":false,\"queryType\":\"EQ\",\"required\":false,\"sort\":1,\"superColumn\":false,\"tableId\":7,\"updateBy\":\"\",\"updateTime\":\"2025-06-18 13:27:47\",\"usableColumn\":false},{\"capJavaField\":\"RequestNo\",\"columnComment\":\"工单编号\",\"columnId\":86,\"columnName\":\"request_no\",\"columnType\":\"varchar(30)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 13:26:24\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isEdit\":\"1\",\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery\":\"1\",\"isRequired\":\"1\",\"javaField\":\"requestNo\",\"javaType\":\"String\",\"list\":true,\"params\":{},\"pk\":false,\"query\":true,\"queryType\":\"EQ\",\"required\":true,\"sort\":2,\"superColumn\":false,\"tableId\":7,\"updateBy\":\"\",\"updateTime\":\"2025-06-18 13:27:47\",\"usableColumn\":false},{\"capJavaField\":\"StudentId\",\"columnComment\":\"报修学生ID\",\"columnId\":87,\"columnName\":\"student_id\",\"columnType\":\"bigint(20)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 13:26:24\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isEdit\":\"1\",\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery\":\"1\",\"isRequired\":\"0\",\"javaField\":\"studentId\",\"javaType\":\"Long\",\"list\":true,\"params\":{},\"pk\":false,\"query\":true,\"queryType\":\"EQ\",\"required\":false,\"sort\":3,\"superColumn\":false,\"tableId\":7,\"updateBy\":\"\",\"updateTime\":\"2025-06-18 13:27:47\",\"usableColumn\":false},{\"capJavaField\":\"DormId\",\"columnComment\":\"宿舍ID\",\"columnId\":88,\"columnName\":\"dorm_id\",\"columnType\":\"bigint(20)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 13:26:24\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 13:32:53', 133);
+INSERT INTO `sys_oper_log` VALUES (771, '代码生成', 8, 'com.dorm.generator.controller.GenController.batchGenCode()', 'GET', 1, 'admin', '研发部门', '/tool/gen/batchGenCode', '127.0.0.1', '内网IP', '{\"tables\":\"dorm_repair_request\"}', NULL, 0, NULL, '2025-06-18 13:32:58', 538);
+INSERT INTO `sys_oper_log` VALUES (772, '代码生成', 8, 'com.dorm.generator.controller.GenController.batchGenCode()', 'GET', 1, 'admin', '研发部门', '/tool/gen/batchGenCode', '127.0.0.1', '内网IP', '{\"tables\":\"dorm_repair_request\"}', NULL, 0, NULL, '2025-06-18 13:32:59', 200);
+INSERT INTO `sys_oper_log` VALUES (773, '角色管理', 2, 'com.dorm.web.controller.system.SysRoleController.edit()', 'PUT', 1, 'admin', '研发部门', '/system/role', '127.0.0.1', '内网IP', '{\"admin\":false,\"createTime\":\"2025-06-07 12:20:49\",\"dataScope\":\"1\",\"delFlag\":\"0\",\"deptCheckStrictly\":true,\"flag\":false,\"menuCheckStrictly\":true,\"menuIds\":[2000,2001,2031,2043,2007,2002,2032,2044,2045,2046,2008,2009,2010],\"params\":{},\"roleId\":100,\"roleKey\":\"student\",\"roleName\":\"学生\",\"roleSort\":1,\"status\":\"0\",\"updateBy\":\"admin\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 14:35:36', 64);
+INSERT INTO `sys_oper_log` VALUES (774, '报修工单', 1, 'com.dorm.manage.controller.DormRepairRequestController.add()', 'POST', 1, '2310305320', NULL, '/dorm/request', '172.18.34.104', '内网IP', '{\"contactPhone\":\"13282973175\",\"createTime\":\"2025-06-18 14:42:15\",\"description\":\"546466456456\",\"dormId\":262,\"images\":\"\",\"params\":{},\"reporterName\":\"123\",\"specialty\":\"0,1,2,3\"}', NULL, 1, '\r\n### Error updating database.  Cause: java.sql.SQLException: Field \'request_no\' doesn\'t have a default value\r\n### The error may exist in file [C:\\Users\\25591\\Desktop\\dorm\\Dorm\\dorm-manage\\target\\classes\\mapper\\dorm\\DormRepairRequestMapper.xml]\r\n### The error may involve com.dorm.manage.mapper.DormRepairRequestMapper.insertDormRepairRequest-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into dorm_repair_request          ( dorm_id,             specialty,             description,             reporter_name,             contact_phone,             images,                                       create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,                                       ? )\r\n### Cause: java.sql.SQLException: Field \'request_no\' doesn\'t have a default value\n; Field \'request_no\' doesn\'t have a default value; nested exception is java.sql.SQLException: Field \'request_no\' doesn\'t have a default value', '2025-06-18 14:42:15', 92);
+INSERT INTO `sys_oper_log` VALUES (775, '报修工单', 1, 'com.dorm.manage.controller.DormRepairRequestController.add()', 'POST', 1, '2310305320', NULL, '/dorm/request', '172.18.34.104', '内网IP', '{\"contactPhone\":\"13282973175\",\"createTime\":\"2025-06-18 14:42:25\",\"description\":\"546466456456\",\"dormId\":262,\"images\":\"\",\"params\":{},\"reporterName\":\"123\",\"specialty\":\"0,1,2,3\"}', NULL, 1, '\r\n### Error updating database.  Cause: java.sql.SQLException: Field \'request_no\' doesn\'t have a default value\r\n### The error may exist in file [C:\\Users\\25591\\Desktop\\dorm\\Dorm\\dorm-manage\\target\\classes\\mapper\\dorm\\DormRepairRequestMapper.xml]\r\n### The error may involve com.dorm.manage.mapper.DormRepairRequestMapper.insertDormRepairRequest-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into dorm_repair_request          ( dorm_id,             specialty,             description,             reporter_name,             contact_phone,             images,                                       create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,                                       ? )\r\n### Cause: java.sql.SQLException: Field \'request_no\' doesn\'t have a default value\n; Field \'request_no\' doesn\'t have a default value; nested exception is java.sql.SQLException: Field \'request_no\' doesn\'t have a default value', '2025-06-18 14:42:25', 6);
+INSERT INTO `sys_oper_log` VALUES (776, '报修工单', 1, 'com.dorm.manage.controller.DormRepairRequestController.add()', 'POST', 1, '2310305320', NULL, '/dorm/request', '172.18.34.104', '内网IP', '{\"contactPhone\":\"13282973175\",\"createTime\":\"2025-06-18 14:42:56\",\"description\":\"546466456456\",\"dormId\":262,\"images\":\"\",\"params\":{},\"reporterName\":\"123\",\"specialty\":\"0,1,2,3\"}', NULL, 1, '\r\n### Error updating database.  Cause: java.sql.SQLException: Field \'request_no\' doesn\'t have a default value\r\n### The error may exist in file [C:\\Users\\25591\\Desktop\\dorm\\Dorm\\dorm-manage\\target\\classes\\mapper\\dorm\\DormRepairRequestMapper.xml]\r\n### The error may involve com.dorm.manage.mapper.DormRepairRequestMapper.insertDormRepairRequest-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into dorm_repair_request          ( dorm_id,             specialty,             description,             reporter_name,             contact_phone,             images,                                       create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,                                       ? )\r\n### Cause: java.sql.SQLException: Field \'request_no\' doesn\'t have a default value\n; Field \'request_no\' doesn\'t have a default value; nested exception is java.sql.SQLException: Field \'request_no\' doesn\'t have a default value', '2025-06-18 14:42:56', 3);
+INSERT INTO `sys_oper_log` VALUES (777, '报修工单', 1, 'com.dorm.manage.controller.DormRepairRequestController.add()', 'POST', 1, '2310305320', NULL, '/dorm/request', '172.18.34.104', '内网IP', '{\"contactPhone\":\"13282973175\",\"createTime\":\"2025-06-18 14:50:18\",\"description\":\"12331332312313\",\"dormId\":262,\"images\":\"\",\"params\":{},\"reporterName\":\"1231\",\"specialty\":\"0,1,2,3\"}', NULL, 1, '\r\n### Error updating database.  Cause: java.sql.SQLException: Field \'request_no\' doesn\'t have a default value\r\n### The error may exist in file [C:\\Users\\25591\\Desktop\\dorm\\Dorm\\dorm-manage\\target\\classes\\mapper\\dorm\\DormRepairRequestMapper.xml]\r\n### The error may involve com.dorm.manage.mapper.DormRepairRequestMapper.insertDormRepairRequest-Inline\r\n### The error occurred while setting parameters\r\n### SQL: insert into dorm_repair_request          ( dorm_id,             specialty,             description,             reporter_name,             contact_phone,             images,                                       create_time )           values ( ?,             ?,             ?,             ?,             ?,             ?,                                       ? )\r\n### Cause: java.sql.SQLException: Field \'request_no\' doesn\'t have a default value\n; Field \'request_no\' doesn\'t have a default value; nested exception is java.sql.SQLException: Field \'request_no\' doesn\'t have a default value', '2025-06-18 14:50:18', 6);
+INSERT INTO `sys_oper_log` VALUES (778, '报修工单', 1, 'com.dorm.manage.controller.DormRepairRequestController.add()', 'POST', 1, '2310305320', NULL, '/dorm/request', '172.18.34.104', '内网IP', '{\"contactPhone\":\"13282973175\",\"createTime\":\"2025-06-18 14:50:51\",\"description\":\"12331332312313\",\"dormId\":262,\"images\":\"\",\"params\":{},\"reporterName\":\"1231\",\"requestId\":1,\"requestNo\":\"REQ202506180001\",\"specialty\":\"0,1,2,3\",\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 14:50:51', 184);
+INSERT INTO `sys_oper_log` VALUES (779, '报修工单', 1, 'com.dorm.manage.controller.DormRepairRequestController.add()', 'POST', 1, '2310305320', NULL, '/dorm/request', '172.18.34.104', '内网IP', '{\"contactPhone\":\"13282973175\",\"createTime\":\"2025-06-18 14:52:29\",\"description\":\"下水道堵了.........\",\"dormId\":262,\"images\":\"\",\"params\":{},\"reporterName\":\"王新瑜\",\"requestId\":2,\"requestNo\":\"REQ202506180002\",\"specialty\":\"0,1,2,3\",\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 14:52:29', 64);
+INSERT INTO `sys_oper_log` VALUES (780, '报修工单', 2, 'com.dorm.manage.controller.DormRepairRequestController.edit()', 'PUT', 1, '2310305320', NULL, '/dorm/request', '172.18.34.104', '内网IP', '{\"contactPhone\":\"13282973175\",\"createTime\":\"2025-06-18 14:52:29\",\"description\":\"下水道堵了.........\",\"dormId\":262,\"images\":\"\",\"params\":{},\"reporterName\":\"王新瑜\",\"requestId\":2,\"requestNo\":\"REQ202506180002\",\"specialty\":\"0,1,2,3\",\"status\":\"3\",\"updateTime\":\"2025-06-18 14:57:56\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 14:57:56', 71);
+INSERT INTO `sys_oper_log` VALUES (781, '报修工单', 2, 'com.dorm.manage.controller.DormRepairRequestController.edit()', 'PUT', 1, '2310305320', NULL, '/dorm/request', '172.18.34.104', '内网IP', '{\"contactPhone\":\"13282973175\",\"createTime\":\"2025-06-18 14:50:51\",\"description\":\"12331332312313\",\"dormId\":262,\"dormName\":\"瓯江口 - 人工智能学院 - 观潮公寓 - B栋 - 三楼 - 306\",\"images\":\"\",\"params\":{},\"reporterName\":\"1231\",\"requestId\":1,\"requestNo\":\"REQ202506180001\",\"specialty\":\"0,1,2,3\",\"status\":\"3\",\"updateTime\":\"2025-06-18 15:03:02\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 15:03:02', 54);
+INSERT INTO `sys_oper_log` VALUES (782, '报修工单', 1, 'com.dorm.manage.controller.DormRepairRequestController.add()', 'POST', 1, '2310305320', NULL, '/dorm/request', '172.18.34.104', '内网IP', '{\"contactPhone\":\"13282973175\",\"createTime\":\"2025-06-18 15:12:17\",\"description\":\"12332332133232132\",\"dormId\":262,\"images\":\"\",\"params\":{},\"reporterName\":\"2131332\",\"requestId\":3,\"requestNo\":\"REQ202506180003\",\"specialty\":\"0,1,2,3\",\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 15:12:17', 88);
+INSERT INTO `sys_oper_log` VALUES (783, '代码生成', 2, 'com.dorm.generator.controller.GenController.editSave()', 'PUT', 1, 'admin', '研发部门', '/tool/gen', '127.0.0.1', '内网IP', '{\"businessName\":\"request\",\"className\":\"DormRepairRequest\",\"columns\":[{\"capJavaField\":\"RequestId\",\"columnComment\":\"工单ID\",\"columnId\":85,\"columnName\":\"request_id\",\"columnType\":\"bigint(20)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 13:26:24\",\"dictType\":\"\",\"edit\":false,\"htmlType\":\"input\",\"increment\":true,\"insert\":false,\"isIncrement\":\"1\",\"isInsert\":\"0\",\"isPk\":\"1\",\"isRequired\":\"0\",\"javaField\":\"requestId\",\"javaType\":\"Long\",\"list\":false,\"params\":{},\"pk\":true,\"query\":false,\"queryType\":\"EQ\",\"required\":false,\"sort\":1,\"superColumn\":false,\"tableId\":7,\"updateBy\":\"\",\"updateTime\":\"2025-06-18 13:32:53\",\"usableColumn\":false},{\"capJavaField\":\"RequestNo\",\"columnComment\":\"工单编号\",\"columnId\":86,\"columnName\":\"request_no\",\"columnType\":\"varchar(30)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 13:26:24\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isEdit\":\"1\",\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery\":\"1\",\"isRequired\":\"1\",\"javaField\":\"requestNo\",\"javaType\":\"String\",\"list\":true,\"params\":{},\"pk\":false,\"query\":true,\"queryType\":\"EQ\",\"required\":true,\"sort\":2,\"superColumn\":false,\"tableId\":7,\"updateBy\":\"\",\"updateTime\":\"2025-06-18 13:32:53\",\"usableColumn\":false},{\"capJavaField\":\"StudentId\",\"columnComment\":\"报修学生ID\",\"columnId\":87,\"columnName\":\"student_id\",\"columnType\":\"bigint(20)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 13:26:24\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isEdit\":\"1\",\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery\":\"1\",\"isRequired\":\"0\",\"javaField\":\"studentId\",\"javaType\":\"Long\",\"list\":true,\"params\":{},\"pk\":false,\"query\":true,\"queryType\":\"EQ\",\"required\":false,\"sort\":3,\"superColumn\":false,\"tableId\":7,\"updateBy\":\"\",\"updateTime\":\"2025-06-18 13:32:53\",\"usableColumn\":false},{\"capJavaField\":\"DormId\",\"columnComment\":\"宿舍ID\",\"columnId\":88,\"columnName\":\"dorm_id\",\"columnType\":\"bigint(20)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 13:26:24\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 15:22:38', 106);
+INSERT INTO `sys_oper_log` VALUES (784, '代码生成', 6, 'com.dorm.generator.controller.GenController.importTableSave()', 'POST', 1, 'admin', '研发部门', '/tool/gen/importTable', '127.0.0.1', '内网IP', '{\"tables\":\"dorm_repair_assignment\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 15:49:13', 110);
+INSERT INTO `sys_oper_log` VALUES (785, '代码生成', 2, 'com.dorm.generator.controller.GenController.editSave()', 'PUT', 1, 'admin', '研发部门', '/tool/gen', '127.0.0.1', '内网IP', '{\"businessName\":\"assignment\",\"className\":\"DormRepairAssignment\",\"columns\":[{\"capJavaField\":\"AssignmentId\",\"columnComment\":\"分配ID\",\"columnId\":101,\"columnName\":\"assignment_id\",\"columnType\":\"bigint(20)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 15:49:13\",\"dictType\":\"\",\"edit\":false,\"htmlType\":\"input\",\"increment\":true,\"insert\":true,\"isIncrement\":\"1\",\"isInsert\":\"1\",\"isPk\":\"1\",\"isRequired\":\"0\",\"javaField\":\"assignmentId\",\"javaType\":\"Long\",\"list\":false,\"params\":{},\"pk\":true,\"query\":false,\"queryType\":\"EQ\",\"required\":false,\"sort\":1,\"superColumn\":false,\"tableId\":8,\"updateBy\":\"\",\"usableColumn\":false},{\"capJavaField\":\"RequestId\",\"columnComment\":\"工单ID\",\"columnId\":102,\"columnName\":\"request_id\",\"columnType\":\"bigint(20)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 15:49:13\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isEdit\":\"1\",\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery\":\"1\",\"isRequired\":\"1\",\"javaField\":\"requestId\",\"javaType\":\"Long\",\"list\":true,\"params\":{},\"pk\":false,\"query\":true,\"queryType\":\"EQ\",\"required\":true,\"sort\":2,\"superColumn\":false,\"tableId\":8,\"updateBy\":\"\",\"usableColumn\":false},{\"capJavaField\":\"RequestNo\",\"columnComment\":\"工单编号\",\"columnId\":103,\"columnName\":\"request_no\",\"columnType\":\"varchar(30)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 15:49:13\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isEdit\":\"1\",\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery\":\"1\",\"isRequired\":\"1\",\"javaField\":\"requestNo\",\"javaType\":\"String\",\"list\":true,\"params\":{},\"pk\":false,\"query\":true,\"queryType\":\"EQ\",\"required\":true,\"sort\":3,\"superColumn\":false,\"tableId\":8,\"updateBy\":\"\",\"usableColumn\":false},{\"capJavaField\":\"RepairerId\",\"columnComment\":\"维修人员ID\",\"columnId\":104,\"columnName\":\"repairer_id\",\"columnType\":\"bigint(20)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 15:49:13\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isEdit\":\"1\",\"isIncrement\":\"0\",\"isInsert\":\"1\",\"i', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 15:49:45', 67);
+INSERT INTO `sys_oper_log` VALUES (786, '字典类型', 1, 'com.dorm.web.controller.system.SysDictTypeController.add()', 'POST', 1, 'admin', '研发部门', '/system/dict/type', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"dictName\":\"处理状态\",\"dictType\":\"process_status\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 15:51:13', 30);
+INSERT INTO `sys_oper_log` VALUES (787, '字典数据', 1, 'com.dorm.web.controller.system.SysDictDataController.add()', 'POST', 1, 'admin', '研发部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"default\":false,\"dictLabel\":\"待接单\",\"dictSort\":0,\"dictType\":\"process_status\",\"dictValue\":\"0\",\"listClass\":\"warning\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 15:51:50', 128);
+INSERT INTO `sys_oper_log` VALUES (788, '字典数据', 1, 'com.dorm.web.controller.system.SysDictDataController.add()', 'POST', 1, 'admin', '研发部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"default\":false,\"dictLabel\":\"处理中\",\"dictSort\":0,\"dictType\":\"process_status\",\"dictValue\":\"1\",\"listClass\":\"primary\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 15:52:27', 31);
+INSERT INTO `sys_oper_log` VALUES (789, '字典数据', 1, 'com.dorm.web.controller.system.SysDictDataController.add()', 'POST', 1, 'admin', '研发部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"default\":false,\"dictLabel\":\"已完成\",\"dictSort\":0,\"dictType\":\"process_status\",\"dictValue\":\"3\",\"listClass\":\"success\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 15:52:44', 129);
+INSERT INTO `sys_oper_log` VALUES (790, '字典数据', 1, 'com.dorm.web.controller.system.SysDictDataController.add()', 'POST', 1, 'admin', '研发部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"default\":false,\"dictLabel\":\"已拒绝\",\"dictSort\":0,\"dictType\":\"process_status\",\"dictValue\":\"4\",\"listClass\":\"danger\",\"params\":{},\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 15:52:55', 59);
+INSERT INTO `sys_oper_log` VALUES (791, '代码生成', 2, 'com.dorm.generator.controller.GenController.editSave()', 'PUT', 1, 'admin', '研发部门', '/tool/gen', '127.0.0.1', '内网IP', '{\"businessName\":\"assignment\",\"className\":\"DormRepairAssignment\",\"columns\":[{\"capJavaField\":\"AssignmentId\",\"columnComment\":\"分配ID\",\"columnId\":101,\"columnName\":\"assignment_id\",\"columnType\":\"bigint(20)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 15:49:13\",\"dictType\":\"\",\"edit\":false,\"htmlType\":\"input\",\"increment\":true,\"insert\":false,\"isIncrement\":\"1\",\"isInsert\":\"0\",\"isPk\":\"1\",\"isRequired\":\"0\",\"javaField\":\"assignmentId\",\"javaType\":\"Long\",\"list\":false,\"params\":{},\"pk\":true,\"query\":false,\"queryType\":\"EQ\",\"required\":false,\"sort\":1,\"superColumn\":false,\"tableId\":8,\"updateBy\":\"\",\"updateTime\":\"2025-06-18 15:49:45\",\"usableColumn\":false},{\"capJavaField\":\"RequestId\",\"columnComment\":\"工单ID\",\"columnId\":102,\"columnName\":\"request_id\",\"columnType\":\"bigint(20)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 15:49:13\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isEdit\":\"1\",\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery\":\"1\",\"isRequired\":\"1\",\"javaField\":\"requestId\",\"javaType\":\"Long\",\"list\":true,\"params\":{},\"pk\":false,\"query\":true,\"queryType\":\"EQ\",\"required\":true,\"sort\":2,\"superColumn\":false,\"tableId\":8,\"updateBy\":\"\",\"updateTime\":\"2025-06-18 15:49:45\",\"usableColumn\":false},{\"capJavaField\":\"RequestNo\",\"columnComment\":\"工单编号\",\"columnId\":103,\"columnName\":\"request_no\",\"columnType\":\"varchar(30)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 15:49:13\",\"dictType\":\"\",\"edit\":true,\"htmlType\":\"input\",\"increment\":false,\"insert\":true,\"isEdit\":\"1\",\"isIncrement\":\"0\",\"isInsert\":\"1\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery\":\"1\",\"isRequired\":\"1\",\"javaField\":\"requestNo\",\"javaType\":\"String\",\"list\":true,\"params\":{},\"pk\":false,\"query\":true,\"queryType\":\"EQ\",\"required\":true,\"sort\":3,\"superColumn\":false,\"tableId\":8,\"updateBy\":\"\",\"updateTime\":\"2025-06-18 15:49:45\",\"usableColumn\":false},{\"capJavaField\":\"RepairerId\",\"columnComment\":\"维修人员ID\",\"columnId\":104,\"columnName\":\"repairer_id\",\"columnType\":\"bigint(20)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 15:49:13\",\"dictType\":\"\",\"edit', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 15:56:32', 170);
+INSERT INTO `sys_oper_log` VALUES (792, '代码生成', 8, 'com.dorm.generator.controller.GenController.batchGenCode()', 'GET', 1, 'admin', '研发部门', '/tool/gen/batchGenCode', '127.0.0.1', '内网IP', '{\"tables\":\"dorm_repair_assignment\"}', NULL, 0, NULL, '2025-06-18 15:56:37', 251);
+INSERT INTO `sys_oper_log` VALUES (793, '代码生成', 8, 'com.dorm.generator.controller.GenController.batchGenCode()', 'GET', 1, 'admin', '研发部门', '/tool/gen/batchGenCode', '127.0.0.1', '内网IP', '{\"tables\":\"dorm_repair_assignment\"}', NULL, 0, NULL, '2025-06-18 15:56:37', 203);
+INSERT INTO `sys_oper_log` VALUES (794, '用户管理', 1, 'com.dorm.web.controller.system.SysUserController.add()', 'POST', 1, 'admin', '研发部门', '/system/user', '127.0.0.1', '内网IP', '{\"admin\":false,\"nickName\":\"杨豪\",\"params\":{},\"phonenumber\":\"13282973175\",\"postIds\":[],\"roleIds\":[101],\"sex\":\"0\",\"status\":\"0\",\"userName\":\"2310305109\"}', '{\"msg\":\"新增用户\'2310305109\'失败，手机号码已存在\",\"code\":500}', 0, NULL, '2025-06-18 16:02:47', 12);
+INSERT INTO `sys_oper_log` VALUES (795, '用户管理', 1, 'com.dorm.web.controller.system.SysUserController.add()', 'POST', 1, 'admin', '研发部门', '/system/user', '127.0.0.1', '内网IP', '{\"admin\":false,\"createBy\":\"admin\",\"nickName\":\"杨豪\",\"params\":{},\"phonenumber\":\"13282973171\",\"postIds\":[],\"roleIds\":[101],\"sex\":\"0\",\"status\":\"0\",\"userId\":105,\"userName\":\"2310305109\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 16:02:53', 217);
+INSERT INTO `sys_oper_log` VALUES (796, '维修人员管理', 1, 'com.dorm.manage.controller.DormRepairerController.add()', 'POST', 1, '2310305109', NULL, '/manage/repairer', '172.18.34.104', '内网IP', '{\"createTime\":\"2025-06-18 16:03:44\",\"name\":\"杨豪\",\"params\":{},\"phone\":\"13282973171\",\"repairerId\":103,\"repairerNo\":2310305109,\"specialty\":\"0,1,2,3\",\"status\":\"1\",\"userId\":105}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 16:03:44', 82);
+INSERT INTO `sys_oper_log` VALUES (797, '报修工单', 1, 'com.dorm.manage.controller.DormRepairRequestController.add()', 'POST', 1, '2310305320', NULL, '/dorm/request', '172.18.34.104', '内网IP', '{\"contactPhone\":\"13282973175\",\"createTime\":\"2025-06-18 18:31:31\",\"description\":\"下水道堵住了.......\",\"dormId\":262,\"images\":\"\",\"params\":{},\"reporterName\":\"王新瑜\",\"requestId\":4,\"requestNo\":\"REQ202506180001\",\"specialty\":\"1\",\"status\":\"0\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 18:31:32', 151);
+INSERT INTO `sys_oper_log` VALUES (798, '字典数据', 2, 'com.dorm.web.controller.system.SysDictDataController.edit()', 'PUT', 1, 'admin', '研发部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"createTime\":\"2025-06-18 15:52:43\",\"default\":false,\"dictCode\":125,\"dictLabel\":\"已完成\",\"dictSort\":0,\"dictType\":\"process_status\",\"dictValue\":\"2\",\"isDefault\":\"N\",\"listClass\":\"success\",\"params\":{},\"status\":\"0\",\"updateBy\":\"admin\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 19:05:27', 63);
+INSERT INTO `sys_oper_log` VALUES (799, '字典数据', 2, 'com.dorm.web.controller.system.SysDictDataController.edit()', 'PUT', 1, 'admin', '研发部门', '/system/dict/data', '127.0.0.1', '内网IP', '{\"createBy\":\"admin\",\"createTime\":\"2025-06-18 15:52:55\",\"default\":false,\"dictCode\":126,\"dictLabel\":\"已拒绝\",\"dictSort\":0,\"dictType\":\"process_status\",\"dictValue\":\"3\",\"isDefault\":\"N\",\"listClass\":\"danger\",\"params\":{},\"status\":\"0\",\"updateBy\":\"admin\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 19:05:35', 61);
+INSERT INTO `sys_oper_log` VALUES (800, '代码生成', 2, 'com.dorm.generator.controller.GenController.synchDb()', 'GET', 1, 'admin', '研发部门', '/tool/gen/synchDb/dorm_repair_assignment', '127.0.0.1', '内网IP', '{}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 19:14:18', 119);
+INSERT INTO `sys_oper_log` VALUES (801, '代码生成', 2, 'com.dorm.generator.controller.GenController.editSave()', 'PUT', 1, 'admin', '研发部门', '/tool/gen', '127.0.0.1', '内网IP', '{\"businessName\":\"assignment\",\"className\":\"DormRepairAssignment\",\"columns\":[{\"capJavaField\":\"AssignmentId\",\"columnComment\":\"分配ID\",\"columnId\":101,\"columnName\":\"assignment_id\",\"columnType\":\"bigint(20)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 15:49:13\",\"dictType\":\"\",\"edit\":false,\"htmlType\":\"input\",\"increment\":true,\"insert\":false,\"isIncrement\":\"1\",\"isInsert\":\"0\",\"isPk\":\"1\",\"isRequired\":\"0\",\"javaField\":\"assignmentId\",\"javaType\":\"Long\",\"list\":false,\"params\":{},\"pk\":true,\"query\":false,\"queryType\":\"EQ\",\"required\":false,\"sort\":1,\"superColumn\":false,\"tableId\":8,\"updateBy\":\"\",\"updateTime\":\"2025-06-18 19:14:18\",\"usableColumn\":false},{\"capJavaField\":\"RequestId\",\"columnComment\":\"工单ID\",\"columnId\":102,\"columnName\":\"request_id\",\"columnType\":\"bigint(20)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 15:49:13\",\"dictType\":\"\",\"edit\":false,\"htmlType\":\"input\",\"increment\":false,\"insert\":false,\"isEdit\":\"0\",\"isIncrement\":\"0\",\"isInsert\":\"0\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery\":\"1\",\"isRequired\":\"1\",\"javaField\":\"requestId\",\"javaType\":\"Long\",\"list\":true,\"params\":{},\"pk\":false,\"query\":true,\"queryType\":\"EQ\",\"required\":true,\"sort\":2,\"superColumn\":false,\"tableId\":8,\"updateBy\":\"\",\"updateTime\":\"2025-06-18 19:14:18\",\"usableColumn\":false},{\"capJavaField\":\"RequestNo\",\"columnComment\":\"工单编号\",\"columnId\":103,\"columnName\":\"request_no\",\"columnType\":\"varchar(30)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 15:49:13\",\"dictType\":\"\",\"edit\":false,\"htmlType\":\"input\",\"increment\":false,\"insert\":false,\"isEdit\":\"0\",\"isIncrement\":\"0\",\"isInsert\":\"0\",\"isList\":\"1\",\"isPk\":\"0\",\"isQuery\":\"1\",\"isRequired\":\"1\",\"javaField\":\"requestNo\",\"javaType\":\"String\",\"list\":true,\"params\":{},\"pk\":false,\"query\":true,\"queryType\":\"EQ\",\"required\":true,\"sort\":3,\"superColumn\":false,\"tableId\":8,\"updateBy\":\"\",\"updateTime\":\"2025-06-18 19:14:18\",\"usableColumn\":false},{\"capJavaField\":\"RepairerId\",\"columnComment\":\"维修人员ID\",\"columnId\":104,\"columnName\":\"repairer_id\",\"columnType\":\"bigint(20)\",\"createBy\":\"admin\",\"createTime\":\"2025-06-18 15:49:13\",\"dictType\":\"\",\"', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2025-06-18 19:18:05', 74);
 
 -- ----------------------------
 -- Table structure for sys_post
@@ -2032,7 +2226,7 @@ CREATE TABLE `sys_role`  (
 -- ----------------------------
 INSERT INTO `sys_role` VALUES (1, '超级管理员', 'admin', 1, '1', 1, 1, '0', '0', 'admin', '2025-06-03 20:44:14', '', NULL, '超级管理员');
 INSERT INTO `sys_role` VALUES (2, '普通角色', 'common', 2, '2', 1, 1, '0', '0', 'admin', '2025-06-03 20:44:14', '', NULL, '普通角色');
-INSERT INTO `sys_role` VALUES (100, '学生', 'student', 1, '1', 1, 1, '0', '0', 'admin', '2025-06-07 12:20:49', 'admin', '2025-06-16 15:42:05', NULL);
+INSERT INTO `sys_role` VALUES (100, '学生', 'student', 1, '1', 1, 1, '0', '0', 'admin', '2025-06-07 12:20:49', 'admin', '2025-06-18 14:35:36', NULL);
 INSERT INTO `sys_role` VALUES (101, '维修人员', 'repairer', 3, '1', 1, 1, '0', '0', 'admin', '2025-06-17 18:21:53', 'admin', '2025-06-17 18:25:47', NULL);
 
 -- ----------------------------
@@ -2159,6 +2353,10 @@ INSERT INTO `sys_role_menu` VALUES (100, 2009);
 INSERT INTO `sys_role_menu` VALUES (100, 2010);
 INSERT INTO `sys_role_menu` VALUES (100, 2031);
 INSERT INTO `sys_role_menu` VALUES (100, 2032);
+INSERT INTO `sys_role_menu` VALUES (100, 2043);
+INSERT INTO `sys_role_menu` VALUES (100, 2044);
+INSERT INTO `sys_role_menu` VALUES (100, 2045);
+INSERT INTO `sys_role_menu` VALUES (100, 2046);
 INSERT INTO `sys_role_menu` VALUES (101, 2000);
 INSERT INTO `sys_role_menu` VALUES (101, 2031);
 INSERT INTO `sys_role_menu` VALUES (101, 2032);
@@ -2193,17 +2391,18 @@ CREATE TABLE `sys_user`  (
   `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`user_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 105 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '用户信息表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 106 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci COMMENT = '用户信息表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_user
 -- ----------------------------
-INSERT INTO `sys_user` VALUES (1, 103, 'admin', '若依', '00', 'ry@163.com', '15888888888', '1', 'http://172.18.34.104:9005/test/2025/06/avatar/b0523dcb7bca4442b447cac98617efd5.png', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2025-06-18 10:00:35', '2025-06-03 20:44:14', 'admin', '2025-06-03 20:44:14', '', '2025-06-18 10:00:35', '管理员');
+INSERT INTO `sys_user` VALUES (1, 103, 'admin', '若依', '00', 'ry@163.com', '15888888888', '1', 'http://172.18.34.104:9005/test/2025/06/avatar/b0523dcb7bca4442b447cac98617efd5.png', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2025-06-18 18:21:18', '2025-06-03 20:44:14', 'admin', '2025-06-03 20:44:14', '', '2025-06-18 18:21:17', '管理员');
 INSERT INTO `sys_user` VALUES (2, 105, 'ry', '若依', '00', 'ry@qq.com', '15666666666', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2025-06-03 20:44:14', '2025-06-03 20:44:14', 'admin', '2025-06-03 20:44:14', '', NULL, '测试员');
-INSERT INTO `sys_user` VALUES (101, NULL, '2310305320', '王新瑜', '00', '2559118499@qq.com', '13282973175', '0', '', '$2a$10$KxpBw6D/j92BmWb18xK/xOZ3Iwzv/HkKmPR1/CXgmse6HFrXAKWWS', '0', '0', '172.18.34.104', '2025-06-17 21:18:22', '2025-06-07 12:19:27', '', '2025-06-07 12:19:27', 'admin', '2025-06-17 21:18:22', NULL);
+INSERT INTO `sys_user` VALUES (101, NULL, '2310305320', '王新瑜', '00', '2559118499@qq.com', '13282973175', '0', '', '$2a$10$KxpBw6D/j92BmWb18xK/xOZ3Iwzv/HkKmPR1/CXgmse6HFrXAKWWS', '0', '0', '172.18.34.104', '2025-06-18 18:46:18', '2025-06-07 12:19:27', '', '2025-06-07 12:19:27', 'admin', '2025-06-18 18:46:17', NULL);
 INSERT INTO `sys_user` VALUES (102, NULL, '徐涛', '2310305106', '00', '123@qq.com', '13282973174', '0', '', '$2a$10$d4Wdk7dqlSLcWkGwo5h1semiwHB4Rgyyx7nAb1Pt1PaebRNTEXNrO', '0', '2', '', NULL, NULL, 'admin', '2025-06-16 15:37:55', '', NULL, NULL);
 INSERT INTO `sys_user` VALUES (103, NULL, '2310305106', '徐涛', '00', '123@qq.com', '13282973174', '0', '', '$2a$10$2OimFFryRxIYfx.G.CLjRejHC20zz/ye/ksSpXYsR7e/sT3pNM9.u', '0', '0', '', NULL, NULL, 'admin', '2025-06-16 15:38:59', '', NULL, NULL);
-INSERT INTO `sys_user` VALUES (104, NULL, '2310305321', '陈炫霖', '00', '', '', '0', '', '$2a$10$FoZtSWNHfP9dz0pvD95RTOGWkEceMoShZnJrY3fYbjsDebKxELY9a', '0', '0', '172.18.34.104', '2025-06-18 10:00:53', NULL, 'admin', '2025-06-17 18:23:36', 'admin', '2025-06-18 10:00:53', NULL);
+INSERT INTO `sys_user` VALUES (104, NULL, '2310305321', '陈炫霖', '00', '', '', '0', '', '$2a$10$FoZtSWNHfP9dz0pvD95RTOGWkEceMoShZnJrY3fYbjsDebKxELY9a', '0', '0', '172.18.34.104', '2025-06-18 14:00:41', NULL, 'admin', '2025-06-17 18:23:36', 'admin', '2025-06-18 14:00:41', NULL);
+INSERT INTO `sys_user` VALUES (105, NULL, '2310305109', '杨豪', '00', '', '13282973171', '0', '', '$2a$10$GOZPP8W3nvG7IS18L3mRvOGG7NaVabq14PMCle9QiXCwgwBGByB3u', '0', '0', '172.18.34.104', '2025-06-18 16:03:25', NULL, 'admin', '2025-06-18 16:02:53', '', '2025-06-18 16:03:24', NULL);
 
 -- ----------------------------
 -- Table structure for sys_user_post
@@ -2238,6 +2437,7 @@ INSERT INTO `sys_user_role` VALUES (1, 1);
 INSERT INTO `sys_user_role` VALUES (2, 2);
 INSERT INTO `sys_user_role` VALUES (101, 100);
 INSERT INTO `sys_user_role` VALUES (104, 101);
+INSERT INTO `sys_user_role` VALUES (105, 101);
 
 -- ----------------------------
 -- Table structure for sys_user_shortcut

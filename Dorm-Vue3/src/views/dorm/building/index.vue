@@ -707,16 +707,12 @@ function handleDelete(row) {
 
 /** 修复宿舍状态 */
 async function handleFixStatus() {
-  console.log('🔧 开始执行修复状态功能')
   let checkResponse = null
 
   // 第一步：调用检查状态一致性API
   try {
-    console.log('📡 调用检查状态一致性API...')
     checkResponse = await checkStatusConsistency()
-    console.log('✅ API调用成功，响应:', checkResponse)
   } catch (error) {
-    console.error('❌ 调用检查状态一致性API失败:', error)
     proxy.$modal.msgError("检查状态一致性失败，请重试")
     return
   }
@@ -725,58 +721,42 @@ async function handleFixStatus() {
   try {
     // 验证响应数据
     if (!checkResponse) {
-      console.error('❌ checkResponse 为空')
       proxy.$modal.msgError("检查状态一致性失败")
       return
     }
-
-    console.log('🔍 分析响应数据:')
-    console.log('  - 响应码:', checkResponse.code)
-    console.log('  - 响应消息:', checkResponse.msg)
-    console.log('  - 响应数据:', checkResponse.data)
 
     // 判断是否有不一致的状态
     // 当有不一致状态时，data 包含 { count, inconsistentDorms, message }
     // 当无不一致状态时，data 为 null，消息在 msg 中
     if (checkResponse.data && typeof checkResponse.data === 'object' && checkResponse.data.count > 0) {
-      console.log('⚠️ 发现不一致状态，需要修复')
       // 有不一致状态，需要修复
       const inconsistentCount = checkResponse.data.count
       const confirmMessage = `检测到 ${inconsistentCount} 个宿舍的状态与容量不一致，是否执行批量修复？`
 
       // 显示确认对话框
       try {
-        console.log('❓ 显示确认对话框')
         await proxy.$modal.confirm(confirmMessage)
-        console.log('✅ 用户确认执行修复')
       } catch (error) {
-        console.log('🚫 用户取消操作')
         return
       }
 
       // 执行批量修复
       let fixResponse = null
       try {
-        console.log('🔧 执行批量修复...')
         fixResponse = await batchFixDormStatus()
-        console.log('✅ 批量修复完成，响应:', fixResponse)
       } catch (error) {
-        console.error('❌ 调用批量修复API失败:', error)
         proxy.$modal.msgError("批量修复失败，请重试")
         return
       }
 
       // 处理修复结果
       if (fixResponse && fixResponse.code === 200) {
-        console.log('🎉 修复成功')
         proxy.$modal.msgSuccess(fixResponse.msg || "状态修复成功")
         getList()
       } else {
-        console.error('❌ 修复失败:', fixResponse)
         proxy.$modal.msgError(fixResponse?.msg || "状态修复失败")
       }
     } else {
-      console.log('ℹ️ 无不一致状态，显示信息提示')
       // 无不一致状态，显示信息提示（使用后端返回的消息）
       proxy.$modal.msgInfo(checkResponse.msg || "所有宿舍状态与容量一致，无需修复")
     }
@@ -793,15 +773,11 @@ async function handleFixStatus() {
 
 /** 同步父子节点容量数据 */
 async function handleSyncCapacity() {
-  console.log('🔄 开始执行容量同步功能')
-
   try {
     // 显示确认对话框
     await proxy.$modal.confirm('是否确认同步所有父子节点的容量数据？此操作将重新计算所有父节点的最大入住人数和当前入住人数。')
 
-    console.log('📡 调用容量同步API...')
     const response = await syncCapacity()
-    console.log('✅ 容量同步完成，响应:', response)
 
     if (response && response.code === 200) {
       proxy.$modal.msgSuccess(response.msg || "容量数据同步成功")
@@ -812,10 +788,8 @@ async function handleSyncCapacity() {
     }
   } catch (error) {
     if (error === 'cancel') {
-      console.log('🚫 用户取消容量同步操作')
       return
     }
-    console.error('❌ 容量同步失败:', error)
     proxy.$modal.msgError("容量数据同步失败，请重试")
   }
 }
