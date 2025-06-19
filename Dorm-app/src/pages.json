@@ -145,12 +145,15 @@
         "iconPath": "static/images/tabbar/home.png",
         "selectedIconPath": "static/images/tabbar/home_.png",
         "text": "首页"
-      }, {
-        "pagePath": "pages/work/index",
-        "iconPath": "static/images/tabbar/work.png",
-        "selectedIconPath": "static/images/tabbar/work_.png",
-        "text": "工作台"
-      }, {
+      }, 
+      // 暂时隐藏工作台
+      // {
+      //   "pagePath": "pages/work/index",
+      //   "iconPath": "static/images/tabbar/work.png",
+      //   "selectedIconPath": "static/images/tabbar/work_.png",
+      //   "text": "工作台"
+      // }, 
+      {
         "pagePath": "pages/mine/index",
         "iconPath": "static/images/tabbar/mine.png",
         "selectedIconPath": "static/images/tabbar/mine_.png",
