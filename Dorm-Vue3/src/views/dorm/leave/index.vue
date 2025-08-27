@@ -9,7 +9,7 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="离校时间" prop="leaveTime">
+      <!-- <el-form-item label="离校时间" prop="leaveTime">
         <el-date-picker clearable
           v-model="queryParams.leaveTime"
           type="daterange"
@@ -19,8 +19,8 @@
           value-format="YYYY-MM-DD"
           format="YYYY-MM-DD">
         </el-date-picker>
-      </el-form-item>
-      <el-form-item label="预计返校时间" prop="expectedReturnTime">
+      </el-form-item> -->
+      <!-- <el-form-item label="预计返校时间" prop="expectedReturnTime">
         <el-date-picker clearable
           v-model="queryParams.expectedReturnTime"
           type="daterange"
@@ -30,8 +30,8 @@
           value-format="YYYY-MM-DD"
           format="YYYY-MM-DD">
         </el-date-picker>
-      </el-form-item>
-      <el-form-item label="实际返校时间" prop="actualReturnTime">
+      </el-form-item> -->
+      <!-- <el-form-item label="实际返校时间" prop="actualReturnTime">
         <el-date-picker clearable
           v-model="queryParams.actualReturnTime"
           type="daterange"
@@ -41,7 +41,7 @@
           value-format="YYYY-MM-DD"
           format="YYYY-MM-DD">
         </el-date-picker>
-      </el-form-item>
+      </el-form-item> -->
       <el-form-item label="离校原因" prop="leaveReason">
         <el-input
           v-model="queryParams.leaveReason"
@@ -58,31 +58,31 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="离校期间联系电话" prop="contactDuringLeave">
+      <!-- <el-form-item label="离校期间联系电话" prop="contactDuringLeave">
         <el-input
           v-model="queryParams.contactDuringLeave"
           placeholder="请输入离校期间联系电话"
           clearable
           @keyup.enter="handleQuery"
         />
-      </el-form-item>
-      <el-form-item label="紧急联系人" prop="emergencyContact">
+      </el-form-item> -->
+      <!-- <el-form-item label="紧急联系人" prop="emergencyContact">
         <el-input
           v-model="queryParams.emergencyContact"
           placeholder="请输入紧急联系人"
           clearable
           @keyup.enter="handleQuery"
         />
-      </el-form-item>
-      <el-form-item label="紧急联系人电话" prop="emergencyPhone">
+      </el-form-item> -->
+      <!-- <el-form-item label="紧急联系人电话" prop="emergencyPhone">
         <el-input
           v-model="queryParams.emergencyPhone"
           placeholder="请输入紧急联系人电话"
           clearable
           @keyup.enter="handleQuery"
         />
-      </el-form-item>
-      <el-form-item label="状态" prop="status">
+      </el-form-item> -->
+      <el-form-item label="状态" prop="status" style="width: 250px;">
         <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
           <el-option
             v-for="dict in leave_status"
@@ -92,15 +92,15 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="审批人" prop="approver">
+      <!-- <el-form-item label="审批人" prop="approver">
         <el-input
           v-model="queryParams.approver"
           placeholder="请输入审批人"
           clearable
           @keyup.enter="handleQuery"
         />
-      </el-form-item>
-      <el-form-item label="审批时间" prop="approveTime">
+      </el-form-item> -->
+      <!-- <el-form-item label="审批时间" prop="approveTime">
         <el-date-picker clearable
           v-model="queryParams.approveTime"
           type="daterange"
@@ -110,8 +110,8 @@
           value-format="YYYY-MM-DD"
           format="YYYY-MM-DD">
         </el-date-picker>
-      </el-form-item>
-      <el-form-item label="审批状态" prop="approveStatus">
+      </el-form-item> -->
+      <el-form-item label="审批状态" prop="approveStatus" style="width: 250px;">
         <el-select v-model="queryParams.approveStatus" placeholder="请选择审批状态" clearable>
           <el-option
             v-for="dict in approve_status"

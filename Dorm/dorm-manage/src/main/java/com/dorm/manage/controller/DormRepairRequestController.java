@@ -1,6 +1,8 @@
 package com.dorm.manage.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -176,5 +178,80 @@ public class DormRepairRequestController extends BaseController
         }
 
         return toAjax(dormRepairRequestService.deleteDormRepairRequestByRequestIds(requestIds));
+    }
+
+    /**
+     * 获取维修工单统计数据
+     */
+    @GetMapping("/statistics")
+    public AjaxResult getRepairStatistics()
+    {
+        try {
+            Map<String, Object> statistics = new HashMap<>();
+
+            // 获取所有维修工单数据
+            List<DormRepairRequest> allRequests = dormRepairRequestService.selectDormRepairRequestList(new DormRepairRequest());
+
+            // 统计总工单数
+            int totalRequests = allRequests.size();
+
+            // 按状态统计工单数量
+            long pendingRequests = allRequests.stream()
+                .filter(request -> "0".equals(request.getStatus()))
+                .count();
+
+            long assignedRequests = allRequests.stream()
+                .filter(request -> "1".equals(request.getStatus()))
+                .count();
+
+            long inProgressRequests = allRequests.stream()
+                .filter(request -> "2".equals(request.getStatus()))
+                .count();
+
+            long completedRequests = allRequests.stream()
+                .filter(request -> "3".equals(request.getStatus()))
+                .count();
+
+            long cancelledRequests = allRequests.stream()
+                .filter(request -> "4".equals(request.getStatus()))
+                .count();
+
+            long manualDispatchRequests = allRequests.stream()
+                .filter(request -> "5".equals(request.getStatus()))
+                .count();
+
+            // 按专业类型统计
+            long electricalRequests = allRequests.stream()
+                .filter(request -> "0".equals(request.getSpecialty()))
+                .count();
+
+            long plumbingRequests = allRequests.stream()
+                .filter(request -> "1".equals(request.getSpecialty()))
+                .count();
+
+            long carpentryRequests = allRequests.stream()
+                .filter(request -> "2".equals(request.getSpecialty()))
+                .count();
+
+            long cementRequests = allRequests.stream()
+                .filter(request -> "3".equals(request.getSpecialty()))
+                .count();
+
+            statistics.put("totalRequests", totalRequests);
+            statistics.put("pendingRequests", pendingRequests);
+            statistics.put("assignedRequests", assignedRequests);
+            statistics.put("inProgressRequests", inProgressRequests);
+            statistics.put("completedRequests", completedRequests);
+            statistics.put("cancelledRequests", cancelledRequests);
+            statistics.put("manualDispatchRequests", manualDispatchRequests);
+            statistics.put("electricalRequests", electricalRequests);
+            statistics.put("plumbingRequests", plumbingRequests);
+            statistics.put("carpentryRequests", carpentryRequests);
+            statistics.put("cementRequests", cementRequests);
+
+            return success(statistics);
+        } catch (Exception e) {
+            return error("获取维修工单统计数据失败：" + e.getMessage());
+        }
     }
 }

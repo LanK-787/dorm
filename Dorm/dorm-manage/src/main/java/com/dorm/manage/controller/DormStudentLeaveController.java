@@ -1,6 +1,7 @@
 package com.dorm.manage.controller;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
@@ -308,6 +309,67 @@ public class DormStudentLeaveController extends BaseController
         } catch (Exception e) {
             logger.error("批量审批离校申请失败", e);
             return error("批量审批失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取请假申请统计数据
+     */
+    @GetMapping("/statistics")
+    public AjaxResult getLeaveStatistics()
+    {
+        try {
+            Map<String, Object> statistics = new HashMap<>();
+
+            // 获取所有请假申请数据
+            List<DormStudentLeave> allLeaves = dormStudentLeaveService.selectDormStudentLeaveList(new DormStudentLeave());
+
+            // 统计总申请数
+            int totalLeaves = allLeaves.size();
+
+            // 按审批状态统计
+            long pendingApproval = allLeaves.stream()
+                .filter(leave -> "0".equals(leave.getApproveStatus()))
+                .count();
+
+            long approvedLeaves = allLeaves.stream()
+                .filter(leave -> "1".equals(leave.getApproveStatus()))
+                .count();
+
+            long rejectedLeaves = allLeaves.stream()
+                .filter(leave -> "2".equals(leave.getApproveStatus()))
+                .count();
+
+            long cancelledLeaves = allLeaves.stream()
+                .filter(leave -> "3".equals(leave.getApproveStatus()))
+                .count();
+
+            // 按离校状态统计
+            long awayStudents = allLeaves.stream()
+                .filter(leave -> "0".equals(leave.getStatus()))
+                .count();
+
+            long returnedStudents = allLeaves.stream()
+                .filter(leave -> "1".equals(leave.getStatus()))
+                .count();
+
+            long overdueStudents = allLeaves.stream()
+                .filter(leave -> "2".equals(leave.getStatus()))
+                .count();
+
+            statistics.put("totalLeaves", totalLeaves);
+            statistics.put("pendingApproval", pendingApproval);
+            statistics.put("approvedLeaves", approvedLeaves);
+            statistics.put("rejectedLeaves", rejectedLeaves);
+            statistics.put("cancelledLeaves", cancelledLeaves);
+            statistics.put("awayStudents", awayStudents);
+            statistics.put("returnedStudents", returnedStudents);
+            statistics.put("overdueStudents", overdueStudents);
+
+            return success(statistics);
+        } catch (Exception e) {
+            logger.error("获取请假申请统计数据失败", e);
+            return error("获取请假申请统计数据失败：" + e.getMessage());
         }
     }
 }

@@ -208,6 +208,65 @@ public class DormBuildingController extends BaseController
     }
 
     /**
+     * 获取宿舍统计数据
+     */
+    @GetMapping("/statistics")
+    public AjaxResult getDormStatistics()
+    {
+        try {
+            Map<String, Object> statistics = new HashMap<>();
+
+            // 获取所有宿舍数据
+            List<DormBuilding> allDorms = dormBuildingService.selectDormBuildingList(new DormBuilding());
+
+            // 统计总宿舍数（只统计房间级别的宿舍）
+            long totalRooms = allDorms.stream()
+                .filter(dorm -> dorm.getMaxCapacity() != null && dorm.getMaxCapacity() > 0)
+                .count();
+
+            // 统计总床位数
+            int totalBeds = allDorms.stream()
+                .filter(dorm -> dorm.getMaxCapacity() != null)
+                .mapToInt(dorm -> dorm.getMaxCapacity())
+                .sum();
+
+            // 统计已入住床位数
+            int occupiedBeds = allDorms.stream()
+                .filter(dorm -> dorm.getCurrentCount() != null)
+                .mapToInt(dorm -> dorm.getCurrentCount())
+                .sum();
+
+            // 统计空闲床位数
+            int availableBeds = totalBeds - occupiedBeds;
+
+            // 计算入住率
+            double occupancyRate = totalBeds > 0 ? (double) occupiedBeds / totalBeds * 100 : 0;
+
+            // 统计满员宿舍数
+            long fullRooms = allDorms.stream()
+                .filter(dorm -> "1".equals(dorm.getStatus()))
+                .count();
+
+            // 统计空闲宿舍数
+            long emptyRooms = allDorms.stream()
+                .filter(dorm -> dorm.getCurrentCount() != null && dorm.getCurrentCount() == 0)
+                .count();
+
+            statistics.put("totalRooms", totalRooms);
+            statistics.put("totalBeds", totalBeds);
+            statistics.put("occupiedBeds", occupiedBeds);
+            statistics.put("availableBeds", availableBeds);
+            statistics.put("occupancyRate", Math.round(occupancyRate * 100.0) / 100.0);
+            statistics.put("fullRooms", fullRooms);
+            statistics.put("emptyRooms", emptyRooms);
+
+            return success(statistics);
+        } catch (Exception e) {
+            return error("获取宿舍统计数据失败：" + e.getMessage());
+        }
+    }
+
+    /**
      * 验证宿舍状态数据一致性
      */
     @PreAuthorize("@ss.hasPermi('dorm:building:list')")

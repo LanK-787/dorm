@@ -1,6 +1,8 @@
 package com.dorm.manage.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dorm.common.core.domain.entity.DormBuilding;
@@ -174,5 +176,61 @@ public class DormStudentController extends BaseController
     public AjaxResult updateStudentInfo(@RequestBody DormStudent dormStudent)
     {
         return toAjax(dormStudentService.UpdateDormStudentInfo(dormStudent));
+    }
+
+    /**
+     * 获取学生统计数据
+     */
+    @GetMapping("/statistics")
+    public AjaxResult getStudentStatistics()
+    {
+        try {
+            Map<String, Object> statistics = new HashMap<>();
+
+            // 获取所有学生数据
+            List<DormStudent> allStudents = dormStudentService.selectDormStudentList(new DormStudent());
+
+            // 统计总学生数
+            int totalStudents = allStudents.size();
+
+            // 统计在校学生数
+            long inSchoolStudents = allStudents.stream()
+                .filter(student -> "0".equals(student.getStatus()))
+                .count();
+
+            // 统计离校学生数
+            long outSchoolStudents = allStudents.stream()
+                .filter(student -> "1".equals(student.getStatus()))
+                .count();
+
+            // 统计男女学生数
+            long maleStudents = allStudents.stream()
+                .filter(student -> "0".equals(student.getGender()))
+                .count();
+
+            long femaleStudents = allStudents.stream()
+                .filter(student -> "1".equals(student.getGender()))
+                .count();
+
+            // 统计已分配宿舍的学生数
+            long assignedStudents = allStudents.stream()
+                .filter(student -> student.getDormId() != null)
+                .count();
+
+            // 统计未分配宿舍的学生数
+            long unassignedStudents = totalStudents - assignedStudents;
+
+            statistics.put("totalStudents", totalStudents);
+            statistics.put("inSchoolStudents", inSchoolStudents);
+            statistics.put("outSchoolStudents", outSchoolStudents);
+            statistics.put("maleStudents", maleStudents);
+            statistics.put("femaleStudents", femaleStudents);
+            statistics.put("assignedStudents", assignedStudents);
+            statistics.put("unassignedStudents", unassignedStudents);
+
+            return success(statistics);
+        } catch (Exception e) {
+            return error("获取学生统计数据失败：" + e.getMessage());
+        }
     }
 }
