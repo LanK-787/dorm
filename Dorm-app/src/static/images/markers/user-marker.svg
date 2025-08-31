@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
+  <!-- 用户标记背景 -->
+  <circle cx="14" cy="14" r="13" fill="#52c41a" stroke="#ffffff" stroke-width="2"/>
+  
+  <!-- 用户图标 -->
+  <g fill="#ffffff" transform="translate(7, 6)">
+    <!-- 头部 -->
+    <circle cx="7" cy="5" r="3"/>
+    <!-- 身体 -->
+    <path d="M2 16 C2 12, 5 10, 7 10 S12 12, 12 16 L12 16 L2 16 Z"/>
+  </g>
+  
+  <!-- 定位点 -->
+  <circle cx="14" cy="14" r="2" fill="#ffffff"/>
+</svg>
