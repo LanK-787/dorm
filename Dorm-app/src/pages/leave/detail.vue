@@ -769,22 +769,53 @@ const addAmapSchoolMarker = async () => {
   })
 }
 
-// 添加学校围栏
+// 添加学校围栏（优先显示多边形）
 const addAmapSchoolCircle = async () => {
   if (!amapInstance.value || !window.AMap) return
   
   const utils = await loadAmapUtils()
   if (!utils) return
   
-  schoolCircle.value = utils.createCircle(amapInstance.value, {
-    center: [schoolConfig.longitude, schoolConfig.latitude],
-    radius: schoolConfig.radius,
-    strokeColor: '#1890ff',
-    strokeWeight: 2,
-    strokeOpacity: 0.8,
-    fillColor: '#1890ff',
-    fillOpacity: 0.2
-  })
+  // 优先使用多边形围栏
+  if (utils.SCHOOL_CONFIG && utils.SCHOOL_CONFIG.polygon && utils.SCHOOL_CONFIG.polygon.path) {
+    console.log('🔷 创建多边形学校围栏')
+    schoolCircle.value = utils.createPolygon(amapInstance.value, {
+      path: utils.SCHOOL_CONFIG.polygon.path,
+      strokeColor: utils.SCHOOL_CONFIG.polygon.strokeColor || '#1890ff',
+      strokeWeight: utils.SCHOOL_CONFIG.polygon.strokeWeight || 2,
+      strokeOpacity: utils.SCHOOL_CONFIG.polygon.strokeOpacity || 0.8,
+      fillColor: utils.SCHOOL_CONFIG.polygon.fillColor || '#1890ff',
+      fillOpacity: utils.SCHOOL_CONFIG.polygon.fillOpacity || 0.2
+    })
+    
+    if (schoolCircle.value) {
+      console.log('✅ 多边形学校围栏显示成功')
+    } else {
+      console.warn('⚠️ 多边形围栏创建失败，使用圆形围栏')
+      // 降级使用圆形围栏
+      schoolCircle.value = utils.createCircle(amapInstance.value, {
+        center: [schoolConfig.longitude, schoolConfig.latitude],
+        radius: schoolConfig.radius,
+        strokeColor: '#1890ff',
+        strokeWeight: 2,
+        strokeOpacity: 0.8,
+        fillColor: '#1890ff',
+        fillOpacity: 0.2
+      })
+    }
+  } else {
+    console.log('🔵 使用圆形学校围栏（多边形配置不完整）')
+    // 使用圆形围栏作为备用
+    schoolCircle.value = utils.createCircle(amapInstance.value, {
+      center: [schoolConfig.longitude, schoolConfig.latitude],
+      radius: schoolConfig.radius,
+      strokeColor: '#1890ff',
+      strokeWeight: 2,
+      strokeOpacity: 0.8,
+      fillColor: '#1890ff',
+      fillOpacity: 0.2
+    })
+  }
 }
 
 // 获取当前位置
@@ -962,40 +993,34 @@ const wgs84ToGcj02 = (lng, lat) => {
   }
 }
 
-// 高德地图距离计算
+// 高德地图距离计算（使用多边形围栏）
 const calculateAmapDistance = async () => {
   try {
     const utils = await loadAmapUtils()
     if (utils && currentLatitude.value && currentLongitude.value) {
-      const calculatedDistance = utils.calculateDistance(
-        currentLongitude.value,
-        currentLatitude.value,
-        schoolConfig.longitude,
-        schoolConfig.latitude
-      )
+      // 使用新的多边形围栏检查功能
+      const rangeResult = utils.checkSchoolRange(currentLongitude.value, currentLatitude.value)
       
-      // 确保距离是有效数值
-      if (typeof calculatedDistance === 'number' && !isNaN(calculatedDistance)) {
-        distance.value = calculatedDistance
-      } else {
-        console.warn('高德距离计算返回无效值，使用备用方法')
-        calculateDistance()
-      }
-    } else {
-      calculateDistance()
+      // 更新距离和范围状态
+      distance.value = rangeResult.distance
+      isInSchoolRange.value = rangeResult.isInRange
+      
+      console.log(`✅ 多边形围栏检查结果:`, {
+        type: rangeResult.type,
+        distance: `${rangeResult.distance.toFixed(2)}米`,
+        inRange: rangeResult.isInRange,
+        message: rangeResult.message
+      })
+      
+      return
     }
     
-    // 确保距离值是有效数值后再判断范围
-    if (typeof distance.value === 'number' && !isNaN(distance.value)) {
-      isInSchoolRange.value = distance.value <= schoolConfig.radius
-      console.log(`高德地图计算距离: ${distance.value.toFixed(2)}米, 在范围内: ${isInSchoolRange.value}`)
-    } else {
-      console.error('距离计算结果无效:', distance.value)
-      distance.value = 0
-      isInSchoolRange.value = false
-    }
+    // 如果工具加载失败，使用备用方法
+    console.warn('⚙️ 高德工具不可用，使用备用计算方法')
+    calculateDistance()
+    
   } catch (error) {
-    console.error('高德距离计算失败:', error)
+    console.error('❌ 高德距离计算失败:', error)
     calculateDistance() // 使用备用方法
   }
 }
