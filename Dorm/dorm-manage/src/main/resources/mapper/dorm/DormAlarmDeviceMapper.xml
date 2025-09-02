@@ -7,6 +7,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="DormAlarmDevice" id="DormAlarmDeviceResult">
         <result property="deviceId"    column="device_id"    />
         <result property="dormId"    column="dorm_id"    />
+        <result property="dormFullName"    column="dorm_full_name"    />
         <result property="deviceName"    column="device_name"    />
         <result property="deviceType"    column="device_type"    />
         <result property="location"    column="location"    />
@@ -17,23 +18,31 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectDormAlarmDeviceVo">
-        select device_id, dorm_id, device_name, device_type, location, status, last_online_time, create_time, update_time from dorm_alarm_device
+        select d.device_id, d.dorm_id, b.full_name as dorm_full_name, d.device_name, d.device_type, d.location, d.status, d.last_online_time, d.create_time, d.update_time 
+        from dorm_alarm_device d
+        left join dorm_building b on d.dorm_id = b.dorm_id
     </sql>
 
     <select id="selectDormAlarmDeviceList" parameterType="DormAlarmDevice" resultMap="DormAlarmDeviceResult">
         <include refid="selectDormAlarmDeviceVo"/>
         <where>  
-            <if test="dormId != null "> and dorm_id = #{dormId}</if>
-            <if test="deviceName != null  and deviceName != ''"> and device_name like concat('%', #{deviceName}, '%')</if>
-            <if test="deviceType != null "> and device_type = #{deviceType}</if>
-            <if test="status != null "> and status = #{status}</if>
-            <if test="lastOnlineTime != null "> and last_online_time = #{lastOnlineTime}</if>
+            <if test="dormId != null "> and d.dorm_id = #{dormId}</if>
+            <if test="dormIds != null and dormIds.size() > 0">
+                and d.dorm_id in
+                <foreach item="dormId" collection="dormIds" open="(" separator="," close=")">
+                    #{dormId}
+                </foreach>
+            </if>
+            <if test="deviceName != null  and deviceName != ''"> and d.device_name like concat('%', #{deviceName}, '%')</if>
+            <if test="deviceType != null "> and d.device_type = #{deviceType}</if>
+            <if test="status != null "> and d.status = #{status}</if>
+            <if test="lastOnlineTime != null "> and d.last_online_time = #{lastOnlineTime}</if>
         </where>
     </select>
     
     <select id="selectDormAlarmDeviceByDeviceId" parameterType="Long" resultMap="DormAlarmDeviceResult">
         <include refid="selectDormAlarmDeviceVo"/>
-        where device_id = #{deviceId}
+        where d.device_id = #{deviceId}
     </select>
 
     <insert id="insertDormAlarmDevice" parameterType="DormAlarmDevice" useGeneratedKeys="true" keyProperty="deviceId">

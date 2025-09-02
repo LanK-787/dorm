@@ -1,6 +1,7 @@
 package com.dorm.manage.domain;
 
 import java.util.Date;
+import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -23,6 +24,12 @@ public class DormAlarmDevice extends BaseEntity
     /** 所属宿舍/房间ID */
     @Excel(name = "所属宿舍/房间ID")
     private Long dormId;
+
+    /** 宿舍全称 */
+    private String dormFullName;
+
+    /** 多个宿舍ID（用于查询父节点下的所有设备） */
+    private List<Long> dormIds;
 
     /** 设备名称 */
     @Excel(name = "设备名称")
@@ -62,6 +69,26 @@ public class DormAlarmDevice extends BaseEntity
     public Long getDormId() 
     {
         return dormId;
+    }
+
+    public void setDormFullName(String dormFullName) 
+    {
+        this.dormFullName = dormFullName;
+    }
+
+    public String getDormFullName() 
+    {
+        return dormFullName;
+    }
+
+    public void setDormIds(List<Long> dormIds) 
+    {
+        this.dormIds = dormIds;
+    }
+
+    public List<Long> getDormIds() 
+    {
+        return dormIds;
     }
 
     public void setDeviceName(String deviceName) 
@@ -119,6 +146,8 @@ public class DormAlarmDevice extends BaseEntity
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("deviceId", getDeviceId())
             .append("dormId", getDormId())
+            .append("dormFullName", getDormFullName())
+            .append("dormIds", getDormIds())
             .append("deviceName", getDeviceName())
             .append("deviceType", getDeviceType())
             .append("location", getLocation())
