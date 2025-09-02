@@ -191,3 +191,39 @@ file:
     directoryStrategy: YEAR_MONTH
     # 是否保留原始文件名(不推荐，存在安全风险)
     preserveOriginalName: false
+
+# MQTT配置
+mqtt:
+  # 是否启用MQTT服务
+  enabled: true
+  # MQTT Broker 地址
+  broker-url: tcp://localhost:1883
+  # 客户端ID
+  client-id: dorm-smoke-client
+  # MQTT 用户名（可选）
+  username:
+  # MQTT 密码（可选）
+  password:
+  # 要订阅的Topic（支持通配符）
+  topic: /dorm/smoke/+
+  # 服务质量 (0: 至多一次, 1: 至少一次, 2: 只有一次)
+  qos: 1
+
+# InfluxDB时序数据库配置
+influxdb:
+  # 是否启用InfluxDB服务
+  enabled: true
+  # InfluxDB服务器地址
+  url: http://localhost:8086
+  # 访问令牌
+  token: 2OO6DUscgbQSosUjhqFnU2DiZgS_ivpBBP-DK2uXjN-UGM_a8NeUaFokz315k0QoV6LK2SeUgAq-2XxZH_z8rg==
+  # 组织名称
+  org: dorm
+  # 数据桶名称
+  bucket: dorm_smoke
+  # 连接超时时间(毫秒)
+  connect-timeout: 10000
+  # 读取超时时间(毫秒)
+  read-timeout: 30000
+  # 写入超时时间(毫秒)
+  write-timeout: 10000

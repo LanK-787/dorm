@@ -11,7 +11,8 @@ import org.springframework.scheduling.annotation.EnableAsync;
  * @author ruoyi
  */
 @EnableAsync
-@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
+@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class }, 
+    scanBasePackages = {"com.dorm"})
 public class RuoYiApplication
 {
     public static void main(String[] args)

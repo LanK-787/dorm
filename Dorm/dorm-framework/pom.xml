@@ -7,6 +7,18 @@
         <groupId>dorm</groupId>
         <version>3.8.9</version>
     </parent>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>9</source>
+                    <target>9</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>dorm-framework</artifactId>
@@ -70,6 +82,14 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
+
+        <!-- 通用工具模块（包含InfluxDB和MQTT客户端） -->
+        <dependency>
+            <groupId>dorm</groupId>
+            <artifactId>dorm-common</artifactId>
+        </dependency>
+
+
 
     </dependencies>
 

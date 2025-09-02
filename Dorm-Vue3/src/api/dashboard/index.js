@@ -47,3 +47,20 @@ export function getDispatchMonitorData() {
     method: 'get'
   })
 }
+
+// 获取烟雾传感器数据
+export function getSmokeMonitorData() {
+  return request({
+    url: '/monitor/influxdb/smoke/overview',
+    method: 'get'
+  })
+}
+
+// 获取指定宿舍烟雾数据
+export function getRoomSmokeData(dormId, hours = 24) {
+  return request({
+    url: `/monitor/influxdb/smoke/${dormId}/stats`,
+    method: 'get',
+    params: { hours }
+  })
+}
