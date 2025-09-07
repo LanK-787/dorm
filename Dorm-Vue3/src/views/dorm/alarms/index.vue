@@ -117,8 +117,8 @@
 
     <el-table v-loading="loading" :data="alarmsList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="主键，告警ID" align="center" prop="alarmId" />
-      <el-table-column label="对应报警设备ID" align="center" prop="deviceId" />
+      <el-table-column label="报警ID" align="center" prop="alarmId" />
+      <el-table-column label="设备ID" align="center" prop="deviceId" />
       <el-table-column label="房间ID" align="center" prop="dormId" />
       <el-table-column label="告警时烟雾值" align="center" prop="smokeValue" />
       <el-table-column label="告警等级" align="center" prop="alarmLevel">

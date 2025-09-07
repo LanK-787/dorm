@@ -63,13 +63,13 @@ public class MqttSmokeService {
                             boolean quality = v.get("q").asBoolean();
                             long ts = v.get("t").asLong();
 
-                            // 从 id 字段提取 dorm_id（例如：MQ2_Channel.MQ2-device.262 -> 262）
-                            String dormId = extractRoomIdFromId(id);
-                            if (dormId != null) {
-                                influxDBService.writeSmokeData(dormId, value, quality, ts);
-//                                System.out.println("处理烟雾数据: dorm_id=" + dormId + ", value=" + value + ", quality=" + quality);
+                            // 从 id 字段提取 device_id（例如：MQ2_Channel.MQ2-device.2 -> 2）
+                            String deviceId = extractDeviceIdFromId(id);
+                            if (deviceId != null) {
+                                influxDBService.writeSmokeDataByDevice(deviceId, value, quality, ts);
+//                                System.out.println("处理烟雾数据: device_id=" + deviceId + ", value=" + value + ", quality=" + quality);
                             } else {
-                                System.out.println("无法从 ID 中提取宿舍号: " + id);
+                                System.out.println("无法从 ID 中提取设备号: " + id);
                             }
                         }
                     }
@@ -87,13 +87,13 @@ public class MqttSmokeService {
     }
 
     /**
-     * 从 id 字段中提取宿舍ID
-     * 例如：MQ2_Channel.MQ2-device.262 -> 262
+     * 从 id 字段中提取设备ID
+     * 例如：MQ2_Channel.MQ2-device.2 -> 2
      *
      * @param id 设备ID字符串
-     * @return 宿舍ID
+     * @return 设备ID
      */
-    private String extractRoomIdFromId(String id) {
+    private String extractDeviceIdFromId(String id) {
         if (id == null || id.trim().isEmpty()) {
             return null;
         }
@@ -117,10 +117,10 @@ public class MqttSmokeService {
                 return matcher.group(1);
             }
             
-            System.out.println("警告：无法从 ID 中提取数字宿舍号: " + id);
+            System.out.println("警告：无法从 ID 中提取数字设备号: " + id);
             return null;
         } catch (Exception e) {
-            System.out.println("提取宿舍ID失败: " + e.getMessage());
+            System.out.println("提取设备ID失败: " + e.getMessage());
             return null;
         }
     }

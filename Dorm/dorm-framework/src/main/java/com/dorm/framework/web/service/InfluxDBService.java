@@ -1,6 +1,8 @@
 package com.dorm.framework.web.service;
 
 import com.dorm.framework.config.InfluxDBConfig;
+
+
 import com.influxdb.client.InfluxDBClient;
 import com.influxdb.client.InfluxDBClientFactory;
 import com.influxdb.client.QueryApi;
@@ -11,6 +13,7 @@ import com.influxdb.query.FluxTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -33,6 +36,9 @@ public class InfluxDBService {
     
     @Autowired
     private InfluxDBConfig influxDBConfig;
+    
+    @Autowired
+    private ApplicationContext applicationContext;
     
     private InfluxDBClient client;
     private volatile boolean connected = false;
@@ -117,6 +123,14 @@ public class InfluxDBService {
      * @param quality 质量状态
      * @param timestamp 时间戳
      */
+    /**
+     * 写入烟雾数据（使用宿舍ID）
+     * 
+     * @param dormId 宿舍ID 
+     * @param smokePpm 烟雾浓度
+     * @param quality 数据质量
+     * @param timestamp 时间戳
+     */
     public void writeSmokeData(String dormId, double smokePpm, boolean quality, long timestamp) {
         Map<String, String> tags = Map.of("dorm_id", dormId);
         Map<String, Object> fields = Map.of("smokePpm", smokePpm, "quality", quality);
@@ -124,6 +138,82 @@ public class InfluxDBService {
         writePoint("smoke", tags, fields, Instant.ofEpochMilli(timestamp));
     }
     
+    /**
+     * 根据设备ID写入烟雾数据
+     * 
+     * @param deviceId 设备ID
+     * @param smokePpm 烟雾浓度 
+     * @param quality 数据质量
+     * @param timestamp 时间戳
+     */
+    public void writeSmokeDataByDevice(String deviceId, double smokePpm, boolean quality, long timestamp) {
+        if (!isConnected()) {
+            log.warn("InfluxDB未连接，烟雾数据写入失败");
+            return;
+        }
+        
+        try {
+            // 查询设备对应的宿舍ID
+            String dormId = getDormIdByDeviceId(deviceId);
+            if (dormId == null) {
+                log.warn("设备ID {} 没有对应的宿舍ID，使用device_id作为tag存储", deviceId);
+                // 如果没有找到对应的宿舍，则使用device_id作为tag存储
+                Map<String, String> tags = Map.of("device_id", deviceId);
+                Map<String, Object> fields = Map.of("smokePpm", smokePpm, "quality", quality);
+                writePoint("smoke_device", tags, fields, Instant.ofEpochMilli(timestamp));
+            } else {
+                // 找到对应宿舍，使用原有的方式存储
+                Map<String, String> tags = new HashMap<>();
+                tags.put("dorm_id", dormId);
+                tags.put("device_id", deviceId);
+                Map<String, Object> fields = Map.of("smokePpm", smokePpm, "quality", quality);
+                writePoint("smoke", tags, fields, Instant.ofEpochMilli(timestamp));
+            }
+            
+            log.debug("烟雾数据写入成功: deviceId={}, dormId={}, smokePpm={}", 
+                     deviceId, dormId, smokePpm);
+        } catch (Exception e) {
+            log.error("写入烟雾数据失败: {}", e.getMessage(), e);
+        }
+    }
+    
+    
+    /**
+     * 根据设备ID获取对应的宿舍ID
+     * 
+     * @param deviceId 设备ID字符串
+     * @return 宿舍ID字符串，如果未找到则返回null
+     */
+    private String getDormIdByDeviceId(String deviceId) {
+        try {
+            // 动态获取设备服务Bean，避免循环依赖
+            Object deviceService = applicationContext.getBean("dormAlarmDeviceServiceImpl");
+            if (deviceService == null) {
+                log.warn("设备服务Bean未找到，无法查询设备对应的宿舍ID");
+                return null;
+            }
+            
+            // 使用反射调用方法，避免直接依赖
+            Long deviceIdLong = Long.parseLong(deviceId);
+            java.lang.reflect.Method method = deviceService.getClass().getMethod("selectDormAlarmDeviceByDeviceId", Long.class);
+            Object device = method.invoke(deviceService, deviceIdLong);
+            
+            if (device != null) {
+                // 通过反射获取dormId属性
+                java.lang.reflect.Method getDormIdMethod = device.getClass().getMethod("getDormId");
+                Object dormId = getDormIdMethod.invoke(device);
+                if (dormId != null) {
+                    return dormId.toString();
+                }
+            }
+        } catch (NumberFormatException e) {
+            log.warn("设备ID格式错误: {}", deviceId);
+        } catch (Exception e) {
+            log.error("查询设备对应宿舍ID失败: {}", e.getMessage(), e);
+        }
+        
+        return null;
+    }
     
     /**
      * 写入设备监控数据
@@ -131,7 +221,7 @@ public class InfluxDBService {
      * @param deviceId 设备ID
      * @param deviceType 设备类型
      * @param dormId 宿舍ID
-     * @param measurement 测量值
+     * @param measurement 测量名称
      * @param value 数值
      * @param unit 单位
      */
@@ -418,14 +508,23 @@ public class InfluxDBService {
             Instant end = Instant.now();
             Instant start = end.minus(hours, ChronoUnit.HOURS);
                 
-            // 查询最新的烟雾数据
+            // 查询最新的烟雾数据（包括两种数据类型）
             String query = String.format(
+                "union(tables: [" +
                 "from(bucket: \"%s\") " +
                 "|> range(start: %s, stop: %s) " +
                 "|> filter(fn: (r) => r._measurement == \"smoke\") " +
                 "|> filter(fn: (r) => r._field == \"smokePpm\") " +
                 "|> group(columns: [\"dorm_id\"]) " +
-                "|> last()",
+                "|> last(), " +
+                "from(bucket: \"%s\") " +
+                "|> range(start: %s, stop: %s) " +
+                "|> filter(fn: (r) => r._measurement == \"smoke_device\") " +
+                "|> filter(fn: (r) => r._field == \"smokePpm\") " +
+                "|> group(columns: [\"device_id\"]) " +
+                "|> last()"+
+                "])",
+                influxDBConfig.getBucket(), start, end,
                 influxDBConfig.getBucket(), start, end
             );
                 
@@ -450,15 +549,25 @@ public class InfluxDBService {
             for (FluxTable table : tables) {
                 for (com.influxdb.query.FluxRecord record : table.getRecords()) {
                     String dormId = (String) record.getValueByKey("dorm_id");
+                    String deviceId = (String) record.getValueByKey("device_id");
+                    
+                    // 如果没有dorm_id，尝试使用device_id查找对应的dorm_id
+                    if (dormId == null && deviceId != null) {
+                        dormId = getDormIdByDeviceId(deviceId);
+                    }
+                    
+                    // 如果仍然没有dorm_id，使用device_id作为标识
+                    String roomId = dormId != null ? dormId : deviceId;
                     Object value = record.getValue();
                     long timestamp = record.getTime().toEpochMilli();
                         
-                    if (dormId != null && value instanceof Number) {
-                        activeRooms.add(dormId);
+                    if (roomId != null && value instanceof Number) {
+                        activeRooms.add(roomId);
                         double smokePpm = ((Number) value).doubleValue();
                             
                         Map<String, Object> roomDetail = new HashMap<>();
-                        roomDetail.put("dorm_id", dormId);
+                        roomDetail.put("dorm_id", dormId != null ? dormId : roomId);  // 使用dorm_id或device_id
+                        roomDetail.put("device_id", deviceId);  // 增加device_id信息
                         roomDetail.put("smokePpm", smokePpm);
                         roomDetail.put("timestamp", timestamp);
                         roomDetail.put("lastUpdate", new Date(timestamp));

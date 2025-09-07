@@ -103,7 +103,7 @@
 
     <el-table v-loading="loading" :data="deviceList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="主键，设备ID" align="center" prop="deviceId" />
+      <el-table-column label="设备ID" align="center" prop="deviceId" />
       <el-table-column label="所属宿舍" align="center" prop="dormFullName" />
       <el-table-column label="设备名称" align="center" prop="deviceName" />
       <el-table-column label="设备类型" align="center" prop="deviceType">
