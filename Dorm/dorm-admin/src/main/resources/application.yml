@@ -139,9 +139,9 @@ spring:
     # SMTP服务器端口
     port: 587
     # 发送方邮箱
-    username: 2559118499@qq.com
+    username: ********@qq.com
     # 发送方邮箱授权码（不是密码）
-    password: sqpwumlrtgwqdjhe
+    password: ********
     # 编码
     default-encoding: UTF-8
     # 其他配置
