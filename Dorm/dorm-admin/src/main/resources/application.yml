@@ -132,6 +132,29 @@ spring:
           # 最大重试间隔
           max-interval: 10000
 
+  # 邮件配置
+  mail:
+    # SMTP服务器地址
+    host: smtp.qq.com
+    # SMTP服务器端口
+    port: 587
+    # 发送方邮箱
+    username: 2559118499@qq.com
+    # 发送方邮箱授权码（不是密码）
+    password: sqpwumlrtgwqdjhe
+    # 编码
+    default-encoding: UTF-8
+    # 其他配置
+    properties:
+      mail:
+        smtp:
+          # 开启认证
+          auth: true
+          # 开启TLS加密
+          starttls:
+            enable: true
+            required: true
+
 # token配置
 token:
   # 令牌自定义标识

@@ -8,6 +8,7 @@ import com.dorm.framework.web.service.InfluxDBService;
 import com.dorm.manage.service.IDormAlarmLogService;
 import com.dorm.manage.domain.DormAlarmLog;
 import com.dorm.manage.service.IDormBuildingService;
+import com.dorm.common.service.MailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,9 @@ public class InfluxDBController extends BaseController {
     
     @Autowired
     private IDormAlarmLogService dormAlarmLogService;
+    
+    @Autowired(required = false)
+    private MailService mailService;
     
     /**
      * 获取InfluxDB健康状态
@@ -358,13 +362,13 @@ public class InfluxDBController extends BaseController {
         // 保存报警记录到数据库
         saveAlertToDatabase(alertInfo);
         
+        // 发送报警邮件
+        sendAlertEmail(alertInfo);
+        
         // TODO: 可以在这里添加以下功能：
-        // 1. 发送短信/邮件通知
+        // 1. 发送短信通知
         // 2. 推送到管理员手机APP
         // 3. 触发自动应急流程
-        
-        // 示例：发送通知
-        // sendEmergencyNotification(alertInfo);
     }
     
     /**
@@ -374,13 +378,16 @@ public class InfluxDBController extends BaseController {
         // 警告级报警处理逻辑
         log.warn("警告级烟雾报警: {}", alertInfo);
         
+        // 保存报警记录到数据库
+        saveAlertToDatabase(alertInfo);
+        
+        // 发送报警邮件
+        sendAlertEmail(alertInfo);
+        
         // TODO: 可以在这里添加以下功能：
         // 1. 发送通知到管理人员
         // 2. 记录到监控日志
         // 3. 更新实时监控状态
-        
-        // 示例：记录报警到数据库
-        // saveAlertToDatabase(alertInfo, "WARNING");
     }
     
     /**
@@ -598,6 +605,26 @@ public class InfluxDBController extends BaseController {
             
         } catch (Exception e) {
             log.error("保存报警记录到数据库失败: {}", e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 发送报警邮件
+     */
+    private void sendAlertEmail(Map<String, Object> alertInfo) {
+        try {
+            // 目标邮箱地址
+            String targetEmail = "872384208@qq.com";
+            
+            // 发送报警邮件
+            mailService.sendAlertMail(targetEmail, alertInfo);
+            
+            log.info("报警邮件发送成功: 宿舍{}, 烟雾值{}ppm -> {}", 
+                    alertInfo.get("dormId"), alertInfo.get("smokeValue"), targetEmail);
+                    
+        } catch (Exception e) {
+            log.error("发送报警邮件失败: {}", e.getMessage(), e);
+            // 邮件发送失败不影响主流程，只记录错误日志
         }
     }
 }
