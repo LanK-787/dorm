@@ -42,3 +42,19 @@ export function delDevice(deviceId) {
     method: 'delete'
   })
 }
+
+// 更新设备状态
+export function updateDeviceStatus(deviceId, status) {
+  return request({
+    url: `/dorm/device/status/${deviceId}/${status}`,
+    method: 'put'
+  })
+}
+
+// 批量更新离线设备
+export function updateOfflineDevices(offlineMinutes) {
+  return request({
+    url: `/dorm/device/offline/${offlineMinutes}`,
+    method: 'put'
+  })
+}

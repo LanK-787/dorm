@@ -58,4 +58,21 @@ public interface IDormAlarmDeviceService
      * @return 结果
      */
     public int deleteDormAlarmDeviceByDeviceId(Long deviceId);
+
+    /**
+     * 更新设备在线状态
+     * 
+     * @param deviceId 设备ID
+     * @param status 设备状态（0离线，1在线）
+     * @return 结果
+     */
+    public int updateDeviceStatus(Long deviceId, Integer status);
+
+    /**
+     * 批量更新设备离线状态（将超过指定时间未更新的设备设为离线）
+     * 
+     * @param offlineMinutes 离线时间阈值（分钟）
+     * @return 更新的设备数量
+     */
+    public int updateOfflineDevices(int offlineMinutes);
 }

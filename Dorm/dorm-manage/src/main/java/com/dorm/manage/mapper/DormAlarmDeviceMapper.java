@@ -1,6 +1,7 @@
 package com.dorm.manage.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.dorm.manage.domain.DormAlarmDevice;
 
 /**
@@ -58,4 +59,12 @@ public interface DormAlarmDeviceMapper
      * @return 结果
      */
     public int deleteDormAlarmDeviceByDeviceIds(Long[] deviceIds);
+
+    /**
+     * 批量更新设备离线状态（将超过指定时间未更新的设备设为离线）
+     * 
+     * @param offlineMinutes 离线时间阈值（分钟）
+     * @return 更新的设备数量
+     */
+    public int updateOfflineDevices(@Param("offlineMinutes") int offlineMinutes);
 }

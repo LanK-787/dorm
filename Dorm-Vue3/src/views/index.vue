@@ -17,7 +17,7 @@
             </div>
             <div class="metric-content">
               <div class="metric-value">{{ dormStats.totalRooms || 0 }}</div>
-              <div class="metric-label">总宿舍数</div>
+              <div class="metric-label">总设备数</div>
             </div>
           </div>
         </el-col>
@@ -193,10 +193,7 @@
               <span class="summary-label">正常:</span>
               <span class="summary-value">{{ smokeStats.normalRooms || 0 }}</span>
             </div>
-            <div class="summary-item warning">
-              <span class="summary-label">警告:</span>
-              <span class="summary-value">{{ smokeStats.warningRooms || 0 }}</span>
-            </div>
+
             <div class="summary-item alert">
               <span class="summary-label">报警:</span>
               <span class="summary-value">{{ smokeStats.alertRooms || 0 }}</span>
@@ -411,8 +408,7 @@ const refreshData = () => {
 
 // 烟雾监控相关方法
 const getProgressColor = (smokePpm) => {
-  if (smokePpm >= 200) return '#f56c6c'  // 报警 - 红色
-  if (smokePpm >= 100) return '#e6a23c'  // 警告 - 黄色
+  if (smokePpm > 300) return '#f56c6c'  // 报警 - 红色
   return '#67c23a'  // 正常 - 绿色
 }
 
@@ -957,7 +953,6 @@ const updateRepairStatusChart = () => {
 
         &.total .summary-value { color: #ffffff; }
         &.normal .summary-value { color: #67c23a; }
-        &.warning .summary-value { color: #e6a23c; }
         &.alert .summary-value { color: #f56c6c; }
         &.offline .summary-value { color: #909399; }
       }
@@ -996,7 +991,6 @@ const updateRepairStatusChart = () => {
       }
 
       &.success::before { background: #67c23a; }
-      &.warning::before { background: #e6a23c; }
       &.danger::before { background: #f56c6c; }
       &.info::before { background: #909399; }
 

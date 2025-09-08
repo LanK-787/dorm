@@ -170,6 +170,9 @@ public class InfluxDBService {
                 writePoint("smoke", tags, fields, Instant.ofEpochMilli(timestamp));
             }
             
+            // 更新设备在线状态
+            updateDeviceOnlineStatus(deviceId);
+            
             log.debug("烟雾数据写入成功: deviceId={}, dormId={}, smokePpm={}", 
                      deviceId, dormId, smokePpm);
         } catch (Exception e) {
@@ -213,6 +216,33 @@ public class InfluxDBService {
         }
         
         return null;
+    }
+    
+    /**
+     * 更新设备在线状态
+     * 
+     * @param deviceId 设备ID字符串
+     */
+    private void updateDeviceOnlineStatus(String deviceId) {
+        try {
+            // 动态获取设备服务Bean
+            Object deviceService = applicationContext.getBean("dormAlarmDeviceServiceImpl");
+            if (deviceService == null) {
+                log.warn("设备服务Bean未找到，无法更新设备状态");
+                return;
+            }
+            
+            // 使用反射调用更新状态方法
+            Long deviceIdLong = Long.parseLong(deviceId);
+            java.lang.reflect.Method method = deviceService.getClass().getMethod("updateDeviceStatus", Long.class, Integer.class);
+            method.invoke(deviceService, deviceIdLong, 1); // 1表示在线
+            
+            log.debug("设备状态更新为在线: deviceId={}", deviceId);
+        } catch (NumberFormatException e) {
+            log.warn("设备ID格式错误: {}", deviceId);
+        } catch (Exception e) {
+            log.error("更新设备在线状态失败: {}", e.getMessage(), e);
+        }
     }
     
     /**
@@ -497,7 +527,6 @@ public class InfluxDBService {
             log.warn("InfluxDB未连接，烟雾数据概览查询失败");
             overview.put("totalRooms", 0);
             overview.put("normalRooms", 0);
-            overview.put("warningRooms", 0);
             overview.put("alertRooms", 0);
             overview.put("offlineRooms", 0);
             overview.put("roomDetails", new ArrayList<>());
@@ -535,13 +564,11 @@ public class InfluxDBService {
                 
             List<Map<String, Object>> roomDetails = new ArrayList<>();
             int normalRooms = 0;
-            int warningRooms = 0;
             int alertRooms = 0;
             int offlineRooms = 0;
                 
-            // 定义烟雾浓度阈值
-            double warningThreshold = 100.0;  // 警告阈值
-            double alertThreshold = 200.0;    // 报警阈值
+            // 定义烟雾浓度阈值（简化为两级）
+            double alertThreshold = 300.0;    // 报警阈值
             long offlineThreshold = 30 * 60 * 1000; // 30分钟未更新则认为离线
                 
             Set<String> activeRooms = new HashSet<>();
@@ -572,23 +599,18 @@ public class InfluxDBService {
                         roomDetail.put("timestamp", timestamp);
                         roomDetail.put("lastUpdate", new Date(timestamp));
                             
-                        // 判断宿舍状态
+                        // 判断宿舍状态（简化为两级：正常和报警）
                         long timeDiff = System.currentTimeMillis() - timestamp;
                         if (timeDiff > offlineThreshold) {
                             roomDetail.put("status", "offline");
                             roomDetail.put("statusText", "离线");
                             roomDetail.put("level", "info");
                             offlineRooms++;
-                        } else if (smokePpm >= alertThreshold) {
+                        } else if (smokePpm > alertThreshold) {
                             roomDetail.put("status", "alert");
-                            roomDetail.put("statusText", "严重警报");
+                            roomDetail.put("statusText", "报警");
                             roomDetail.put("level", "danger");
                             alertRooms++;
-                        } else if (smokePpm >= warningThreshold) {
-                            roomDetail.put("status", "warning");
-                            roomDetail.put("statusText", "警告");
-                            roomDetail.put("level", "warning");
-                            warningRooms++;
                         } else {
                             roomDetail.put("status", "normal");
                             roomDetail.put("statusText", "正常");
@@ -606,7 +628,7 @@ public class InfluxDBService {
                 String statusA = (String) a.get("status");
                 String statusB = (String) b.get("status");
                     
-                // 先按状态排序：alert > warning > offline > normal
+                // 先按状态排序：alert > offline > normal
                 int priorityA = getPriority(statusA);
                 int priorityB = getPriority(statusB);
                     
@@ -623,16 +645,14 @@ public class InfluxDBService {
             // 组装返回数据
             overview.put("totalRooms", activeRooms.size());
             overview.put("normalRooms", normalRooms);
-            overview.put("warningRooms", warningRooms);
             overview.put("alertRooms", alertRooms);
             overview.put("offlineRooms", offlineRooms);
             overview.put("roomDetails", roomDetails);
-            overview.put("warningThreshold", warningThreshold);
             overview.put("alertThreshold", alertThreshold);
             overview.put("lastUpdate", new Date());
                 
-            log.info("烟雾数据概览查询成功: 总宿舍={}, 正常={}, 警告={}, 报警={}, 离线={}", 
-                     activeRooms.size(), normalRooms, warningRooms, alertRooms, offlineRooms);
+            log.info("烟雾数据概览查询成功: 总宿舍={}, 正常={}, 报警={}, 离线={}", 
+                     activeRooms.size(), normalRooms, alertRooms, offlineRooms);
                 
             return overview;
                 
@@ -642,7 +662,6 @@ public class InfluxDBService {
             // 返回错误时的默认数据
             overview.put("totalRooms", 0);
             overview.put("normalRooms", 0);
-            overview.put("warningRooms", 0);
             overview.put("alertRooms", 0);
             overview.put("offlineRooms", 0);
             overview.put("roomDetails", new ArrayList<>());
@@ -653,12 +672,11 @@ public class InfluxDBService {
     }
         
     /**
-     * 获取状态优先级
+     * 获取状态优先级（简化为三级）
      */
     private int getPriority(String status) {
         switch (status) {
-            case "alert": return 4;
-            case "warning": return 3;
+            case "alert": return 3;
             case "offline": return 2;
             case "normal": return 1;
             default: return 0;

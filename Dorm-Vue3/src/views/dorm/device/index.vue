@@ -98,6 +98,15 @@
           v-hasPermi="['dorm:device:export']"
         >导出</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button
+          type="info"
+          plain
+          icon="Timer"
+          @click="handleUpdateOfflineDevices"
+          v-hasPermi="['dorm:device:edit']"
+        >更新离线设备</el-button>
+      </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -113,7 +122,12 @@
       </el-table-column>
       <el-table-column label="设备状态" align="center" prop="status">
         <template #default="scope">
-          <dict-tag :options="dorm_device_status" :value="scope.row.status"/>
+          <el-tag 
+            :type="scope.row.status === 1 ? 'success' : 'danger'" 
+            :icon="scope.row.status === 1 ? 'CircleCheck' : 'CircleClose'"
+          >
+            {{ scope.row.status === 1 ? '在线' : '离线' }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="最后一次在线时间" align="center" prop="lastOnlineTime" width="180">
@@ -123,8 +137,29 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['dorm:device:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['dorm:device:remove']">删除</el-button>
+          <el-button 
+            link 
+            type="primary" 
+            icon="Edit" 
+            @click="handleUpdate(scope.row)" 
+            v-hasPermi="['dorm:device:edit']"
+          >修改</el-button>
+          <el-button 
+            link 
+            :type="scope.row.status === 1 ? 'warning' : 'success'" 
+            :icon="scope.row.status === 1 ? 'VideoPlay' : 'VideoPause'"
+            @click="handleToggleStatus(scope.row)" 
+            v-hasPermi="['dorm:device:edit']"
+          >
+            {{ scope.row.status === 1 ? '设为离线' : '设为在线' }}
+          </el-button>
+          <el-button 
+            link 
+            type="danger" 
+            icon="Delete" 
+            @click="handleDelete(scope.row)" 
+            v-hasPermi="['dorm:device:remove']"
+          >删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -182,7 +217,7 @@
 </template>
 
 <script setup name="Device">
-import { listDevice, getDevice, delDevice, addDevice, updateDevice } from "@/api/dorm/device"
+import { listDevice, getDevice, delDevice, addDevice, updateDevice, updateDeviceStatus, updateOfflineDevices } from "@/api/dorm/device"
 import { dormTreeSelectWithCapacity } from "@/api/dorm/student"
 import { Splitpanes, Pane } from "splitpanes"
 import useAppStore from '@/store/modules/app'
@@ -382,6 +417,33 @@ function handleExport() {
   proxy.download('dorm/device/export', {
     ...queryParams.value
   }, `device_${new Date().getTime()}.xlsx`)
+}
+
+/** 切换设备状态 */
+function handleToggleStatus(row) {
+  const newStatus = row.status === 1 ? 0 : 1
+  const statusText = newStatus === 1 ? '在线' : '离线'
+  
+  proxy.$modal.confirm(`确认要将设备"${row.deviceName}"设置为"${statusText}"状态吗？`).then(function() {
+    return updateDeviceStatus(row.deviceId, newStatus)
+  }).then(() => {
+    getList()
+    proxy.$modal.msgSuccess(`设备状态已更新为"${statusText}"`)
+  }).catch((error) => {
+    proxy.$modal.msgError(error.response?.data?.msg || '操作失败')
+  })
+}
+
+/** 批量更新离线设备 */
+function handleUpdateOfflineDevices() {
+  proxy.$modal.confirm('确认要将超过30分钟未更新的设备设置为离线状态吗？').then(function() {
+    return updateOfflineDevices(30) // 30分钟超时
+  }).then((response) => {
+    getList()
+    proxy.$modal.msgSuccess(response.msg || '离线设备状态更新成功')
+  }).catch((error) => {
+    proxy.$modal.msgError(error.response?.data?.msg || '操作失败')
+  })
 }
 
 /** 节点单击事件 */

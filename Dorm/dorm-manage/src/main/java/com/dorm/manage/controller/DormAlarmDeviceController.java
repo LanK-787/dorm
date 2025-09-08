@@ -101,4 +101,40 @@ public class DormAlarmDeviceController extends BaseController
     {
         return toAjax(dormAlarmDeviceService.deleteDormAlarmDeviceByDeviceIds(deviceIds));
     }
+
+    /**
+     * 手动更新设备状态
+     */
+    @PreAuthorize("@ss.hasPermi('dorm:device:edit')")
+    @Log(title = "设备状态更新", businessType = BusinessType.UPDATE)
+    @PutMapping("/status/{deviceId}/{status}")
+    public AjaxResult updateStatus(@PathVariable Long deviceId, @PathVariable Integer status)
+    {
+        try {
+            int result = dormAlarmDeviceService.updateDeviceStatus(deviceId, status);
+            if (result > 0) {
+                return success("设备状态更新成功");
+            } else {
+                return error("设备不存在或更新失败");
+            }
+        } catch (Exception e) {
+            return error("更新设备状态失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 批量更新离线设备
+     */
+    @PreAuthorize("@ss.hasPermi('dorm:device:edit')")
+    @Log(title = "设备离线状态更新", businessType = BusinessType.UPDATE)
+    @PutMapping("/offline/{offlineMinutes}")
+    public AjaxResult updateOfflineDevices(@PathVariable int offlineMinutes)
+    {
+        try {
+            int updatedCount = dormAlarmDeviceService.updateOfflineDevices(offlineMinutes);
+            return success("成功更新 " + updatedCount + " 个设备为离线状态");
+        } catch (Exception e) {
+            return error("更新设备离线状态失败: " + e.getMessage());
+        }
+    }
 }

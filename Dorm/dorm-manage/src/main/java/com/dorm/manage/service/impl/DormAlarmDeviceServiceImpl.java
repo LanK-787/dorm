@@ -1,5 +1,6 @@
 package com.dorm.manage.service.impl;
 
+import java.util.Date;
 import java.util.List;
 import com.dorm.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,5 +93,35 @@ public class DormAlarmDeviceServiceImpl implements IDormAlarmDeviceService
     public int deleteDormAlarmDeviceByDeviceId(Long deviceId)
     {
         return dormAlarmDeviceMapper.deleteDormAlarmDeviceByDeviceId(deviceId);
+    }
+
+    /**
+     * 更新设备在线状态
+     * 
+     * @param deviceId 设备ID
+     * @param status 设备状态（0离线，1在线）
+     * @return 结果
+     */
+    @Override
+    public int updateDeviceStatus(Long deviceId, Integer status)
+    {
+        DormAlarmDevice device = new DormAlarmDevice();
+        device.setDeviceId(deviceId);
+        device.setStatus(status);
+        device.setLastOnlineTime(new Date());
+        device.setUpdateTime(DateUtils.getNowDate());
+        return dormAlarmDeviceMapper.updateDormAlarmDevice(device);
+    }
+
+    /**
+     * 批量更新设备离线状态（将超过指定时间未更新的设备设为离线）
+     * 
+     * @param offlineMinutes 离线时间阈值（分钟）
+     * @return 更新的设备数量
+     */
+    @Override
+    public int updateOfflineDevices(int offlineMinutes)
+    {
+        return dormAlarmDeviceMapper.updateOfflineDevices(offlineMinutes);
     }
 }

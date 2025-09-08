@@ -94,4 +94,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{deviceId}
         </foreach>
     </delete>
+
+    <!-- 批量更新设备离线状态 -->
+    <update id="updateOfflineDevices" parameterType="int">
+        update dorm_alarm_device 
+        set status = 0,
+            update_time = now()
+        where status = 1 
+        and (last_online_time is null or last_online_time &lt; date_sub(now(), interval #{offlineMinutes} minute))
+    </update>
 </mapper>
