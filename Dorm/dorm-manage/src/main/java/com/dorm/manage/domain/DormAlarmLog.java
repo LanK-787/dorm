@@ -1,6 +1,7 @@
 package com.dorm.manage.domain;
 
 import java.util.Date;
+import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -28,9 +29,15 @@ public class DormAlarmLog extends BaseEntity
     @Excel(name = "房间ID")
     private Long dormId;
 
+    /** 所属宿舍全名 */
+    private String dormFullName;
+
+    /** 宿舍ID列表（用于批量查询） */
+    private List<Long> dormIds;
+
     /** 告警时烟雾值 */
     @Excel(name = "告警时烟雾值")
-    private Long smokeValue;
+    private Double smokeValue;
 
     /** 告警等级（1一般，2严重等） */
     @Excel(name = "告警等级", readConverterExp = "1=一般，2严重等")
@@ -88,12 +95,32 @@ public class DormAlarmLog extends BaseEntity
         return dormId;
     }
 
-    public void setSmokeValue(Long smokeValue) 
+    public void setDormFullName(String dormFullName) 
+    {
+        this.dormFullName = dormFullName;
+    }
+
+    public String getDormFullName() 
+    {
+        return dormFullName;
+    }
+
+    public void setDormIds(List<Long> dormIds) 
+    {
+        this.dormIds = dormIds;
+    }
+
+    public List<Long> getDormIds() 
+    {
+        return dormIds;
+    }
+
+    public void setSmokeValue(Double smokeValue) 
     {
         this.smokeValue = smokeValue;
     }
 
-    public Long getSmokeValue() 
+    public Double getSmokeValue() 
     {
         return smokeValue;
     }

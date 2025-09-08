@@ -5,6 +5,8 @@ import com.dorm.common.core.controller.BaseController;
 import com.dorm.common.core.domain.AjaxResult;
 import com.dorm.common.core.domain.entity.DormBuilding;
 import com.dorm.framework.web.service.InfluxDBService;
+import com.dorm.manage.service.IDormAlarmLogService;
+import com.dorm.manage.domain.DormAlarmLog;
 import com.dorm.manage.service.IDormBuildingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +19,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * InfluxDB监控控制器
@@ -35,6 +39,9 @@ public class InfluxDBController extends BaseController {
     
     @Autowired
     private IDormBuildingService dormBuildingService;
+    
+    @Autowired
+    private IDormAlarmLogService dormAlarmLogService;
     
     /**
      * 获取InfluxDB健康状态
@@ -348,14 +355,13 @@ public class InfluxDBController extends BaseController {
         // 严重报警处理逻辑
         log.error("严重烟雾报警: {}", alertInfo);
         
+        // 保存报警记录到数据库
+        saveAlertToDatabase(alertInfo);
+        
         // TODO: 可以在这里添加以下功能：
         // 1. 发送短信/邮件通知
         // 2. 推送到管理员手机APP
-        // 3. 记录到报警日志表
-        // 4. 触发自动应急流程
-        
-        // 示例：记录报警到数据库
-        // saveAlertToDatabase(alertInfo, "CRITICAL");
+        // 3. 触发自动应急流程
         
         // 示例：发送通知
         // sendEmergencyNotification(alertInfo);
@@ -495,6 +501,103 @@ public class InfluxDBController extends BaseController {
             return success("批量数据写入成功，共" + dataPoints.size() + "条记录");
         } catch (Exception e) {
             return error("批量数据写入失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 保存报警信息到数据库
+     */
+    private void saveAlertToDatabase(Map<String, Object> alertInfo) {
+        try {
+            // 提取报警信息
+            String dormIdStr = (String) alertInfo.get("dormId");
+            Double smokeValue = (Double) alertInfo.get("smokeValue");
+            String alertLevel = (String) alertInfo.get("alertLevel");
+            
+            // 解析message中的device_id
+            Long deviceId = null;
+            Object messageObj = alertInfo.get("message");
+            if (messageObj != null) {
+                try {
+                    // 如果message是字符串，尝试解析为JSON
+                    String messageStr = messageObj.toString();
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> messageMap = objectMapper.readValue(messageStr, Map.class);
+                    
+                    Object deviceIdObj = messageMap.get("device_id");
+                    if (deviceIdObj != null) {
+                        deviceId = Long.valueOf(deviceIdObj.toString());
+                    }
+                } catch (Exception e) {
+                    log.warn("无法从消息中解析device_id: {}", e.getMessage());
+                    // 如果JSON解析失败，尝试简单的字符串匹配
+                    String message = messageObj.toString();
+                    if (message.contains("device_id")) {
+                        try {
+                            String[] lines = message.split("\n");
+                            for (String line : lines) {
+                                if (line.contains("device_id")) {
+                                    String deviceIdStr = line.substring(line.indexOf('"') + 1);
+                                    deviceIdStr = deviceIdStr.substring(0, deviceIdStr.indexOf('"'));
+                                    deviceId = Long.valueOf(deviceIdStr);
+                                    break;
+                                }
+                            }
+                        } catch (Exception ex) {
+                            log.warn("字符串匹配解析device_id失败: {}", ex.getMessage());
+                        }
+                    }
+                }
+            }
+            
+            // 创建报警记录对象
+            DormAlarmLog alarmLog = new DormAlarmLog();
+            
+            // 设置宿舍ID
+            if (dormIdStr != null && !"UNKNOWN".equals(dormIdStr)) {
+                try {
+                    alarmLog.setDormId(Long.valueOf(dormIdStr));
+                } catch (NumberFormatException e) {
+                    log.warn("无效的宿舍ID: {}", dormIdStr);
+                }
+            }
+            
+            // 设置设备ID（如果无法获取则设为null）
+            alarmLog.setDeviceId(deviceId);
+            
+            // 设置烟雾值
+            alarmLog.setSmokeValue(smokeValue);
+            
+            // 设置报警等级（1=一般，2=严重）
+            if ("CRIT".equalsIgnoreCase(alertLevel) || "CRITICAL".equalsIgnoreCase(alertLevel)) {
+                alarmLog.setAlarmLevel(2); // 严重
+            } else {
+                alarmLog.setAlarmLevel(1); // 一般
+            }
+            
+            // 设置报警时间
+            alarmLog.setAlarmTime(new Date());
+            
+            // 设置为未处理
+            alarmLog.setHandled(0);
+            
+            // 设置备注
+            alarmLog.setRemarks("系统自动检测到的烟雾报警");
+            
+            // 保存到数据库
+            int result = dormAlarmLogService.insertDormAlarmLog(alarmLog);
+            
+            if (result > 0) {
+                log.info("报警记录保存成功: 宿舍{}, 烟雾值{}ppm, 设备ID: {}", 
+                        dormIdStr, smokeValue, deviceId);
+            } else {
+                log.error("报警记录保存失败: 宿舍{}, 烟雾值{}ppm", 
+                        dormIdStr, smokeValue);
+            }
+            
+        } catch (Exception e) {
+            log.error("保存报警记录到数据库失败: {}", e.getMessage(), e);
         }
     }
 }

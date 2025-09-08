@@ -8,6 +8,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="alarmId"    column="alarm_id"    />
         <result property="deviceId"    column="device_id"    />
         <result property="dormId"    column="dorm_id"    />
+        <result property="dormFullName"    column="dorm_full_name"    />
         <result property="smokeValue"    column="smoke_value"    />
         <result property="alarmLevel"    column="alarm_level"    />
         <result property="alarmTime"    column="alarm_time"    />
@@ -18,26 +19,34 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectDormAlarmLogVo">
-        select alarm_id, device_id, dorm_id, smoke_value, alarm_level, alarm_time, handled, handled_time, handler, remarks from dorm_alarm_log
+        select a.alarm_id, a.device_id, a.dorm_id, b.full_name as dorm_full_name, a.smoke_value, a.alarm_level, a.alarm_time, a.handled, a.handled_time, a.handler, a.remarks 
+        from dorm_alarm_log a
+        left join dorm_building b on a.dorm_id = b.dorm_id
     </sql>
 
     <select id="selectDormAlarmLogList" parameterType="DormAlarmLog" resultMap="DormAlarmLogResult">
         <include refid="selectDormAlarmLogVo"/>
         <where>  
-            <if test="deviceId != null "> and device_id = #{deviceId}</if>
-            <if test="dormId != null "> and dorm_id = #{dormId}</if>
-            <if test="smokeValue != null "> and smoke_value = #{smokeValue}</if>
-            <if test="alarmLevel != null "> and alarm_level = #{alarmLevel}</if>
-            <if test="alarmTime != null "> and alarm_time = #{alarmTime}</if>
-            <if test="handled != null "> and handled = #{handled}</if>
-            <if test="handledTime != null "> and handled_time = #{handledTime}</if>
-            <if test="remarks != null  and remarks != ''"> and remarks = #{remarks}</if>
+            <if test="deviceId != null "> and a.device_id = #{deviceId}</if>
+            <if test="dormId != null "> and a.dorm_id = #{dormId}</if>
+            <if test="dormIds != null and dormIds.size() > 0">
+                and a.dorm_id in
+                <foreach item="dormId" collection="dormIds" open="(" separator="," close=")">
+                    #{dormId}
+                </foreach>
+            </if>
+            <if test="smokeValue != null "> and a.smoke_value = #{smokeValue}</if>
+            <if test="alarmLevel != null "> and a.alarm_level = #{alarmLevel}</if>
+            <if test="alarmTime != null "> and a.alarm_time = #{alarmTime}</if>
+            <if test="handled != null "> and a.handled = #{handled}</if>
+            <if test="handledTime != null "> and a.handled_time = #{handledTime}</if>
+            <if test="remarks != null  and remarks != ''"> and a.remarks = #{remarks}</if>
         </where>
     </select>
     
     <select id="selectDormAlarmLogByAlarmId" parameterType="Long" resultMap="DormAlarmLogResult">
         <include refid="selectDormAlarmLogVo"/>
-        where alarm_id = #{alarmId}
+        where a.alarm_id = #{alarmId}
     </select>
 
     <insert id="insertDormAlarmLog" parameterType="DormAlarmLog" useGeneratedKeys="true" keyProperty="alarmId">
