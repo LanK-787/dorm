@@ -4,18 +4,16 @@
     <view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
 
     <!-- 头部区域 -->
-    <view class="header">
-      <view class="header-content">
-        <view class="back-btn" @click="goBack">
-          <text class="iconfont icon-back">‹</text>
+    <view class="custom-navbar">
+      <view class="navbar-content">
+        <view class="navbar-left" @click="goBack">
+          <text class="iconfont icon-arrow-left">‹</text>
         </view>
-        <view class="header-title">
-          <text class="title-text">离校申请</text>
+        <view class="navbar-title">
+          <text>离校申请</text>
         </view>
-        <view class="header-actions">
-          <view class="add-btn" @click="goToRegistration">
-            <text class="iconfont icon-add">+</text>
-          </view>
+        <view class="navbar-right" @click="goToRegistration">
+          <text class="iconfont icon-add">+</text>
         </view>
       </view>
     </view>
@@ -253,16 +251,11 @@ const getStatusText = (approveStatus, status) => {
   return '未知状态'
 }
 
-// 格式化日期
-const formatDate = (date) => {
-  if (!date) return ''
-  return new Date(date).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+// 格式化日期时间
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
 }
 
 // 判断是否可以取消申请
@@ -364,74 +357,78 @@ const viewDetail = (item) => {
 .page-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background-color: #f5f5f5;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
 }
 
 .status-bar {
-  background-color: #ffffff;
+  background: transparent;
 }
 
-.header {
-  background-color: #ffffff;
-  border-bottom: 1rpx solid #eee;
-  
-  .header-content {
-    display: flex;
-    align-items: center;
-    height: 88rpx;
-    padding: 0 30rpx;
-    
-    .back-btn {
-      padding: 20rpx;
-      margin-left: -20rpx;
-      
-      .icon-back {
-        font-size: 40rpx;
-        color: #333;
-      }
-    }
-    
-    .header-title {
-      flex: 1;
-      text-align: center;
-      
-      .title-text {
-        font-size: 34rpx;
-        font-weight: 500;
-        color: #333;
-      }
-    }
-    
-    .header-actions {
-      .add-btn {
-        padding: 20rpx;
-        margin-right: -20rpx;
-        
-        .icon-add {
-          font-size: 40rpx;
-          color: #333;
-        }
-      }
-    }
-  }
+.custom-navbar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20rpx 30rpx;
+}
+
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 88rpx;
+}
+
+.navbar-left,
+.navbar-right {
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  backdrop-filter: blur(10rpx);
+}
+
+.navbar-left .iconfont,
+.navbar-right .iconfont {
+  color: white;
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+.navbar-title {
+  flex: 1;
+  text-align: center;
+}
+
+.navbar-title text {
+  color: white;
+  font-size: 36rpx;
+  font-weight: bold;
 }
 
 .main-content {
   flex: 1;
-  background-color: #f5f5f5;
+  background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
 }
 
 .leave-list {
-  padding: 20rpx;
+  padding: 30rpx;
   
   .leave-item {
     display: flex;
-    align-items: stretch;
-    margin-bottom: 20rpx;
+    align-items: center;
+    margin-bottom: 24rpx;
     background-color: #fff;
-    border-radius: 12rpx;
+    border-radius: 24rpx;
     overflow: hidden;
+    box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    
+    &:active {
+      transform: scale(0.98);
+      box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+    }
     
     .leave-content {
       flex: 1;
@@ -441,51 +438,54 @@ const viewDetail = (item) => {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20rpx;
+        margin-bottom: 24rpx;
         
         .leave-title {
           font-size: 32rpx;
-          font-weight: 500;
+          font-weight: 600;
           color: #333;
+          flex: 1;
+          margin-right: 20rpx;
         }
         
         .leave-status {
-          padding: 4rpx 16rpx;
-          border-radius: 8rpx;
+          padding: 6rpx 20rpx;
+          border-radius: 20rpx;
           
           .status-text {
             font-size: 24rpx;
             color: #fff;
+            font-weight: 500;
           }
           
           // 审批状态样式
           &.status-pending {
-            background-color: #ffa500;  // 待审批 - 橙色
+            background: linear-gradient(135deg, #ffa500, #ff8c00);  // 待审批 - 橙色渐变
           }
 
           &.status-approved {
-            background-color: #52c41a;  // 已批准 - 绿色
+            background: linear-gradient(135deg, #52c41a, #389e0d);  // 已批准 - 绿色渐变
           }
 
           &.status-rejected {
-            background-color: #ff4d4f;  // 已拒绝 - 红色
+            background: linear-gradient(135deg, #ff4d4f, #cf1322);  // 已拒绝 - 红色渐变
           }
 
           &.status-cancelled {
-            background-color: #6c757d;  // 已取消 - 灰色
+            background: linear-gradient(135deg, #6c757d, #545b62);  // 已取消 - 灰色渐变
           }
 
           // 离校状态样式
           &.status-away {
-            background-color: #1890ff;  // 离校中 - 蓝色
+            background: linear-gradient(135deg, #1890ff, #096dd9);  // 离校中 - 蓝色渐变
           }
 
           &.status-returned {
-            background-color: #52c41a;  // 已返校 - 绿色
+            background: linear-gradient(135deg, #52c41a, #389e0d);  // 已返校 - 绿色渐变
           }
 
           &.status-overdue {
-            background-color: #ff4d4f;  // 逾期未返 - 红色
+            background: linear-gradient(135deg, #ff4d4f, #cf1322);  // 逾期未返 - 红色渐变
           }
         }
       }
@@ -494,42 +494,58 @@ const viewDetail = (item) => {
         .info-row {
           display: flex;
           margin-bottom: 16rpx;
+          align-items: center;
           
           .info-label {
             width: 160rpx;
             font-size: 28rpx;
             color: #666;
+            flex-shrink: 0;
           }
           
           .info-value {
             flex: 1;
             font-size: 28rpx;
             color: #333;
+            font-weight: 500;
           }
+        }
+        
+        .info-row:last-child {
+          margin-bottom: 0;
         }
       }
       
       .leave-actions {
         display: flex;
         justify-content: flex-end;
-        margin-top: 20rpx;
+        margin-top: 24rpx;
+        padding-top: 24rpx;
+        border-top: 1rpx solid #f0f0f0;
         
         .action-btn {
           margin-left: 20rpx;
-          padding: 12rpx 24rpx;
-          border-radius: 8rpx;
+          padding: 14rpx 32rpx;
+          border-radius: 24rpx;
+          transition: all 0.3s ease;
           
           .btn-text {
             font-size: 28rpx;
             color: #fff;
+            font-weight: 500;
           }
           
           &.cancel-btn {
-            background-color: #ff4d4f;
+            background: linear-gradient(135deg, #ff4d4f, #cf1322);
           }
           
           &.return-btn {
-            background-color: #1890ff;
+            background: linear-gradient(135deg, #1890ff, #096dd9);
+          }
+          
+          &:active {
+            opacity: 0.8;
+            transform: scale(0.95);
           }
         }
       }
@@ -538,9 +554,9 @@ const viewDetail = (item) => {
     .leave-arrow {
       display: flex;
       align-items: center;
-      padding: 0 20rpx;
+      padding: 0 30rpx;
       color: #999;
-      font-size: 32rpx;
+      font-size: 36rpx;
     }
   }
 }
@@ -549,38 +565,103 @@ const viewDetail = (item) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 100rpx 0;
+  justify-content: center;
+  padding: 160rpx 40rpx;
+  text-align: center;
   
   .empty-icon {
-    font-size: 80rpx;
-    margin-bottom: 20rpx;
-  }
-  
-  .empty-text {
-    font-size: 28rpx;
-    color: #999;
+    font-size: 120rpx;
     margin-bottom: 40rpx;
   }
   
+  .empty-text {
+    font-size: 32rpx;
+    color: #666;
+    margin-bottom: 50rpx;
+    font-weight: 500;
+  }
+  
   .empty-btn {
-    padding: 20rpx 60rpx;
-    background-color: #1890ff;
-    border-radius: 8rpx;
+    padding: 24rpx 80rpx;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50rpx;
+    box-shadow: 0 8rpx 32rpx rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
     
     .btn-text {
-      font-size: 28rpx;
+      font-size: 30rpx;
       color: #fff;
+      font-weight: 600;
+    }
+    
+    &:active {
+      transform: scale(0.95);
+      box-shadow: 0 4rpx 16rpx rgba(102, 126, 234, 0.2);
     }
   }
 }
 
 .loading-more, .no-more {
   text-align: center;
-  padding: 30rpx 0;
+  padding: 40rpx 0;
   
   .loading-text, .no-more-text {
-    font-size: 24rpx;
+    font-size: 28rpx;
     color: #999;
   }
+}
+
+/* 骨架屏加载动画 */
+.loading-more {
+  .loading-text::after {
+    content: '';
+    display: inline-block;
+    width: 20rpx;
+    animation: loading-dots 1.5s infinite;
+  }
+}
+
+@keyframes loading-dots {
+  0%, 20% {
+    content: '.';
+  }
+  40% {
+    content: '..';
+  }
+  60%, 100% {
+    content: '...';
+  }
+}
+
+/* 全局交互效果 */
+:active {
+  opacity: 0.9;
+}
+
+/* 优化按钮点击效果 */
+.back-btn,
+.add-btn,
+.empty-btn,
+.action-btn {
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+}
+
+/* 滚动条美化 */
+.main-content::-webkit-scrollbar {
+  width: 6rpx;
+}
+
+.main-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.3);
+  border-radius: 3rpx;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.5);
 }
 </style>

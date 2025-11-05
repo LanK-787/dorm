@@ -75,8 +75,8 @@
   }
   const globalConfig = ref(getGlobalConfig())
   const loginForm = reactive({
-    username: "admin",
-    password: "admin123",
+    username: "2310305320",
+    password: "123456",
     code: "",
     uuid: ""
   })

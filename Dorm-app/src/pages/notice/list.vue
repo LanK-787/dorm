@@ -1,7 +1,10 @@
 <template>
   <view class="page-container">
+    <!-- 状态栏占位 -->
+    <view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
+
     <!-- 自定义导航栏 -->
-    <view class="custom-navbar" :style="{ paddingTop: statusBarHeight + 'px' }">
+    <view class="custom-navbar">
       <view class="navbar-content">
         <view class="nav-left" @click="goBack">
           <text class="iconfont icon-back">‹</text>
@@ -286,13 +289,13 @@ export default {
   background: #f8f9fa;
 }
 
+.status-bar {
+  background: transparent;
+}
+
 .custom-navbar {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
+  padding: 20rpx 30rpx;
 }
 
 .navbar-content {
@@ -300,7 +303,6 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 30rpx;
 }
 
 .nav-left, .nav-right {
@@ -326,13 +328,8 @@ export default {
 }
 
 .filter-bar {
-  position: fixed;
-  top: 88rpx;
-  left: 0;
-  right: 0;
   background: white;
   border-bottom: 1rpx solid #f0f0f0;
-  z-index: 999;
 }
 
 .filter-scroll {
@@ -363,7 +360,7 @@ export default {
 }
 
 .content-container {
-  margin-top: 200rpx;
+  flex: 1;
   padding: 0 30rpx;
 }
 

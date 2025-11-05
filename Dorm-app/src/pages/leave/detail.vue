@@ -1,15 +1,17 @@
 <template>
   <view class="page-container">
-    <!-- 自定义导航栏 -->
-    <view class="custom-navbar" :style="{ paddingTop: statusBarHeight + 'px' }">
+    <!-- 状态栏占位 -->
+    <view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
+
+    <!-- 头部区域 -->
+    <view class="custom-navbar">
       <view class="navbar-content">
         <view class="navbar-left" @click="goBack">
-          <text class="iconfont icon-back">‹</text>
+          <text class="iconfont icon-arrow-left">‹</text>
         </view>
         <view class="navbar-title">
           <text>申请详情</text>
         </view>
-        <view class="navbar-right"></view>
       </view>
     </view>
 
@@ -1505,44 +1507,45 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .page-container {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
-  background: #f8f9fa;
+  background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
 }
 
 .custom-navbar {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
+  padding: 20rpx 30rpx;
 }
 
 .navbar-content {
-  height: 88rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 30rpx;
-}
-
-.navbar-left,
-.navbar-right {
-  width: 80rpx;
-  height: 60rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  height: 88rpx;
+  position: relative;
+}
+
+.navbar-left {
+  position: absolute;
+  left: 0;
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  backdrop-filter: blur(10rpx);
 }
 
 .navbar-left .iconfont {
   color: white;
-  font-size: 40rpx;
+  font-size: 36rpx;
   font-weight: bold;
 }
 
 .navbar-title {
-  flex: 1;
   text-align: center;
 }
 
@@ -1553,8 +1556,8 @@ onMounted(() => {
 }
 
 .main-content {
-  margin-top: 88rpx;
-  padding: 30rpx;
+  flex: 1;
+  background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
 }
 
 .loading-container,
@@ -1564,165 +1567,228 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 100rpx 0;
+  min-height: 60vh;
 }
 
 .loading-text,
 .error-text {
   color: #666;
-  font-size: 28rpx;
+  font-size: 32rpx;
   margin-bottom: 30rpx;
+  text-align: center;
+  letter-spacing: 1rpx;
 }
 
 .retry-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 40rpx;
-  padding: 20rpx 60rpx;
-  font-size: 28rpx;
+  border-radius: 50rpx;
+  padding: 24rpx 80rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+}
+
+.retry-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.retry-btn:active::before {
+  left: 100%;
+}
+
+.retry-btn:active {
+  transform: scale(0.96);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
 }
 
 .detail-container {
+  padding: 30rpx;
   display: flex;
   flex-direction: column;
-  gap: 30rpx;
+  gap: 24rpx;
 }
 
 .status-card {
   background: white;
-  border-radius: 20rpx;
+  border-radius: 24rpx;
   padding: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.status-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
 }
 
 .status-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20rpx;
+  margin-bottom: 24rpx;
 }
 
 .status-title {
   font-size: 32rpx;
-  font-weight: bold;
+  font-weight: 600;
   color: #333;
 }
 
 .status-tag {
-  padding: 8rpx 16rpx;
+  padding: 6rpx 20rpx;
   border-radius: 20rpx;
   font-size: 24rpx;
-  font-weight: bold;
+  color: #fff;
+  font-weight: 500;
 }
 
 // 审批状态样式
 .status-tag.pending {
-  background: #fff3cd;
-  color: #856404;
+  background: linear-gradient(135deg, #ffa500, #ff8c00);  // 待审批 - 橙色渐变
 }
 
 .status-tag.approved {
-  background: #d4edda;
-  color: #155724;
+  background: linear-gradient(135deg, #52c41a, #389e0d);  // 已批准 - 绿色渐变
 }
 
 .status-tag.rejected {
-  background: #f5c6cb;
-  color: #721c24;
+  background: linear-gradient(135deg, #ff4d4f, #cf1322);  // 已拒绝 - 红色渐变
 }
 
 .status-tag.cancelled {
-  background: #e9ecef;
-  color: #6c757d;
+  background: linear-gradient(135deg, #6c757d, #545b62);  // 已取消 - 灰色渐变
 }
 
 // 离校状态样式
 .status-tag.away {
-  background: #cce5ff;
-  color: #0066cc;
+  background: linear-gradient(135deg, #1890ff, #096dd9);  // 离校中 - 蓝色渐变
 }
 
 .status-tag.returned {
-  background: #d4edda;
-  color: #155724;
+  background: linear-gradient(135deg, #52c41a, #389e0d);  // 已返校 - 绿色渐变
 }
 
 .status-tag.overdue {
-  background: #f8d7da;
-  color: #721c24;
+  background: linear-gradient(135deg, #ff4d4f, #cf1322);  // 逾期未返 - 红色渐变
 }
 
 .status-content {
-  padding: 20rpx;
+  padding: 24rpx;
   background: #f8f9fa;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
 }
 
 .status-desc {
   font-size: 28rpx;
   color: #666;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .info-card {
   background: white;
-  border-radius: 20rpx;
+  border-radius: 24rpx;
   padding: 30rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.info-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
 }
 
 .card-title {
   margin-bottom: 30rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 2rpx solid #f0f0f0;
+  position: relative;
+}
+
+.card-title::after {
+  content: '';
+  position: absolute;
+  bottom: -2rpx;
+  left: 0;
+  width: 60rpx;
+  height: 6rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 6rpx;
 }
 
 .card-title text {
   font-size: 32rpx;
   font-weight: bold;
   color: #333;
+  letter-spacing: 1rpx;
 }
 
 .info-list {
-  display: flex;
-  flex-direction: column;
-  gap: 24rpx;
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.info-label {
-  font-size: 28rpx;
-  color: #666;
-  min-width: 160rpx;
-}
-
-.info-value {
-  font-size: 28rpx;
-  color: #333;
-  flex: 1;
-  text-align: right;
-  word-break: break-all;
+  .info-item {
+    display: flex;
+    margin-bottom: 16rpx;
+    align-items: center;
+    
+    .info-label {
+      width: 160rpx;
+      font-size: 28rpx;
+      color: #666;
+      flex-shrink: 0;
+    }
+    
+    .info-value {
+      flex: 1;
+      font-size: 28rpx;
+      color: #333;
+      font-weight: 500;
+    }
+  }
+  
+  .info-item:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .reason-content {
-  padding: 20rpx;
+  padding: 24rpx;
   background: #f8f9fa;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
+  position: relative;
+}
+
+.reason-content::before {
+  content: '';
+  position: absolute;
+  top: 24rpx;
+  left: 24rpx;
+  width: 4rpx;
+  height: 32rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4rpx;
 }
 
 .reason-text {
   font-size: 28rpx;
   color: #333;
   line-height: 1.6;
+  padding-left: 36rpx;
 }
 
 .action-section {
   display: flex;
-  gap: 20rpx;
-  padding: 20rpx 0;
+  gap: 24rpx;
+  padding: 24rpx 0;
 }
 
 .action-btn {
@@ -1735,10 +1801,29 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+}
+
+.action-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.action-btn:active::before {
+  left: 100%;
 }
 
 .cancel-btn {
-  background: #ff4d4f;
+  background: linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%);
   color: white;
 }
 
@@ -1748,7 +1833,8 @@ onMounted(() => {
 }
 
 .action-btn:active {
-  transform: scale(0.98);
+  transform: scale(0.96);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
 }
 
 // 地图验证对话框样式
@@ -1764,11 +1850,12 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 40rpx;
+  backdrop-filter: blur(8rpx);
 }
 
 .map-dialog {
   background: white;
-  border-radius: 20rpx;
+  border-radius: 32rpx;
   width: 100%;
   max-width: 600rpx;
   max-height: 80vh;
@@ -1776,6 +1863,15 @@ onMounted(() => {
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  box-shadow: 0 16rpx 64rpx rgba(0, 0, 0, 0.15);
+  transform: scale(0.95);
+  animation: dialogSlideIn 0.3s ease forwards;
+}
+
+@keyframes dialogSlideIn {
+  to {
+    transform: scale(1);
+  }
 }
 
 .dialog-header {
@@ -1786,11 +1882,13 @@ onMounted(() => {
   border-bottom: 1rpx solid #f0f0f0;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  border-radius: 32rpx 32rpx 0 0;
 }
 
 .dialog-title {
   font-size: 32rpx;
   font-weight: bold;
+  letter-spacing: 2rpx;
 }
 
 .close-btn {
@@ -1801,6 +1899,12 @@ onMounted(() => {
   justify-content: center;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.2);
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.close-btn:active {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(0.9);
 }
 
 .close-icon {
@@ -1812,6 +1916,7 @@ onMounted(() => {
   height: 400rpx;
   position: relative;
   overflow: hidden;
+  border-bottom: 1rpx solid #f0f0f0;
 }
 
 .amap-container {
@@ -1841,6 +1946,7 @@ onMounted(() => {
   justify-content: center;
   background: rgba(255, 255, 255, 0.9);
   z-index: 10;
+  border-radius: 0 0 16rpx 16rpx;
 }
 
 .location-info-panel {
@@ -1853,7 +1959,8 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 20rpx;
+  margin-bottom: 24rpx;
+  padding: 8rpx 0;
 }
 
 .location-info-panel .info-item:last-child {
@@ -1869,6 +1976,7 @@ onMounted(() => {
   color: #666;
   min-width: 160rpx;
   flex-shrink: 0;
+  font-weight: 500;
 }
 
 .location-info-panel .info-value {
@@ -1877,6 +1985,7 @@ onMounted(() => {
   flex: 1;
   text-align: right;
   font-weight: bold;
+  transition: color 0.3s ease;
 }
 
 .location-info-panel .address-text {
@@ -1888,17 +1997,39 @@ onMounted(() => {
 
 .location-info-panel .info-value.in-range {
   color: #52c41a;
+  animation: pulseGreen 2s infinite;
+}
+
+@keyframes pulseGreen {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .location-info-panel .info-value.out-range {
   color: #ff4d4f;
+  animation: pulseRed 1s infinite;
+}
+
+@keyframes pulseRed {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .validation-status {
   margin-top: 20rpx;
-  padding: 20rpx;
-  border-radius: 12rpx;
+  padding: 24rpx;
+  border-radius: 16rpx;
   text-align: center;
+  background: white;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
 .status-text {
@@ -1921,24 +2052,44 @@ onMounted(() => {
 .dialog-actions {
   display: flex;
   padding: 30rpx;
-  gap: 20rpx;
+  gap: 24rpx;
   border-top: 1rpx solid #f0f0f0;
+  background: white;
 }
 
 .btn {
   flex: 1;
-  height: 80rpx;
+  height: 88rpx;
   border: none;
-  border-radius: 40rpx;
-  font-size: 28rpx;
+  border-radius: 44rpx;
+  font-size: 30rpx;
   font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn:active::before {
+  left: 100%;
 }
 
 .refresh-btn {
-  background: #f0f0f0;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
   color: #666;
 }
 
@@ -1948,12 +2099,23 @@ onMounted(() => {
 }
 
 .confirm-btn.disabled {
-  background: #d9d9d9;
+  background: linear-gradient(135deg, #d9d9d9 0%, #bfbfbf 100%);
   color: #999;
+  box-shadow: none;
+}
+
+.confirm-btn.disabled:active {
+  transform: none;
+  box-shadow: none;
+}
+
+.btn:active {
+  transform: scale(0.96);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
 }
 
 .btn-text {
-  font-size: 28rpx;
+  font-size: 30rpx;
 }
 
 .dialog-loading {
@@ -1962,25 +2124,26 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
+  border-radius: 32rpx;
 }
 
 .loading-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20rpx;
+  gap: 24rpx;
 }
 
 .loading-spinner {
   width: 60rpx;
   height: 60rpx;
   border: 4rpx solid #f3f3f3;
-  border-top: 4rpx solid #1890ff;
+  border-top: 4rpx solid #667eea;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
