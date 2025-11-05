@@ -46,9 +46,22 @@
 <script>
   export default {
     data() {
+      // 安全获取全局配置，避免 globalData 未初始化时报错
+      const getGlobalConfig = () => {
+        const app = getApp()
+        if (app && app.globalData && app.globalData.config && app.globalData.config.appInfo) {
+          return app.globalData.config.appInfo
+        }
+        // 如果 globalData 未初始化，返回默认配置
+        return {
+          site_url: "http://ruoyi.vip",
+          version: "1.1.0"
+        }
+      }
+      const appInfo = getGlobalConfig()
       return {
-        url: getApp().globalData.config.appInfo.site_url,
-        version: getApp().globalData.config.appInfo.version
+        url: appInfo.site_url,
+        version: appInfo.version
       }
     }
   }

@@ -18,8 +18,13 @@ function initApp(){
   //#endif
 }
 function initConfig(){
-  proxy.globalData.config = config
-  proxy.globalData.pages = pagesJson
+  // 使用 getApp() 获取全局实例，确保 globalData 正确初始化
+  const app = getApp()
+  if (!app.globalData) {
+    app.globalData = {}
+  }
+  app.globalData.config = config
+  app.globalData.pages = pagesJson
 }
 function checkLogin() {
   if (!getToken()) {

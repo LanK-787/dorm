@@ -161,6 +161,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import { getRequest, updateRequest } from '@/api/dorm/request'
 import { getAssignmentDetail } from '@/api/repairer/workorder'
 import useUserStore from '@/store/modules/user'
@@ -174,11 +175,17 @@ const imageList = ref([])
 // 获取用户store
 const userStore = useUserStore()
 
-// 获取页面参数
-const pages = getCurrentPages()
-const currentPage = pages[pages.length - 1]
-const requestId = currentPage.options.id
-const assignmentId = currentPage.options.assignmentId
+// 页面参数（使用 onLoad 安全获取）
+const requestId = ref('')
+const assignmentId = ref('')
+
+onLoad((options) => {
+  // 学生查看：id；维修查看：assignmentId
+  if (options) {
+    if (options.id) requestId.value = options.id
+    if (options.assignmentId) assignmentId.value = options.assignmentId
+  }
+})
 
 // 计算属性：判断是否为维修人员
 const isRepairer = computed(() => {
@@ -217,9 +224,9 @@ const initPage = () => {
   statusBarHeight.value = systemInfo.statusBarHeight || 0
 
   // 根据用户角色检查参数
-  if (isRepairer.value && assignmentId) {
+  if (isRepairer.value && assignmentId.value) {
     loadDetail()
-  } else if (!isRepairer.value && requestId) {
+  } else if (!isRepairer.value && requestId.value) {
     loadDetail()
   } else {
     uni.showToast({
@@ -239,10 +246,10 @@ const loadDetail = async () => {
 
     if (isRepairer.value) {
       // 维修人员查看工单详情
-      response = await getAssignmentDetail(assignmentId)
+      response = await getAssignmentDetail(assignmentId.value)
     } else {
       // 学生查看报修详情
-      response = await getRequest(requestId)
+      response = await getRequest(requestId.value)
     }
 
     if (response.code === 200) {

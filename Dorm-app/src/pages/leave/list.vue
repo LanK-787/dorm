@@ -316,26 +316,21 @@ const cancelApplication = async (item) => {
   }
 }
 
-// 确认返校
+// 确认返校（跳转到详情页面进行地图定位验证）
 const handleConfirmReturn = async (item) => {
-  try {
-    uni.showLoading({ title: '提交中...' })
-    const response = await apiConfirmReturn(item.leaveId)
-    if (response.code === 200) {
-      uni.showToast({
-        title: '返校确认成功',
-        icon: 'success'
-      })
-      loadData()
-    }
-  } catch (error) {
+  // 跳转到详情页面，详情页面会进行地图定位验证
+  if (!item || !item.leaveId) {
     uni.showToast({
-      title: '确认失败',
+      title: '申请ID不存在',
       icon: 'none'
     })
-  } finally {
-    uni.hideLoading()
+    return
   }
+  
+  // 跳转到详情页面，并传递参数标识需要打开地图验证
+  uni.navigateTo({
+    url: `/pages/leave/detail?id=${item.leaveId}&autoOpenMap=true`
+  })
 }
 
 // 页面跳转
@@ -350,6 +345,15 @@ const goToRegistration = () => {
 }
 
 const viewDetail = (item) => {
+  if (!item || !item.leaveId) {
+    uni.showToast({
+      title: '申请ID不存在',
+      icon: 'none'
+    })
+    console.error('离校申请数据错误:', item)
+    return
+  }
+  
   uni.navigateTo({
     url: `/pages/leave/detail?id=${item.leaveId}`
   })

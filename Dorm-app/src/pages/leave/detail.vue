@@ -174,6 +174,12 @@
           </view>
           
           <!-- App端或H5端降级使用原生地图 -->
+          <!-- 
+            provider说明：
+            - "amap": 高德地图（需在manifest.json配置Android SDK Key）
+            - "tencent": 腾讯地图（默认，无需配置，坐标系也是GCJ02）
+            - 如果不配置高德SDK，自动使用腾讯地图
+          -->
           <map v-else
             :id="mapId"
             class="native-map"
@@ -188,6 +194,8 @@
             :enable-rotate="false"
             :markers="markers"
             :circles="circles"
+            :polyline="polyline"
+            :provider="mapProvider"
             @markertap="onMarkerTap"
             @updated="onMapUpdated"
           >
@@ -196,9 +204,9 @@
 
         <!-- 位置信息面板 -->
         <view class="location-info-panel">
-          <view class="info-item">
+          <view class="info-item address-item">
             <text class="info-label">当前位置：</text>
-            <text class="info-value">{{ currentAddress || '获取中...' }}</text>
+            <text class="info-value address-text">{{ currentAddress || '获取中...' }}</text>
           </view>
           <view class="info-item">
             <text class="info-label">距离学校：</text>
@@ -242,11 +250,16 @@
 
 <script setup>
 import { ref, onMounted, computed, nextTick } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import {
   getLeaveApplicationDetail,
   cancelLeaveApplication,
   confirmReturn as apiConfirmReturn
 } from '@/api/leave/registration'
+
+// 静态导入高德地图工具（避免动态导入导致代码分割）
+// 注意：虽然只在H5环境使用高德地图API，但学校配置需要在所有环境使用
+import * as amapUtilsModule from '@/utils/amap.js'
 
 // 响应式数据
 const statusBarHeight = ref(0)
@@ -261,6 +274,11 @@ const loadingText = ref('正在获取位置...')
 const isH5 = ref(false)
 const mapId = 'locationValidationMap'
 const mapContainerId = 'amapContainer' // 高德地图容器ID
+
+// 地图提供商：优先使用高德地图，如果未配置则使用腾讯地图
+// 注意：需要在manifest.json中配置高德地图Android SDK Key才能使用provider="amap"
+// 如果使用腾讯地图，坐标系也是GCJ02，与高德地图一致，无需转换
+const mapProvider = ref('tencent') // 'amap' 或 'tencent'
 
 // 高德地图相关
 const amapInstance = ref(null) // 高德地图实例
@@ -278,35 +296,35 @@ const currentAddress = ref('')
 const distance = ref(0)
 const isInSchoolRange = ref(false)
 
-// 学校配置
+// 学校配置（默认值，会在onLoad时从amap.js加载实际配置）
 const schoolConfig = {
   name: '学校',
-  latitude: 31.230416, // 示例坐标，请替换为实际学校坐标
-  longitude: 121.473701,
+  latitude: 27.930826, // 默认坐标，会从amap.js的SCHOOL_CONFIG加载
+  longitude: 120.959226,
   radius: 500, // 学校围栏半径，单位：米
 }
 
-// 高德地图动态导入
-let amapUtils = null
-const loadAmapUtils = async () => {
-  if (isH5.value && !amapUtils) {
-    try {
-      console.log('🚀 开始加载高德地图工具模块...')
-      amapUtils = await import('@/utils/amap.js')
-      console.log('✅ 高德地图工具模块加载成功')
-      
-      // 更新学校配置为高德的配置
-      if (amapUtils.SCHOOL_CONFIG) {
-        Object.assign(schoolConfig, amapUtils.SCHOOL_CONFIG)
-        console.log('⚙️ 学校配置已更新:', schoolConfig)
-      }
-    } catch (error) {
-      console.error('❌ 加载高德地图工具失败:', error)
-      amapLoadFailed.value = true
-      return null
+// 获取高德地图工具（改为静态导入，避免代码分割）
+const loadAmapUtils = () => {
+  // H5环境返回完整工具，App环境返回null（不使用高德API）
+  // #ifdef H5
+  if (isH5.value && amapUtilsModule) {
+    // 更新学校配置为高德的配置
+    if (amapUtilsModule.SCHOOL_CONFIG) {
+      Object.assign(schoolConfig, amapUtilsModule.SCHOOL_CONFIG)
+      console.log('⚙️ 学校配置已更新:', schoolConfig)
     }
+    return amapUtilsModule
   }
-  return amapUtils
+  // #endif
+  
+  // App环境：虽然不使用高德API，但需要加载学校配置
+  if (amapUtilsModule && amapUtilsModule.SCHOOL_CONFIG) {
+    Object.assign(schoolConfig, amapUtilsModule.SCHOOL_CONFIG)
+    console.log('⚙️ App环境：学校配置已加载:', schoolConfig)
+  }
+  
+  return null
 }
 
 // 地图标记
@@ -329,7 +347,7 @@ const markers = ref([
   }
 ])
 
-// 圆形围栏可视化
+// 圆形围栏可视化（备用方案，如果多边形配置不完整时使用）
 const circles = ref([
   {
     latitude: schoolConfig.latitude,
@@ -337,9 +355,55 @@ const circles = ref([
     radius: schoolConfig.radius,
     color: '#1890ff40',
     fillColor: '#1890ff20',
-    strokeWidth: 2
+    strokeWidth: 5  // 加粗边框：从2增加到5
   }
 ])
+
+// 多边形围栏折线（使用polyline绘制多边形边界）
+const polyline = ref([])
+
+// 初始化多边形围栏折线
+const initPolygonPolyline = () => {
+  // 检查是否有多边形配置
+  if (schoolConfig.polygon && schoolConfig.polygon.path && schoolConfig.polygon.path.length >= 3) {
+    // 将多边形坐标转换为polyline格式
+    // uni-app的polyline需要points数组，格式：[{latitude: 纬度, longitude: 经度}, ...]
+    const points = schoolConfig.polygon.path.map(coord => ({
+      latitude: coord[1], // 注意：coord是[经度, 纬度]，polyline需要[纬度, 经度]
+      longitude: coord[0]
+    }))
+    
+    // 创建闭合的折线（最后一个点回到起点）
+    if (points.length > 0 && 
+        (points[points.length - 1].latitude !== points[0].latitude || 
+         points[points.length - 1].longitude !== points[0].longitude)) {
+      points.push(points[0]) // 确保闭合
+    }
+    
+    polyline.value = [
+      {
+        points: points,
+        // 使用更醒目的颜色和更粗的线条
+        color: schoolConfig.polygon.strokeColor || '#1890ff',
+        width: schoolConfig.polygon.strokeWeight || 5, // 加粗线条：从2增加到5
+        borderColor: schoolConfig.polygon.strokeColor || '#1890ff',
+        borderWidth: schoolConfig.polygon.strokeWeight || 5, // 加粗边框：从2增加到5
+        arrowLine: false, // 不显示箭头
+        arrowIconPath: '',
+        dottedLine: false // 实线
+      }
+    ]
+    
+    // 清空圆形围栏，因为使用了多边形
+    circles.value = []
+    
+    console.log('✅ 多边形围栏折线已初始化，点数:', points.length)
+  } else {
+    // 如果没有多边形配置，使用圆形围栏
+    console.log('⚠️ 多边形配置不完整，使用圆形围栏')
+    polyline.value = []
+  }
+}
 
 // 计算属性
 
@@ -378,25 +442,55 @@ const formatDistance = (dist) => {
   }
 }
 
-// 初始化页面
-const initPage = () => {
+// 页面加载时获取参数
+onLoad((options) => {
   // 获取状态栏高度
   const systemInfo = uni.getSystemInfoSync()
   statusBarHeight.value = systemInfo.statusBarHeight || 0
   
-  // 获取页面参数
-  const pages = getCurrentPages()
-  const currentPage = pages[pages.length - 1]
-  leaveId.value = currentPage.options.id || ''
+  // 初始化时加载学校配置（确保所有环境都能获取正确的学校坐标）
+  loadAmapUtils()
   
-  if (leaveId.value) {
+  // 初始化多边形围栏折线（App端使用polyline绘制多边形边界）
+  initPolygonPolyline()
+  
+  // 设置地图提供商
+  // 注意：腾讯地图使用GCJ02坐标系，与高德地图一致，无需坐标转换
+  // 如果后续需要切换到高德地图，需要在manifest.json中配置Android SDK Key
+  // #ifdef APP-PLUS
+  mapProvider.value = 'tencent' // 使用腾讯地图（GCJ02坐标系）
+  console.log('🗺️ App环境：使用腾讯地图（GCJ02坐标系，与高德一致）')
+  // #endif
+  
+  // 从页面参数中获取 id
+  if (options && options.id) {
+    leaveId.value = options.id
     loadDetail()
+    // 注意：自动打开地图验证的逻辑在 loadDetail() 中处理
   } else {
-    uni.showToast({
-      title: '参数错误',
-      icon: 'none'
-    })
+    // 备用方案：从 getCurrentPages 获取
+    const pages = getCurrentPages()
+    if (pages && pages.length > 0) {
+      const currentPage = pages[pages.length - 1]
+      if (currentPage && currentPage.options) {
+        leaveId.value = currentPage.options.id || ''
+      }
+    }
+    
+    if (leaveId.value) {
+      loadDetail()
+    } else {
+      uni.showToast({
+        title: '参数错误',
+        icon: 'none'
+      })
+    }
   }
+})
+
+// 初始化页面（保留用于其他初始化逻辑）
+const initPage = () => {
+  // 状态栏高度已在 onLoad 中设置
 }
 
 // 加载详情
@@ -410,6 +504,25 @@ const loadDetail = async () => {
     
     if (response.code === 200) {
       leaveDetail.value = response.data
+      
+      // 检查是否需要自动打开地图验证（从URL参数获取）
+      const pages = getCurrentPages()
+      if (pages && pages.length > 0) {
+        const currentPage = pages[pages.length - 1]
+        if (currentPage && currentPage.options && currentPage.options.autoOpenMap === 'true') {
+          // 延迟打开地图验证，确保数据已加载
+          setTimeout(() => {
+            if (canReturn(leaveDetail.value)) {
+              openMapValidation()
+            } else {
+              uni.showToast({
+                title: '当前状态无法确认返校',
+                icon: 'none'
+              })
+            }
+          }, 300)
+        }
+      }
     } else {
       uni.showToast({
         title: response.msg || '加载失败',
@@ -587,27 +700,41 @@ const cancelApplication = async () => {
 // 打开地图验证对话框
 const openMapValidation = async () => {
   try {
-    // 检测运行环境 - 增强版检测
+    // 检测运行环境 - 使用uni-app平台判断
     // #ifdef H5
     isH5.value = true
     // #endif
     
-    // 备用H5环境检测
-    if (!isH5.value && (typeof window !== 'undefined' && window.location)) {
-      isH5.value = true
-      console.log('备用H5环境检测成功')
+    // #ifndef H5
+    isH5.value = false
+    // #endif
+    
+    // 双重检查：确保真机环境下不会误判
+    // 在真机环境下，通常没有 window.document 或 window.location
+    const hasWindow = typeof window !== 'undefined'
+    const hasDocument = hasWindow && typeof document !== 'undefined'
+    const hasLocation = hasWindow && typeof window.location !== 'undefined'
+    
+    // 如果检测为H5但实际没有document或location，说明可能是误判
+    if (isH5.value && (!hasDocument || !hasLocation)) {
+      console.warn('⚠️ 检测到H5环境但缺少关键对象，切换到原生模式')
+      isH5.value = false
     }
     
     // 重置错误状态
     amapLoadFailed.value = false
     
-    // 输出诊断信息
+    // 输出诊断信息（安全访问）
+    const hasAMap = hasWindow && typeof window.AMap !== 'undefined' && !!window.AMap
     console.log('🔍 地图验证诊断信息:', {
       isH5: isH5.value,
       amapLoadFailed: amapLoadFailed.value,
-      hasWindow: typeof window !== 'undefined',
-      hasAMap: !!window.AMap,
-      userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'N/A'
+      hasWindow: hasWindow,
+      hasDocument: hasDocument,
+      hasLocation: hasLocation,
+      hasAMap: hasAMap,
+      userAgent: hasWindow && window.navigator ? window.navigator.userAgent : 'N/A',
+      platform: uni.getSystemInfoSync().platform || 'unknown'
     })
     
     showMapDialog.value = true
@@ -620,12 +747,18 @@ const openMapValidation = async () => {
     centerLatitude.value = schoolConfig.latitude
     centerLongitude.value = schoolConfig.longitude
     
-    // 初始化地图
-    if (isH5.value) {
+    // 重新初始化多边形围栏折线（确保使用最新的配置）
+    initPolygonPolyline()
+    
+    // 初始化地图（只在确认是H5环境时）
+    if (isH5.value && hasDocument && hasLocation) {
       console.log('🗺️ 尝试初始化高德地图...')
       await initAmapMap()
     } else {
       console.log('📱 使用原生地图模式')
+      // 确保在非H5环境下不会尝试初始化高德地图
+      isH5.value = false
+      amapLoadFailed.value = true
     }
     
     // 获取当前位置
@@ -633,10 +766,29 @@ const openMapValidation = async () => {
     
   } catch (error) {
     console.error('打开地图验证失败:', error)
-    uni.showToast({
-      title: '地图初始化失败',
-      icon: 'none'
-    })
+    
+    // 如果是window相关的错误，自动切换到原生模式
+    if (error.message && (
+      error.message.includes('window') || 
+      error.message.includes('AMap') ||
+      error.message.includes('Cannot read property')
+    )) {
+      console.warn('⚠️ 检测到环境相关错误，切换到原生地图模式')
+      isH5.value = false
+      amapLoadFailed.value = true
+      
+      // 重新获取位置（使用原生定位）
+      try {
+        await getCurrentLocation()
+      } catch (locError) {
+        console.error('原生定位也失败:', locError)
+      }
+    } else {
+      uni.showToast({
+        title: '地图初始化失败',
+        icon: 'none'
+      })
+    }
   } finally {
     mapLoading.value = false
   }
@@ -674,7 +826,7 @@ const initAmapMap = async () => {
     console.log('🚀 正在初始化高德地图...')
     
     // 加载高德地图工具
-    const utils = await loadAmapUtils()
+    const utils = loadAmapUtils()
     if (!utils) {
       console.error('❌ 高德地图工具加载失败，切换到原生地图模式')
       isH5.value = false
@@ -741,9 +893,15 @@ const initAmapMap = async () => {
 
 // 添加学校标记
 const addAmapSchoolMarker = async () => {
-  if (!amapInstance.value || !window.AMap) return
+  // 检查环境：只在H5环境下且AMap可用时执行
+  if (!isH5.value || typeof window === 'undefined' || !window.AMap) {
+    console.log('⚠️ 非H5环境或AMap不可用，跳过高德标记添加')
+    return
+  }
   
-  const utils = await loadAmapUtils()
+  if (!amapInstance.value) return
+  
+  const utils = loadAmapUtils()
   if (!utils) return
   
   schoolMarker.value = utils.createMarker(amapInstance.value, {
@@ -771,9 +929,15 @@ const addAmapSchoolMarker = async () => {
 
 // 添加学校围栏（优先显示多边形）
 const addAmapSchoolCircle = async () => {
-  if (!amapInstance.value || !window.AMap) return
+  // 检查环境：只在H5环境下且AMap可用时执行
+  if (!isH5.value || typeof window === 'undefined' || !window.AMap) {
+    console.log('⚠️ 非H5环境或AMap不可用，跳过高德围栏添加')
+    return
+  }
   
-  const utils = await loadAmapUtils()
+  if (!amapInstance.value) return
+  
+  const utils = loadAmapUtils()
   if (!utils) return
   
   // 优先使用多边形围栏
@@ -782,8 +946,8 @@ const addAmapSchoolCircle = async () => {
     schoolCircle.value = utils.createPolygon(amapInstance.value, {
       path: utils.SCHOOL_CONFIG.polygon.path,
       strokeColor: utils.SCHOOL_CONFIG.polygon.strokeColor || '#1890ff',
-      strokeWeight: utils.SCHOOL_CONFIG.polygon.strokeWeight || 2,
-      strokeOpacity: utils.SCHOOL_CONFIG.polygon.strokeOpacity || 0.8,
+      strokeWeight: utils.SCHOOL_CONFIG.polygon.strokeWeight || 5, // 加粗：从2增加到5
+      strokeOpacity: utils.SCHOOL_CONFIG.polygon.strokeOpacity || 1.0, // 不透明：从0.8增加到1.0
       fillColor: utils.SCHOOL_CONFIG.polygon.fillColor || '#1890ff',
       fillOpacity: utils.SCHOOL_CONFIG.polygon.fillOpacity || 0.2
     })
@@ -797,8 +961,8 @@ const addAmapSchoolCircle = async () => {
         center: [schoolConfig.longitude, schoolConfig.latitude],
         radius: schoolConfig.radius,
         strokeColor: '#1890ff',
-        strokeWeight: 2,
-        strokeOpacity: 0.8,
+        strokeWeight: 5, // 加粗：从2增加到5
+        strokeOpacity: 1.0, // 不透明：从0.8增加到1.0
         fillColor: '#1890ff',
         fillOpacity: 0.2
       })
@@ -829,7 +993,7 @@ const getCurrentLocation = async () => {
     // H5端优先尝试高德定位
     if (isH5.value && !amapLoadFailed.value) {
       try {
-        const utils = await loadAmapUtils()
+        const utils = loadAmapUtils()
         if (utils) {
           locationResult = await utils.getAmapLocation({
             timeout: 15000,
@@ -844,17 +1008,34 @@ const getCurrentLocation = async () => {
     
     // 如果高德定位失败，使用uni-app原生定位
     if (!locationResult) {
-      locationResult = await getUniLocation()
-      console.log('uni-app定位成功:', locationResult)
+      try {
+        locationResult = await getUniLocation()
+        console.log('✅ uni-app原生定位成功:', locationResult)
+      } catch (error) {
+        console.error('❌ uni-app原生定位也失败:', error)
+        throw error // 重新抛出错误，让外层处理
+      }
     }
     
     // 更新位置信息
     currentLatitude.value = locationResult.latitude
     currentLongitude.value = locationResult.longitude
-    currentAddress.value = locationResult.address || '获取中...'
     
-    // 尝试获取地址信息
-    if (!locationResult.address || locationResult.address === '获取中...') {
+    // 处理地址信息
+    if (locationResult.address) {
+      // 如果已经有格式化后的地址，直接使用
+      currentAddress.value = locationResult.address
+    } else if (locationResult.addressDetail) {
+      // 如果有地址对象，进行格式化
+      currentAddress.value = formatAddress(locationResult.addressDetail)
+    } else {
+      // 如果没有地址信息，尝试获取详细地址
+      currentAddress.value = '获取中...'
+      await getDetailedAddress()
+    }
+    
+    // 如果地址仍然为空或无效，尝试获取详细地址
+    if (!currentAddress.value || currentAddress.value === '获取中...' || currentAddress.value.trim() === '') {
       await getDetailedAddress()
     }
     
@@ -872,11 +1053,12 @@ const getCurrentLocation = async () => {
       updateUserMarker()
     }
     
-    uni.showToast({
-      title: '位置获取成功',
-      icon: 'success',
-      duration: 1500
-    })
+    // 移除弹窗提示，因为：
+    // 1. 地图上已经显示位置标记，用户可以直接看到
+    // 2. 位置信息面板已经显示当前位置和距离
+    // 3. 避免多次调用时弹窗叠加或冲突
+    // 只在控制台输出日志
+    console.log('✅ 位置获取成功，已更新地图标记')
     
   } catch (error) {
     console.error('获取位置失败:', error)
@@ -909,7 +1091,7 @@ const getDetailedAddress = async () => {
   try {
     // 尝试使用高德地址逆解析
     if (isH5.value && !amapLoadFailed.value) {
-      const utils = await loadAmapUtils()
+      const utils = loadAmapUtils()
       if (utils) {
         const address = await utils.getAddressByLocation(currentLongitude.value, currentLatitude.value)
         if (address) {
@@ -929,28 +1111,96 @@ const getDetailedAddress = async () => {
   }
 }
 
+// 格式化地址信息（将地址对象转换为可读字符串）
+const formatAddress = (address) => {
+  if (!address) return ''
+  
+  // 如果address是字符串，直接返回
+  if (typeof address === 'string') {
+    return address
+  }
+  
+  // 如果address是对象，格式化地址字符串
+  if (typeof address === 'object') {
+    // 优先显示POI名称（如果有），这是最精确的位置信息
+    if (address.poiName) {
+      // POI名称通常已包含位置信息，直接返回POI名称
+      // 例如：浙江工贸职业技术学院(瓯江口校区)
+      return address.poiName
+    }
+    
+    // 如果没有POI名称，组合省市区街道信息
+    const parts = []
+    
+    // 拼接省市区
+    if (address.province) {
+      parts.push(address.province)
+    }
+    if (address.city && address.city !== address.province) {
+      parts.push(address.city)
+    }
+    if (address.district) {
+      parts.push(address.district)
+    }
+    
+    // 拼接街道和门牌号
+    if (address.street) {
+      parts.push(address.street)
+    }
+    if (address.streetNum) {
+      parts.push(address.streetNum)
+    }
+    
+    // 组合地址字符串
+    return parts.join('')
+  }
+  
+  return ''
+}
+
 // uni-app原生定位
 const getUniLocation = () => {
   return new Promise((resolve, reject) => {
     uni.getLocation({
-      type: 'wgs84',
-      geocode: false,
-      isHighAccuracy: false,
-      timeout: 10000,
+      // 直接使用GCJ02坐标系（高德/腾讯/百度坐标系），与高德地图一致
+      // 注意：在App端，uni-app会自动处理坐标系转换，无需手动转换
+      type: 'gcj02',
+      geocode: true, // 启用地理编码，获取地址信息
+      isHighAccuracy: true, // 启用高精度定位（GPS定位）
+      altitude: false, // 不需要海拔信息，节省资源
+      timeout: 15000, // 增加超时时间，确保GPS定位完成
       success: (res) => {
-        // WGS84转GCJ02坐标转换
-        const converted = wgs84ToGcj02(res.longitude, res.latitude)
+        console.log('📍 uni-app定位成功:', {
+          latitude: res.latitude,
+          longitude: res.longitude,
+          accuracy: res.accuracy,
+          address: res.address
+        })
+        
+        // 格式化地址信息
+        const formattedAddress = formatAddress(res.address)
+        
         resolve({
-          latitude: converted.latitude,
-          longitude: converted.longitude,
+          latitude: res.latitude,
+          longitude: res.longitude,
           accuracy: res.accuracy || 0,
-          address: '',
+          address: formattedAddress, // 格式化后的地址字符串
+          addressDetail: res.address, // 保留原始地址对象，供后续使用
           timestamp: Date.now()
         })
       },
       fail: (error) => {
-        console.error('uni-app定位失败:', error)
-        reject(new Error(error.errMsg || '定位失败'))
+        console.error('❌ uni-app定位失败:', error)
+        
+        // 如果是权限问题，给出明确提示
+        let errorMsg = error.errMsg || '定位失败'
+        if (errorMsg.includes('permission') || errorMsg.includes('权限')) {
+          errorMsg = '请允许位置权限后重试'
+        } else if (errorMsg.includes('timeout')) {
+          errorMsg = '定位超时，请检查GPS是否开启'
+        }
+        
+        reject(new Error(errorMsg))
       }
     })
   })
@@ -996,7 +1246,7 @@ const wgs84ToGcj02 = (lng, lat) => {
 // 高德地图距离计算（使用多边形围栏）
 const calculateAmapDistance = async () => {
   try {
-    const utils = await loadAmapUtils()
+    const utils = loadAmapUtils()
     if (utils && currentLatitude.value && currentLongitude.value) {
       // 使用新的多边形围栏检查功能
       const rangeResult = utils.checkSchoolRange(currentLongitude.value, currentLatitude.value)
@@ -1069,14 +1319,20 @@ const calculateDistance = () => {
 
 // 更新高德地图标记
 const updateAmapMarkers = async () => {
-  if (!amapInstance.value || !window.AMap) return
+  // 检查环境：只在H5环境下且AMap可用时执行
+  if (!isH5.value || typeof window === 'undefined' || !window.AMap) {
+    console.log('⚠️ 非H5环境或AMap不可用，跳过高德标记更新')
+    return
+  }
+  
+  if (!amapInstance.value) return
   
   // 移除旧的用户标记
   if (userMarker.value) {
     userMarker.value.setMap(null)
   }
   
-  const utils = await loadAmapUtils()
+  const utils = loadAmapUtils()
   if (!utils) return
   
   // 添加新的用户标记
@@ -1241,8 +1497,9 @@ const goBack = () => {
 }
 
 // 生命周期钩子
+// 注意：参数获取已在 onLoad 中处理，onMounted 不再需要调用 initPage
 onMounted(() => {
-  initPage()
+  // 其他需要在组件挂载后的初始化逻辑可以在这里添加
 })
 </script>
 
@@ -1595,7 +1852,7 @@ onMounted(() => {
 .location-info-panel .info-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 20rpx;
 }
 
@@ -1603,10 +1860,15 @@ onMounted(() => {
   margin-bottom: 0;
 }
 
+.location-info-panel .address-item {
+  align-items: flex-start;
+}
+
 .location-info-panel .info-label {
   font-size: 28rpx;
   color: #666;
   min-width: 160rpx;
+  flex-shrink: 0;
 }
 
 .location-info-panel .info-value {
@@ -1615,6 +1877,13 @@ onMounted(() => {
   flex: 1;
   text-align: right;
   font-weight: bold;
+}
+
+.location-info-panel .address-text {
+  word-break: break-all;
+  line-height: 1.6;
+  text-align: right;
+  font-weight: normal;
 }
 
 .location-info-panel .info-value.in-range {

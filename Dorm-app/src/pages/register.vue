@@ -40,10 +40,27 @@
 
   export default {
     data() {
+      // 安全获取全局配置，避免 globalData 未初始化时报错
+      const getGlobalConfig = () => {
+        const app = getApp()
+        if (app && app.globalData && app.globalData.config) {
+          return app.globalData.config
+        }
+        // 如果 globalData 未初始化，返回默认配置
+        return {
+          appInfo: {
+            logo: "/static/logo.png",
+            agreements: [
+              { title: "隐私政策", url: "https://ruoyi.vip/protocol.html" },
+              { title: "用户服务协议", url: "https://ruoyi.vip/protocol.html" }
+            ]
+          }
+        }
+      }
       return {
         codeUrl: "",
         captchaEnabled: true,
-        globalConfig: getApp().globalData.config,
+        globalConfig: getGlobalConfig(),
         registerForm: {
           username: "",
           password: "",
