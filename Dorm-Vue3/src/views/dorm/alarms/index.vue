@@ -16,25 +16,18 @@
         <!--报警数据-->
         <pane size="84">
           <el-col>
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="对应报警设备ID" prop="deviceId">
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="100px">
+      <el-form-item label="报警设备ID" prop="deviceId">
         <el-input
           v-model="queryParams.deviceId"
-          placeholder="请输入对应报警设备ID"
+          placeholder="请输入设备ID"
           clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="告警时烟雾值" prop="smokeValue">
-        <el-input
-          v-model="queryParams.smokeValue"
-          placeholder="请输入告警时烟雾值"
-          clearable
+          style="width: 160px"
           @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item label="告警等级" prop="alarmLevel">
-        <el-select v-model="queryParams.alarmLevel" placeholder="请选择告警等级" clearable>
+        <el-select v-model="queryParams.alarmLevel" placeholder="请选择告警等级" clearable style="width: 160px">
           <el-option
             v-for="dict in dorm_alarm_level"
             :key="dict.value"
@@ -48,11 +41,12 @@
           v-model="queryParams.alarmTime"
           type="date"
           value-format="YYYY-MM-DD"
-          placeholder="请选择告警时间">
+          placeholder="请选择告警时间"
+          style="width: 180px">
         </el-date-picker>
       </el-form-item>
       <el-form-item label="是否处理" prop="handled">
-        <el-select v-model="queryParams.handled" placeholder="请选择是否处理" clearable>
+        <el-select v-model="queryParams.handled" placeholder="请选择是否处理" clearable style="width: 160px">
           <el-option
             v-for="dict in dorm_alarm_state"
             :key="dict.value"
@@ -66,16 +60,9 @@
           v-model="queryParams.handledTime"
           type="date"
           value-format="YYYY-MM-DD"
-          placeholder="请选择处理时间">
+          placeholder="请选择处理时间"
+          style="width: 180px">
         </el-date-picker>
-      </el-form-item>
-      <el-form-item label="备注" prop="remarks">
-        <el-input
-          v-model="queryParams.remarks"
-          placeholder="请输入备注"
-          clearable
-          @keyup.enter="handleQuery"
-        />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -127,7 +114,6 @@
 
     <el-table v-loading="loading" :data="alarmsList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="告警ID" align="center" prop="alarmId" />
       <el-table-column label="对应报警设备ID" align="center" prop="deviceId" />
       <el-table-column label="所属宿舍" align="center" prop="dormFullName" />
       <el-table-column label="告警时烟雾值" align="center" prop="smokeValue" />
@@ -156,6 +142,7 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['dorm:alarms:edit']">修改</el-button>
+          <el-button link type="success" icon="CircleCheck" @click="handleProcess(scope.row)" v-hasPermi="['dorm:alarms:edit']" v-if="scope.row.handled == 0">已处理</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['dorm:alarms:remove']">删除</el-button>
         </template>
       </el-table-column>
@@ -212,7 +199,7 @@
 </template>
 
 <script setup name="Alarms">
-import { listAlarms, getAlarms, delAlarms, addAlarms, updateAlarms } from "@/api/dorm/alarms"
+import { listAlarms, getAlarms, delAlarms, addAlarms, updateAlarms, handleAlarm } from "@/api/dorm/alarms"
 import { dormTreeSelectWithCapacity } from "@/api/dorm/student"
 import { Splitpanes, Pane } from "splitpanes"
 import useAppStore from '@/store/modules/app'
@@ -409,6 +396,16 @@ function handleExport() {
   proxy.download('dorm/alarms/export', {
     ...queryParams.value
   }, `alarms_${new Date().getTime()}.xlsx`)
+}
+
+/** 标记为已处理按钮操作 */
+function handleProcess(row) {
+  proxy.$modal.confirm('是否确认将该报警记录标记为已处理？').then(function() {
+    return handleAlarm(row.alarmId)
+  }).then(() => {
+    getList()
+    proxy.$modal.msgSuccess("处理成功")
+  }).catch(() => {})
 }
 
 /** 节点单击事件 */

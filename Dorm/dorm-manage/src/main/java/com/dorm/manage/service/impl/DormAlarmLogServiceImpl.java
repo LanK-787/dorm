@@ -1,8 +1,10 @@
 package com.dorm.manage.service.impl;
 
+import java.util.Date;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.dorm.common.utils.SecurityUtils;
 import com.dorm.manage.mapper.DormAlarmLogMapper;
 import com.dorm.manage.domain.DormAlarmLog;
 import com.dorm.manage.service.IDormAlarmLogService;
@@ -89,5 +91,22 @@ public class DormAlarmLogServiceImpl implements IDormAlarmLogService
     public int deleteDormAlarmLogByAlarmId(Long alarmId)
     {
         return dormAlarmLogMapper.deleteDormAlarmLogByAlarmId(alarmId);
+    }
+
+    /**
+     * 标记报警为已处理
+     * 
+     * @param alarmId 报警记录主键
+     * @return 结果
+     */
+    @Override
+    public int handleDormAlarmLog(Long alarmId)
+    {
+        DormAlarmLog alarmLog = new DormAlarmLog();
+        alarmLog.setAlarmId(alarmId);
+        alarmLog.setHandled(1);
+        alarmLog.setHandledTime(new Date());
+        alarmLog.setHandler(SecurityUtils.getLoginUser().getUser().getNickName());
+        return dormAlarmLogMapper.updateDormAlarmLog(alarmLog);
     }
 }

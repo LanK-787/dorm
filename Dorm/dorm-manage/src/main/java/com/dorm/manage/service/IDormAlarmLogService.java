@@ -58,4 +58,12 @@ public interface IDormAlarmLogService
      * @return 结果
      */
     public int deleteDormAlarmLogByAlarmId(Long alarmId);
+
+    /**
+     * 标记报警为已处理
+     * 
+     * @param alarmId 报警记录主键
+     * @return 结果
+     */
+    public int handleDormAlarmLog(Long alarmId);
 }

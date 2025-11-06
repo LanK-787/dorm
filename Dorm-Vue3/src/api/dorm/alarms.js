@@ -42,3 +42,11 @@ export function delAlarms(alarmId) {
     method: 'delete'
   })
 }
+
+// 标记报警为已处理
+export function handleAlarm(alarmId) {
+  return request({
+    url: '/dorm/alarms/handle/' + alarmId,
+    method: 'put'
+  })
+}

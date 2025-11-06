@@ -101,4 +101,15 @@ public class DormAlarmLogController extends BaseController
     {
         return toAjax(dormAlarmLogService.deleteDormAlarmLogByAlarmIds(alarmIds));
     }
+
+    /**
+     * 标记报警为已处理
+     */
+    @PreAuthorize("@ss.hasPermi('dorm:alarms:edit')")
+    @Log(title = "报警处理", businessType = BusinessType.UPDATE)
+    @PutMapping("/handle/{alarmId}")
+    public AjaxResult handleAlarm(@PathVariable Long alarmId)
+    {
+        return toAjax(dormAlarmLogService.handleDormAlarmLog(alarmId));
+    }
 }
