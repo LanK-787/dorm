@@ -7,10 +7,10 @@
           <uni-easyinput v-model="student.studentNo" placeholder="请输入学号" disabled/>
         </uni-forms-item>
         <uni-forms-item label="姓名" name="name">
-          <uni-easyinput v-model="student.name" placeholder="请输入姓名" />
+          <uni-easyinput v-model="student.name" placeholder="请输入姓名" disabled/>
         </uni-forms-item>
         <uni-forms-item label="班级" name="className">
-          <uni-easyinput v-model="student.className" placeholder="请输入班级" />
+          <uni-easyinput v-model="student.className" placeholder="请输入班级" disabled/>
         </uni-forms-item>
         <uni-forms-item label="手机号码" name="phone">
           <uni-easyinput v-model="student.phone" placeholder="请输入手机号码" />
@@ -19,10 +19,10 @@
           <uni-easyinput v-model="student.email" placeholder="请输入邮箱" />
         </uni-forms-item>
         <uni-forms-item label="性别" name="gender" required>
-          <uni-data-checkbox v-model="student.gender" :localdata="sexs" />
+          <uni-data-checkbox v-model="student.gender" :localdata="sexs" disabled/>
         </uni-forms-item>
         <uni-forms-item label="状态" name="status" required>
-          <uni-data-checkbox v-model="student.status" :localdata="statusOptions" />
+          <uni-data-checkbox v-model="student.status" :localdata="statusOptions" disabled/>
         </uni-forms-item>
       </uni-forms>
 
@@ -57,6 +57,7 @@
             :localdata="specialtyOptions"
             multiple
             :wrap="true"
+            disabled
           />
         </uni-forms-item>
         <uni-forms-item label="当前状态" name="status">
@@ -71,7 +72,7 @@
       <!-- 用户模式表单 -->
       <uni-forms v-else ref="form" :model="user" labelWidth="80px">
         <uni-forms-item label="用户昵称" name="nickName">
-          <uni-easyinput v-model="user.nickName" placeholder="请输入昵称" />
+          <uni-easyinput v-model="user.nickName" placeholder="请输入昵称" disabled/>
         </uni-forms-item>
         <uni-forms-item label="手机号码" name="phonenumber">
           <uni-easyinput v-model="user.phonenumber" placeholder="请输入手机号码" />
@@ -80,7 +81,7 @@
           <uni-easyinput v-model="user.email" placeholder="请输入邮箱" />
         </uni-forms-item>
         <uni-forms-item label="性别" name="sex" required>
-          <uni-data-checkbox v-model="user.sex" :localdata="sexs" />
+          <uni-data-checkbox v-model="user.sex" :localdata="sexs" disabled/>
         </uni-forms-item>
       </uni-forms>
 
@@ -211,32 +212,6 @@
 
   // 学生模式验证规则
   const studentRules = ref({
-    studentNo: {
-      rules: [{
-        required: true,
-        errorMessage: '学号不能为空'
-      }, {
-        minLength: 6,
-        maxLength: 20,
-        errorMessage: '学号长度应为6-20位'
-      }]
-    },
-    name: {
-      rules: [{
-        required: true,
-        errorMessage: '姓名不能为空'
-      }, {
-        minLength: 2,
-        maxLength: 10,
-        errorMessage: '姓名长度应为2-10位'
-      }]
-    },
-    className: {
-      rules: [{
-        required: true,
-        errorMessage: '班级不能为空'
-      }]
-    },
     phone: {
       rules: [{
         required: true,
@@ -246,30 +221,16 @@
         errorMessage: '请输入正确的手机号码'
       }]
     },
-    gender: {
-      rules: [{
-        required: true,
-        errorMessage: '请选择性别'
-      }]
-    },
     email: {
       rules: [{
         format: 'email',
         errorMessage: '请输入正确的邮箱地址'
-      }]
-    },
-    status: {
-      rules: [{
-        required: true,
-        errorMessage: '请选择状态'
       }]
     }
   })
 
   // 维修人员模式验证规则
   const repairerRules = ref({
-    // 工号字段禁用编辑，不需要验证用户输入
-    // 姓名字段禁用编辑，不需要验证用户输入
     phone: {
       rules: [{
         required: true,
@@ -278,14 +239,7 @@
         pattern: /^1[3-9]\d{9}$/,
         errorMessage: '请输入正确的手机号码'
       }]
-    },
-    specialty: {
-      rules: [{
-        required: true,
-        errorMessage: '请选择专长领域'
-      }]
     }
-    // 状态字段禁用编辑，不需要验证用户输入
   })
 
   // 动态规则

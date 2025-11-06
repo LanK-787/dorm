@@ -1,7 +1,10 @@
 <template>
   <view class="page-container">
+    <!-- 状态栏占位 -->
+    <view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
+
     <!-- 自定义导航栏 -->
-    <view class="custom-navbar" :style="{ paddingTop: statusBarHeight + 'px' }">
+    <view class="custom-navbar">
       <view class="navbar-content">
         <view class="navbar-title">
           <text>个人中心</text>
@@ -272,39 +275,42 @@ onMounted(() => {
   background-color: #f8f9fa;
 }
 
+.status-bar {
+  background: transparent;
+}
+
 .custom-navbar {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
+  padding: 20rpx 30rpx;
+}
 
-  .navbar-content {
-    height: 88rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+.navbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+}
 
-  .navbar-title {
-    text {
-      color: white;
-      font-size: 36rpx;
-      font-weight: bold;
-    }
-  }
+.navbar-title {
+  text-align: center;
+}
+
+.navbar-title text {
+  color: white;
+  font-size: 36rpx;
+  font-weight: bold;
 }
 
 .main-content {
-  margin-top: calc(88rpx + var(--status-bar-height));
-  padding: 30rpx;
+  flex: 1;
+  background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
 }
 
 .profile-card {
   background: white;
   border-radius: 20rpx;
   padding: 40rpx 30rpx;
+  margin: 30rpx;
   margin-bottom: 30rpx;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
 
@@ -414,7 +420,7 @@ onMounted(() => {
   background: white;
   border-radius: 20rpx;
   padding: 30rpx;
-  margin-bottom: 30rpx;
+  margin: 0 30rpx 30rpx 30rpx;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
 
   .stats-item {
@@ -428,6 +434,7 @@ onMounted(() => {
       font-weight: bold;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       -webkit-background-clip: text;
+      background-clip: text;
       color: transparent;
       line-height: 1;
     }
@@ -446,7 +453,7 @@ onMounted(() => {
   background: white;
   border-radius: 20rpx;
   padding: 30rpx;
-  margin-bottom: 30rpx;
+  margin: 0 30rpx 30rpx 30rpx;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
 
   .action-item {
@@ -497,7 +504,7 @@ onMounted(() => {
   background: white;
   border-radius: 20rpx;
   padding: 0 30rpx;
-  margin-bottom: 30rpx;
+  margin: 0 30rpx 30rpx 30rpx;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
 
   .menu-item {

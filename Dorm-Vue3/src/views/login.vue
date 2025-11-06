@@ -169,7 +169,7 @@ getCookie()
   justify-content: center;
   align-items: center;
   height: 100%;
-  background-image: url("https://sso.zjitc.edu.cn/linkid/api/image/download/1732086750949%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%8720241120150859.jpg");
+  background-image: url("@/assets/images/login-background.jpg");
   background-size: cover;
 }
 .title {

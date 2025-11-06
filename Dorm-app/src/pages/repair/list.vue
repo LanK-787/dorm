@@ -1,259 +1,307 @@
 <template>
-  <view class="page-container">
+  <view class="repair-list-page">
     <!-- 状态栏占位 -->
     <view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
 
-    <!-- 头部区域 -->
-    <view class="header">
-      <view class="header-content">
-        <view class="back-btn" @click="goBack">
-          <text class="iconfont icon-back">‹</text>
-        </view>
-        <view class="header-title">
-          <text class="title-text">{{ isRepairer ? '工单处理' : '报修服务' }}</text>
-        </view>
-        <view class="header-actions">
-          <view v-if="!isRepairer" class="add-btn" @click="goToAdd">
-            <text class="iconfont icon-add">+</text>
-          </view>
-        </view>
+    <!-- 顶部导航栏 -->
+    <view class="nav-bar">
+      <view class="nav-left" @click="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <view class="nav-center">
+        <text class="nav-title">{{ pageTitle }}</text>
+        <text class="nav-count">{{ totalCount }}条记录</text>
+      </view>
+      <view class="nav-right" @click="handleNavAction">
+        <text class="nav-icon">{{ isRepairer ? '🔔' : '+' }}</text>
       </view>
     </view>
 
-    <!-- 主要内容区域 -->
-    <scroll-view 
-      class="main-content" 
-      scroll-y="true"
-      @scrolltolower="loadMore"
-      refresher-enabled
-      @refresherrefresh="onRefresh"
-      :refresher-triggered="refreshing"
-    >
-      <!-- 学生报修列表 -->
-      <view v-if="!isRepairer" class="repair-list">
+    <!-- 快速筛选卡片 -->
+    <view class="filter-section">
+      <scroll-view class="filter-scroll" scroll-x show-scrollbar="false">
         <view 
-          v-for="(item, index) in repairList" 
-          :key="item.requestId"
-          class="repair-item"
-          @click="goToDetail(item)"
+          v-for="filter in filterOptions" 
+          :key="filter.value"
+          class="filter-chip"
+          :class="{ 'filter-active': activeFilter === filter.value }"
+          @click="changeFilter(filter.value)"
         >
-          <view class="repair-content">
-            <view class="repair-header">
-              <text class="repair-title">{{ item.description || '报修申请' }}</text>
-              <view class="repair-status" :class="getStatusClass(item.status)">
-                <text class="status-text">{{ getStatusText(item.status) }}</text>
-              </view>
-            </view>
-            <view class="repair-info">
-              <view class="info-row">
-                <text class="info-label">工单编号：</text>
-                <text class="info-value">{{ item.requestNo }}</text>
-              </view>
-              <view class="info-row">
-                <text class="info-label">报修宿舍：</text>
-                <text class="info-value">{{ item.dormName || '未知宿舍' }}</text>
-              </view>
-              <view class="info-row">
-                <text class="info-label">报修项目：</text>
-                <text class="info-value">{{ getSpecialtyText(item.specialty) }}</text>
-              </view>
-              <view class="info-row">
-                <text class="info-label">申请时间：</text>
-                <text class="info-value">{{ formatTime(item.createTime) }}</text>
-              </view>
-            </view>
-          </view>
-          <view class="repair-arrow">
-            <text class="iconfont icon-arrow-right">›</text>
+          <view class="chip-content">
+            <text class="chip-icon">{{ filter.icon }}</text>
+            <text class="chip-label">{{ filter.label }}</text>
+            <text v-if="filter.count > 0" class="chip-badge">{{ filter.count }}</text>
           </view>
         </view>
+      </scroll-view>
+    </view>
+
+    <!-- 搜索栏 -->
+    <view class="search-section">
+      <view class="search-box">
+        <text class="search-icon-left">🔍</text>
+        <input 
+          class="search-input" 
+          v-model="searchKeyword"
+          :placeholder="searchPlaceholder"
+          @input="handleSearchInput"
+          confirm-type="search"
+        />
+        <text v-if="searchKeyword" class="search-clear" @click="clearSearch">×</text>
+      </view>
+    </view>
+
+    <!-- 主列表区域 -->
+    <scroll-view 
+      class="content-scroll"
+      :style="{ height: contentHeight + 'px' }"
+      scroll-y
+      :refresher-enabled="true"
+      :refresher-triggered="refreshing"
+      @refresherrefresh="onPullRefresh"
+      @scrolltolower="onLoadMore"
+      :lower-threshold="100"
+      enhanced
+      :show-scrollbar="false"
+    >
+      <!-- 下拉刷新提示 -->
+      <view v-if="refreshing" class="refresh-indicator">
+        <view class="refresh-spinner"></view>
+        <text class="refresh-text">刷新中...</text>
       </view>
 
-      <!-- 维修人员工单列表 -->
-      <view v-if="isRepairer" class="workorder-list">
-        <view 
-          v-for="(item, index) in workOrderList" 
-          :key="item.assignmentId"
-          class="workorder-item"
-          @click="handleWorkOrderClick(item)"
-        >
-          <view class="workorder-content">
-            <view class="workorder-header">
-              <text class="workorder-title">{{ item.description || '维修工单' }}</text>
-              <view class="workorder-status" :class="getWorkOrderStatusClass(item.processStatus)">
-                <text class="status-text">{{ getWorkOrderStatusText(item.processStatus) }}</text>
+      <!-- 数据列表 -->
+      <view class="list-container">
+        <!-- 学生报修列表 -->
+        <template v-if="!isRepairer">
+          <view 
+            v-for="(item, index) in displayList" 
+            :key="item.requestId"
+            class="repair-item"
+            :style="{ animationDelay: (index % 8) * 0.05 + 's' }"
+            @click="viewDetail(item)"
+          >
+            <!-- 卡片内容 -->
+            <view class="item-header">
+              <view class="header-left">
+                <view class="status-dot" :class="'dot-' + item.status"></view>
+                <text class="request-no">{{ item.requestNo }}</text>
               </view>
-            </view>
-            <view class="workorder-info">
-              <view class="info-row">
-                <text class="info-label">工单编号：</text>
-                <text class="info-value">{{ item.requestNo }}</text>
-              </view>
-              <view class="info-row">
-                <text class="info-label">报修宿舍：</text>
-                <text class="info-value">{{ item.dormName || '未知宿舍' }}</text>
-              </view>
-              <view class="info-row">
-                <text class="info-label">维修项目：</text>
-                <text class="info-value">{{ getSpecialtyText(item.specialty) }}</text>
-              </view>
-              <view class="info-row">
-                <text class="info-label">报修人：</text>
-                <text class="info-value">{{ item.reporterName }}</text>
-              </view>
-              <view class="info-row">
-                <text class="info-label">联系方式：</text>
-                <text class="info-value">{{ item.contactPhone }}</text>
-              </view>
-              <view class="info-row">
-                <text class="info-label">派单时间：</text>
-                <text class="info-value">{{ formatTime(item.assignTime) }}</text>
-              </view>
-            </view>
-            
-            <!-- 工单操作按钮 -->
-            <view v-if="item.processStatus === '0'" class="workorder-actions">
-              <view class="action-btn reject-btn" @click.stop="showRejectDialog(item)">
-                <text class="btn-text">拒绝</text>
-              </view>
-              <view class="action-btn accept-btn" @click.stop="handleAcceptOrder(item)">
-                <text class="btn-text">接受</text>
+              <view class="status-tag" :class="'tag-' + item.status">
+                {{ getStatusText(item.status) }}
               </view>
             </view>
 
-            <view v-if="item.processStatus === '1'" class="workorder-actions">
-              <view class="action-btn complete-btn" @click.stop="showCompleteDialog(item)">
-                <text class="btn-text">完成维修</text>
+            <view class="item-body">
+              <view class="body-row">
+                <text class="row-icon">📝</text>
+                <text class="row-text">{{ item.description || '无描述' }}</text>
+              </view>
+              <view class="body-row">
+                <text class="row-icon">🏠</text>
+                <text class="row-text">{{ item.dormName || '未知宿舍' }}</text>
+              </view>
+              <view class="body-row">
+                <text class="row-icon">🔧</text>
+                <text class="row-text">{{ getSpecialtyText(item.specialty) }}</text>
               </view>
             </view>
 
-            <!-- 已完成和已拒绝的工单显示完成时间或拒绝时间 -->
-            <view v-if="item.processStatus === '2' || item.processStatus === '3'" class="workorder-completion">
-              <view class="completion-info">
-                <text class="completion-label">
-                  {{ item.processStatus === '2' ? '完成时间：' : '拒绝时间：' }}
-                </text>
-                <text class="completion-time">
-                  {{ formatTime(item.processStatus === '2' ? item.completeTime : item.rejectTime) }}
-                </text>
-              </view>
-              <view v-if="item.processStatus === '3' && item.rejectReason" class="reject-reason">
-                <text class="reason-label">拒绝原因：</text>
-                <text class="reason-text">{{ item.rejectReason }}</text>
-              </view>
+            <view class="item-footer">
+              <text class="footer-time">{{ formatTimeAgo(item.createTime) }}</text>
+              <text class="footer-arrow">›</text>
             </view>
           </view>
-        </view>
+        </template>
+
+        <!-- 维修人员工单列表 -->
+        <template v-else>
+          <view 
+            v-for="(item, index) in displayList" 
+            :key="item.assignmentId"
+            class="workorder-item"
+            :class="'priority-' + getItemPriority(item)"
+            :style="{ animationDelay: (index % 8) * 0.05 + 's' }"
+            @click="viewWorkOrderDetail(item)"
+          >
+            <!-- 紧急标记 -->
+            <view v-if="isUrgent(item)" class="urgent-flag">
+              <text>⚡</text>
+            </view>
+
+            <!-- 卡片头部 -->
+            <view class="item-header">
+              <view class="header-left">
+                <view class="avatar-circle" :class="'avatar-' + item.processStatus">
+                  <text>{{ getStatusIcon(item.processStatus) }}</text>
+                </view>
+                <view class="header-info">
+                  <text class="info-name">{{ item.reporterName }}</text>
+                  <text class="info-no">{{ item.requestNo }}</text>
+                </view>
+              </view>
+              <view class="status-tag" :class="'tag-' + item.processStatus">
+                {{ getWorkOrderStatusText(item.processStatus) }}
+              </view>
+            </view>
+
+            <!-- 卡片内容 -->
+            <view class="item-body">
+              <view class="body-desc">
+                <text class="desc-text">{{ item.description || '无描述' }}</text>
+              </view>
+              <view class="body-info-grid">
+                <view class="info-cell">
+                  <text class="cell-icon">🏠</text>
+                  <text class="cell-text">{{ item.dormName }}</text>
+                </view>
+                <view class="info-cell">
+                  <text class="cell-icon">🔧</text>
+                  <text class="cell-text">{{ getSpecialtyText(item.specialty) }}</text>
+                </view>
+                <view class="info-cell">
+                  <text class="cell-icon">📞</text>
+                  <text class="cell-text">{{ item.contactPhone }}</text>
+                </view>
+              </view>
+            </view>
+
+            <!-- 操作按钮区 -->
+            <view v-if="showActions(item)" class="item-actions">
+              <view 
+                v-if="item.processStatus === '0'"
+                class="action-group"
+              >
+                <view class="action-btn btn-reject" @click.stop="handleReject(item)">
+                  <text class="btn-icon">✕</text>
+                  <text class="btn-text">拒绝</text>
+                </view>
+                <view class="action-btn btn-accept" @click.stop="handleAccept(item)">
+                  <text class="btn-icon">✓</text>
+                  <text class="btn-text">接单</text>
+                </view>
+              </view>
+              <view 
+                v-if="item.processStatus === '1'"
+                class="action-group"
+              >
+                <view class="action-btn btn-complete" @click.stop="handleComplete(item)">
+                  <text class="btn-icon">✓</text>
+                  <text class="btn-text">完成维修</text>
+                </view>
+              </view>
+            </view>
+
+            <!-- 时间标记 -->
+            <view class="item-footer">
+              <text class="footer-time">{{ formatTimeAgo(item.assignTime) }}</text>
+            </view>
+          </view>
+        </template>
       </view>
 
       <!-- 空状态 -->
-      <view v-if="!loading && (isRepairer ? workOrderList.length === 0 : repairList.length === 0)" class="empty-state">
-        <text class="empty-icon">📝</text>
-        <text class="empty-text">{{ isRepairer ? '暂无工单' : '暂无报修记录' }}</text>
-        <view v-if="!isRepairer" class="empty-btn" @click="goToAdd">
-          <text class="btn-text">立即报修</text>
+      <view v-if="!loading && displayList.length === 0" class="empty-container">
+        <view class="empty-animation">
+          <text class="empty-emoji">{{ emptyIcon }}</text>
+        </view>
+        <text class="empty-title">{{ emptyTitle }}</text>
+        <text class="empty-desc">{{ emptyDesc }}</text>
+        <view v-if="!isRepairer && !searchKeyword && activeFilter === 'all'" class="empty-action" @click="goToAdd">
+          <text>立即报修</text>
         </view>
       </view>
 
       <!-- 加载更多 -->
       <view v-if="loadingMore" class="loading-more">
+        <view class="loading-spinner"></view>
         <text class="loading-text">加载中...</text>
       </view>
-      
-      <!-- 没有更多数据 -->
-      <view v-if="!hasMore && (isRepairer ? workOrderList.length > 0 : repairList.length > 0)" class="no-more">
-        <text class="no-more-text">没有更多数据了</text>
+
+      <!-- 无更多数据 -->
+      <view v-if="noMore && displayList.length > 0 && !loading" class="no-more">
+        <text>— 已加载全部 —</text>
       </view>
     </scroll-view>
 
     <!-- 拒绝工单弹窗 -->
-    <view v-if="rejectModalVisible" class="modal-mask" @click="closeRejectModal">
-      <view class="reject-modal" @click.stop>
+    <view v-if="rejectModalVisible" class="modal-overlay" @click="closeRejectModal">
+      <view class="modal-container reject-modal" @click.stop>
         <view class="modal-header">
           <text class="modal-title">拒绝工单</text>
+          <view class="modal-close" @click="closeRejectModal">
+            <text>×</text>
+          </view>
         </view>
         <view class="modal-body">
-          <view class="modal-content">
-            <text class="modal-label">请填写拒绝原因：</text>
-            <textarea
-              v-model="rejectReason"
-              class="reject-textarea"
-              placeholder="请输入拒绝原因"
-              maxlength="200"
-              placeholder-style="color: #999;"
-            ></textarea>
-            <view class="char-count">
-              <text class="count-text">{{ rejectReason.length }}/200</text>
-            </view>
-          </view>
+          <text class="modal-label">请说明拒绝原因</text>
+          <textarea
+            v-model="rejectReason"
+            class="modal-textarea"
+            placeholder="请输入拒绝原因（必填）"
+            maxlength="200"
+            :auto-height="true"
+          ></textarea>
+          <text class="char-counter">{{ rejectReason.length }}/200</text>
         </view>
         <view class="modal-footer">
-          <view class="modal-btn cancel-btn" @click="closeRejectModal">
-            <text class="btn-text">取消</text>
-          </view>
-          <view class="modal-btn confirm-btn" @click="handleRejectOrder">
-            <text class="btn-text">确认</text>
-          </view>
+          <view class="modal-btn btn-cancel" @click="closeRejectModal">取消</view>
+          <view class="modal-btn btn-confirm" @click="confirmReject">确定</view>
         </view>
       </view>
     </view>
 
     <!-- 完成维修弹窗 -->
-    <view v-if="completeModalVisible" class="modal-mask" @click="closeCompleteModal">
-      <view class="complete-modal" @click.stop>
+    <view v-if="completeModalVisible" class="modal-overlay" @click="closeCompleteModal">
+      <view class="modal-container complete-modal" @click.stop>
         <view class="modal-header">
           <text class="modal-title">完成维修</text>
+          <view class="modal-close" @click="closeCompleteModal">
+            <text>×</text>
+          </view>
         </view>
         <view class="modal-body">
-          <view class="modal-content">
-            <view class="photo-requirement">
-              <text class="modal-label">维修完成照片：</text>
-              <text class="requirement-text">*必填，请上传维修完成后的照片（最多3张）</text>
-            </view>
-            <view class="image-upload-area">
-              <view
-                v-for="(image, index) in completeImages"
-                :key="index"
-                class="image-item"
-              >
-                <image :src="image.url" class="uploaded-image" @click="previewImage(image.url)" />
-                <view class="delete-btn" @click="deleteImage(index)">
-                  <text class="delete-icon">×</text>
-                </view>
-              </view>
-              <view
-                v-if="completeImages.length < 3"
-                class="upload-btn"
-                @click="chooseImage"
-              >
-                <text class="upload-icon">+</text>
-                <text class="upload-text">添加照片</text>
+          <text class="modal-label required">维修完成照片</text>
+          <view class="image-upload-container">
+            <view 
+              v-for="(img, index) in completeImages" 
+              :key="index"
+              class="image-preview"
+            >
+              <image :src="img.url" mode="aspectFill" class="preview-img" @click="previewImage(index)" />
+              <view class="image-delete" @click="deleteImage(index)">
+                <text>×</text>
               </view>
             </view>
-
-            <text class="modal-label">维修说明（可选）：</text>
-            <textarea
-              v-model="completeRemark"
-              class="complete-textarea"
-              placeholder="请输入维修说明"
-              maxlength="200"
-              placeholder-style="color: #999;"
-            ></textarea>
-            <view class="char-count">
-              <text class="count-text">{{ completeRemark.length }}/200</text>
+            <view 
+              v-if="completeImages.length < 3" 
+              class="image-upload-btn"
+              @click="chooseImage"
+            >
+              <text class="upload-icon">+</text>
+              <text class="upload-text">添加照片</text>
             </view>
           </view>
+          <text class="upload-hint">*必须上传至少1张照片，最多3张</text>
+
+          <text class="modal-label">维修说明（可选）</text>
+          <textarea
+            v-model="completeRemark"
+            class="modal-textarea"
+            placeholder="请描述维修情况"
+            maxlength="200"
+            :auto-height="true"
+          ></textarea>
+          <text class="char-counter">{{ completeRemark.length }}/200</text>
         </view>
         <view class="modal-footer">
-          <view class="modal-btn cancel-btn" @click="closeCompleteModal">
-            <text class="btn-text">取消</text>
-          </view>
-          <view
-            class="modal-btn submit-btn"
-            :class="{ 'disabled': !canSubmit }"
-            @click="handleCompleteOrder"
+          <view class="modal-btn btn-cancel" @click="closeCompleteModal">取消</view>
+          <view 
+            class="modal-btn btn-confirm"
+            :class="{ disabled: completeImages.length === 0 }"
+            @click="confirmComplete"
           >
-            <text class="btn-text">提交</text>
+            提交
           </view>
         </view>
       </view>
@@ -262,22 +310,33 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { listRequest } from '@/api/dorm/request'
 import { getAllAssignments, acceptAssignment, rejectAssignment, completeAssignment } from '@/api/repairer/workorder'
 import useUserStore from '@/store/modules/user'
 
-// 获取用户store
+// ==================== 状态管理 ====================
 const userStore = useUserStore()
+const isRepairer = computed(() => userStore.roles && userStore.roles.includes('repairer'))
 
-// 响应式数据
+// 页面基础数据
 const statusBarHeight = ref(0)
-const repairList = ref([])
-const workOrderList = ref([])
+const contentHeight = ref(600)
 const loading = ref(false)
 const refreshing = ref(false)
 const loadingMore = ref(false)
-const hasMore = ref(true)
+const noMore = ref(false)
+
+// 列表数据
+const repairList = ref([])
+const workOrderList = ref([])
+const pageNum = ref(1)
+const pageSize = 20
+
+// 筛选和搜索
+const activeFilter = ref('all')
+const searchKeyword = ref('')
+let searchTimer = null
 
 // 弹窗相关
 const rejectModalVisible = ref(false)
@@ -285,259 +344,347 @@ const completeModalVisible = ref(false)
 const rejectReason = ref('')
 const completeRemark = ref('')
 const completeImages = ref([])
-const currentWorkOrder = ref(null)
+const currentItem = ref(null)
 
-const queryParams = ref({
-  pageNum: 1,
-  pageSize: 10
+// ==================== 计算属性 ====================
+const pageTitle = computed(() => isRepairer.value ? '工单处理' : '我的报修')
+
+const totalCount = computed(() => {
+  const list = isRepairer.value ? workOrderList.value : repairList.value
+  return list.length
 })
 
-// 计算属性：判断是否为维修人员
-const isRepairer = computed(() => {
-  return userStore.roles && userStore.roles.includes('repairer')
+const searchPlaceholder = computed(() => {
+  return isRepairer.value ? '搜索工单号、报修人' : '搜索工单号、描述'
 })
 
-// 计算属性：判断是否可以提交完成维修
-const canSubmit = computed(() => {
-  return completeImages.value.length > 0
-})
-
-// 报修项目映射
-const specialtyMap = {
-  '0': '电工',
-  '1': '水工',
-  '2': '木工',
-  '3': '水泥工'
-}
-
-// 学生报修状态映射
-const statusMap = {
-  '0': '待派单',
-  '1': '已派单',
-  '2': '维修中',
-  '3': '已完成',
-  '4': '已取消',
-  '5': '等待人工派单'
-}
-
-// 维修人员工单状态映射
-const workOrderStatusMap = {
-  '0': '待处理',
-  '1': '处理中',
-  '2': '已完成',
-  '3': '已拒绝'
-}
-
-// 方法定义
-const initPage = () => {
-  const systemInfo = uni.getSystemInfoSync()
-  statusBarHeight.value = systemInfo.statusBarHeight || 0
-  loadData()
-}
-
-const loadData = async (isRefresh = false) => {
+// 筛选选项
+const filterOptions = computed(() => {
   if (isRepairer.value) {
-    await loadWorkOrderList(isRefresh)
+    const list = workOrderList.value
+    return [
+      { value: 'all', label: '全部', icon: '📋', count: list.length },
+      { value: '0', label: '待处理', icon: '⏳', count: list.filter(i => i.processStatus === '0').length },
+      { value: '1', label: '处理中', icon: '🔧', count: list.filter(i => i.processStatus === '1').length },
+      { value: '2', label: '已完成', icon: '✅', count: list.filter(i => i.processStatus === '2').length },
+      { value: '3', label: '已拒绝', icon: '❌', count: list.filter(i => i.processStatus === '3').length }
+    ]
   } else {
-    await loadRepairList(isRefresh)
+    const list = repairList.value
+    return [
+      { value: 'all', label: '全部', icon: '📋', count: list.length },
+      { value: '0', label: '待派单', icon: '⏳', count: list.filter(i => i.status === '0').length },
+      { value: '1', label: '已派单', icon: '📮', count: list.filter(i => i.status === '1').length },
+      { value: '2', label: '维修中', icon: '🔧', count: list.filter(i => i.status === '2').length },
+      { value: '3', label: '已完成', icon: '✅', count: list.filter(i => i.status === '3').length }
+    ]
   }
-}
+})
 
-const loadRepairList = async (isRefresh = false) => {
-  try { 
-    if (isRefresh) {
-      refreshing.value = true
-      queryParams.value.pageNum = 1
-      hasMore.value = true
+// 显示列表（应用筛选和搜索）
+const displayList = computed(() => {
+  let list = isRepairer.value ? workOrderList.value : repairList.value
+  
+  // 状态筛选
+  if (activeFilter.value !== 'all') {
+    if (isRepairer.value) {
+      list = list.filter(item => item.processStatus === activeFilter.value)
     } else {
-      loading.value = true
+      list = list.filter(item => item.status === activeFilter.value)
     }
-
-    const response = await listRequest(queryParams.value)
-    if (response.code === 200) {
-      const newList = response.rows || []
-      
-      if (isRefresh) {
-        repairList.value = newList
-      } else if (queryParams.value.pageNum === 1) {
-        repairList.value = newList
-      } else {
-        repairList.value = [...repairList.value, ...newList]
-      }
-
-      hasMore.value = newList.length >= queryParams.value.pageSize
-    } else {
-      uni.showToast({
-        title: '获取数据失败',
-        icon: 'none'
-      })
-    }
-  } catch (error) {
-    console.error('加载报修列表异常:', error)
-    uni.showToast({
-      title: '网络异常',
-      icon: 'none'
+  }
+  
+  // 搜索过滤
+  if (searchKeyword.value.trim()) {
+    const keyword = searchKeyword.value.toLowerCase()
+    list = list.filter(item => {
+      const searchFields = [
+        item.requestNo,
+        item.description,
+        item.dormName,
+        item.reporterName
+      ].filter(Boolean).join(' ').toLowerCase()
+      return searchFields.includes(keyword)
     })
-  } finally {
-    loading.value = false
-    refreshing.value = false
-    loadingMore.value = false
   }
-}
+  
+  return list
+})
 
-const loadWorkOrderList = async (isRefresh = false) => {
-  try {
-    if (isRefresh) {
-      refreshing.value = true
-      queryParams.value.pageNum = 1
-      hasMore.value = true
-    } else {
-      loading.value = true
-    }
+// 空状态
+const emptyIcon = computed(() => {
+  if (searchKeyword.value) return '🔍'
+  if (activeFilter.value !== 'all') return '📭'
+  return isRepairer.value ? '📋' : '🔧'
+})
 
-    // 获取所有状态的工单
-    const response = await getAllAssignments(queryParams.value)
+const emptyTitle = computed(() => {
+  if (searchKeyword.value) return '未找到相关内容'
+  if (activeFilter.value !== 'all') return '暂无数据'
+  return isRepairer.value ? '暂无工单' : '暂无报修记录'
+})
 
-    if (response.code === 200) {
-      const allList = response.rows || []
+const emptyDesc = computed(() => {
+  if (searchKeyword.value) return '试试其他关键词'
+  if (activeFilter.value !== 'all') return '切换其他状态查看'
+  return isRepairer.value ? '等待新工单分配' : '点击右上角+号发起报修'
+})
 
-      // 按状态优先级排序：待处理(0) > 处理中(1) > 已完成(2) > 已拒绝(3)
-      const sortedList = allList.sort((a, b) => {
-        const statusOrder = { '0': 0, '1': 1, '2': 2, '3': 3 }
-        const aOrder = statusOrder[a.processStatus] || 999
-        const bOrder = statusOrder[b.processStatus] || 999
-
-        if (aOrder !== bOrder) {
-          return aOrder - bOrder
-        }
-
-        // 同状态按时间排序（最新的在前）
-        return new Date(b.assignTime || b.createTime) - new Date(a.assignTime || a.createTime)
-      })
-
-      if (isRefresh) {
-        workOrderList.value = sortedList
-      } else if (queryParams.value.pageNum === 1) {
-        workOrderList.value = sortedList
-      } else {
-        workOrderList.value = [...workOrderList.value, ...sortedList]
-      }
-
-      hasMore.value = sortedList.length >= queryParams.value.pageSize
-    } else {
-      uni.showToast({
-        title: response.msg || '获取数据失败',
-        icon: 'none'
-      })
-    }
-  } catch (error) {
-    console.error('加载工单列表异常:', error)
-    uni.showToast({
-      title: '网络异常',
-      icon: 'none'
-    })
-  } finally {
-    loading.value = false
-    refreshing.value = false
-    loadingMore.value = false
-  }
-}
-
-// 生命周期钩子
+// ==================== 生命周期 ====================
 onMounted(() => {
   initPage()
+  loadData()
 })
 
-const onRefresh = () => {
+// ==================== 页面初始化 ====================
+const initPage = () => {
+  try {
+    const systemInfo = uni.getSystemInfoSync()
+    statusBarHeight.value = systemInfo.statusBarHeight || 0
+    
+    // 计算内容高度：屏幕高度 - 状态栏 - 导航栏(88rpx≈44px) - 筛选(160rpx≈80px) - 搜索(120rpx≈60px)
+    contentHeight.value = systemInfo.windowHeight - statusBarHeight.value - 44 - 80 - 60
+  } catch (error) {
+    console.error('页面初始化失败:', error)
+    contentHeight.value = 500
+  }
+}
+
+// ==================== 数据加载 ====================
+const loadData = async (refresh = false) => {
+  if (isRepairer.value) {
+    await loadWorkOrders(refresh)
+  } else {
+    await loadRepairs(refresh)
+  }
+}
+
+const loadRepairs = async (refresh = false) => {
+  if (loading.value && !refresh) return
+  
+  try {
+    if (refresh) {
+      loading.value = true
+      refreshing.value = true
+      pageNum.value = 1
+      noMore.value = false
+    } else {
+      loadingMore.value = true
+    }
+
+    const response = await listRequest({
+      pageNum: pageNum.value,
+      pageSize: pageSize
+    })
+
+    if (response.code === 200) {
+      const newData = response.rows || []
+      
+      if (refresh || pageNum.value === 1) {
+        repairList.value = newData
+      } else {
+        repairList.value = [...repairList.value, ...newData]
+      }
+
+      noMore.value = newData.length < pageSize
+      if (!noMore.value) pageNum.value++
+    }
+  } catch (error) {
+    console.error('加载报修列表失败:', error)
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  } finally {
+    loading.value = false
+    refreshing.value = false
+    loadingMore.value = false
+  }
+}
+
+const loadWorkOrders = async (refresh = false) => {
+  if (loading.value && !refresh) return
+  
+  try {
+    if (refresh) {
+      loading.value = true
+      refreshing.value = true
+      pageNum.value = 1
+      noMore.value = false
+    } else {
+      loadingMore.value = true
+    }
+
+    const response = await getAllAssignments({
+      pageNum: pageNum.value,
+      pageSize: pageSize
+    })
+
+    if (response.code === 200) {
+      let newData = response.rows || []
+      
+      // 排序：待处理 > 处理中 > 已完成 > 已拒绝
+      newData.sort((a, b) => {
+        const priority = { '0': 0, '1': 1, '2': 2, '3': 3 }
+        const aPriority = priority[a.processStatus] || 999
+        const bPriority = priority[b.processStatus] || 999
+        
+        if (aPriority !== bPriority) {
+          return aPriority - bPriority
+        }
+        
+        return new Date(b.assignTime) - new Date(a.assignTime)
+      })
+
+      if (refresh || pageNum.value === 1) {
+        workOrderList.value = newData
+      } else {
+        workOrderList.value = [...workOrderList.value, ...newData]
+      }
+
+      noMore.value = newData.length < pageSize
+      if (!noMore.value) pageNum.value++
+    }
+  } catch (error) {
+    console.error('加载工单列表失败:', error)
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  } finally {
+    loading.value = false
+    refreshing.value = false
+    loadingMore.value = false
+  }
+}
+
+// ==================== 事件处理 ====================
+const onPullRefresh = () => {
   loadData(true)
 }
 
-const loadMore = () => {
-  if (!hasMore.value || loadingMore.value) return
+const onLoadMore = () => {
+  if (!noMore.value && !loadingMore.value && !loading.value) {
+    loadData(false)
+  }
+}
 
-  loadingMore.value = true
-  queryParams.value.pageNum++
-  loadData()
+const handleSearchInput = () => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    // 搜索通过计算属性自动实现
+  }, 300)
+}
+
+const clearSearch = () => {
+  searchKeyword.value = ''
+}
+
+const changeFilter = (value) => {
+  activeFilter.value = value
 }
 
 const goBack = () => {
   uni.navigateBack()
 }
 
+const handleNavAction = () => {
+  if (isRepairer.value) {
+    // 维修人员：显示通知
+    uni.showToast({ title: '通知功能开发中', icon: 'none' })
+  } else {
+    // 学生：跳转到添加报修
+    goToAdd()
+  }
+}
+
 const goToAdd = () => {
-  uni.navigateTo({
-    url: '/pages/repair/add'
+  uni.navigateTo({ url: '/pages/repair/add' })
+}
+
+const viewDetail = (item) => {
+  uni.navigateTo({ url: `/pages/repair/detail?id=${item.requestId}` })
+}
+
+const viewWorkOrderDetail = (item) => {
+  uni.navigateTo({ 
+    url: `/pages/repair/detail?id=${item.requestId}&assignmentId=${item.assignmentId}` 
   })
 }
 
-const goToDetail = (item) => {
-  uni.navigateTo({
-    url: `/pages/repair/detail?id=${item.requestId}`
-  })
+// ==================== 工单操作 ====================
+const showActions = (item) => {
+  return ['0', '1'].includes(item.processStatus)
 }
 
-const handleWorkOrderClick = (item) => {
-  // 维修人员点击工单，可以查看详情
-  uni.navigateTo({
-    url: `/pages/repair/detail?id=${item.requestId}&assignmentId=${item.assignmentId}`
-  })
+const getItemPriority = (item) => {
+  if (item.processStatus === '0') return 'high'
+  if (item.processStatus === '1') return 'medium'
+  return 'normal'
 }
 
-const getSpecialtyText = (specialty) => {
-  if (!specialty) return '未知'
-  const specialties = specialty.split(',')
-  return specialties.map(s => specialtyMap[s] || '未知').join('、')
+const isUrgent = (item) => {
+  // 判断是否紧急：创建时间超过24小时且状态为待处理
+  if (item.processStatus !== '0') return false
+  const createTime = new Date(item.assignTime).getTime()
+  const now = Date.now()
+  return (now - createTime) > 24 * 60 * 60 * 1000
 }
 
-const getStatusText = (status) => {
-  return statusMap[status] || '未知'
-}
-
-const getStatusClass = (status) => {
-  const classMap = {
-    '0': 'status-pending',      // 待派单
-    '1': 'status-assigned',     // 已派单
-    '2': 'status-processing',   // 维修中
-    '3': 'status-completed',    // 已完成
-    '4': 'status-cancelled',    // 已取消
-    '5': 'status-manual'        // 等待人工派单
+const handleAccept = async (item) => {
+  try {
+    uni.showLoading({ title: '处理中...' })
+    const response = await acceptAssignment(item.assignmentId)
+    
+    if (response.code === 200) {
+      uni.showToast({ title: '接单成功', icon: 'success' })
+      loadData(true)
+    } else {
+      uni.showToast({ title: response.msg || '接单失败', icon: 'none' })
+    }
+  } catch (error) {
+    console.error('接单失败:', error)
+    uni.showToast({ title: '操作失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
   }
-  return classMap[status] || 'status-pending'
 }
 
-const getWorkOrderStatusText = (status) => {
-  return workOrderStatusMap[status] || '未知'
-}
-
-const getWorkOrderStatusClass = (status) => {
-  const classMap = {
-    '0': 'status-pending',      // 待处理
-    '1': 'status-processing',   // 处理中
-    '2': 'status-completed',    // 已完成
-    '3': 'status-rejected'      // 已拒绝
-  }
-  return classMap[status] || 'status-pending'
-}
-
-const formatTime = (time) => {
-  if (!time) return ''
-  const date = new Date(time)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
-}
-
-// 工单操作方法
-const showRejectDialog = (workOrder) => {
-  currentWorkOrder.value = workOrder
+const handleReject = (item) => {
+  currentItem.value = item
   rejectReason.value = ''
   rejectModalVisible.value = true
 }
 
 const closeRejectModal = () => {
   rejectModalVisible.value = false
+  currentItem.value = null
+  rejectReason.value = ''
 }
 
-const showCompleteDialog = (workOrder) => {
-  currentWorkOrder.value = workOrder
+const confirmReject = async () => {
+  if (!rejectReason.value.trim()) {
+    uni.showToast({ title: '请填写拒绝原因', icon: 'none' })
+    return
+  }
+
+  try {
+    uni.showLoading({ title: '提交中...' })
+    const response = await rejectAssignment(currentItem.value.assignmentId, {
+      rejectReason: rejectReason.value
+    })
+
+    if (response.code === 200) {
+      uni.showToast({ title: '已拒绝', icon: 'success' })
+      closeRejectModal()
+      loadData(true)
+    } else {
+      uni.showToast({ title: response.msg || '操作失败', icon: 'none' })
+    }
+  } catch (error) {
+    console.error('拒绝失败:', error)
+    uni.showToast({ title: '操作失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+const handleComplete = (item) => {
+  currentItem.value = item
   completeRemark.value = ''
   completeImages.value = []
   completeModalVisible.value = true
@@ -545,179 +692,24 @@ const showCompleteDialog = (workOrder) => {
 
 const closeCompleteModal = () => {
   completeModalVisible.value = false
+  currentItem.value = null
+  completeRemark.value = ''
+  completeImages.value = []
 }
 
-const handleAcceptOrder = async (workOrder) => {
-  try {
-    uni.showLoading({ title: '处理中...' })
-
-    const response = await acceptAssignment(workOrder.assignmentId)
-    if (response.code === 200) {
-      uni.showToast({
-        title: '接受成功',
-        icon: 'success'
-      })
-      // 刷新列表
-      loadData(true)
-    } else {
-      // 检查是否是状态已变更的错误
-      if (response.msg && response.msg.includes('状态已变更')) {
-        uni.showToast({
-          title: '工单状态已变更，正在刷新',
-          icon: 'none'
-        })
-        // 自动刷新列表
-        setTimeout(() => {
-          loadData(true)
-        }, 1000)
-      } else {
-        uni.showToast({
-          title: response.msg || '接受失败',
-          icon: 'none'
-        })
-      }
-    }
-  } catch (error) {
-    console.error('接受工单失败:', error)
-
-    // 检查是否是网络错误但实际操作可能成功的情况
-    if (error.message && error.message.includes('500')) {
-      uni.showModal({
-        title: '提示',
-        content: '操作可能已成功，是否刷新页面查看最新状态？',
-        success: (res) => {
-          if (res.confirm) {
-            loadData(true)
-          }
-        }
-      })
-    } else {
-      uni.showToast({
-        title: '网络异常',
-        icon: 'none'
-      })
-    }
-  } finally {
-    uni.hideLoading()
-  }
-}
-
-const handleRejectOrder = async () => {
-  if (!rejectReason.value.trim()) {
-    uni.showToast({
-      title: '请填写拒绝原因',
-      icon: 'none'
-    })
-    return
-  }
-
-  try {
-    uni.showLoading({ title: '处理中...' })
-
-    const response = await rejectAssignment(currentWorkOrder.value.assignmentId, {
-      rejectReason: rejectReason.value
-    })
-
-    if (response.code === 200) {
-      uni.showToast({
-        title: '拒绝成功',
-        icon: 'success'
-      })
-      closeRejectModal()
-      // 刷新列表
-      loadData(true)
-    } else {
-      uni.showToast({
-        title: response.msg || '拒绝失败',
-        icon: 'none'
-      })
-    }
-  } catch (error) {
-    console.error('拒绝工单失败:', error)
-    uni.showToast({
-      title: '网络异常',
-      icon: 'none'
-    })
-  } finally {
-    uni.hideLoading()
-  }
-}
-
-const handleCompleteOrder = async () => {
-  // 验证是否可以提交
-  if (!canSubmit.value) {
-    uni.showToast({
-      title: '请上传维修完成照片',
-      icon: 'none'
-    })
-    return
-  }
-
-  // 验证当前工单
-  if (!currentWorkOrder.value || !currentWorkOrder.value.assignmentId) {
-    uni.showToast({
-      title: '工单信息异常',
-      icon: 'none'
-    })
-    return
-  }
-
-  try {
-    uni.showLoading({ title: '提交中...' })
-
-    // 处理图片URL
-    const imageUrls = completeImages.value.map(img => img.url).join(',')
-
-    const response = await completeAssignment(currentWorkOrder.value.assignmentId, {
-      images: imageUrls,
-      processRemark: completeRemark.value.trim()
-    })
-
-    if (response.code === 200) {
-      uni.showToast({
-        title: '维修完成提交成功',
-        icon: 'success'
-      })
-      closeCompleteModal()
-      // 刷新列表
-      loadData(true)
-    } else {
-      uni.showToast({
-        title: response.msg || '提交失败',
-        icon: 'none'
-      })
-    }
-  } catch (error) {
-    console.error('完成维修失败:', error)
-    uni.showToast({
-      title: '网络异常，请重试',
-      icon: 'none'
-    })
-  } finally {
-    uni.hideLoading()
-  }
-}
-
-// 图片上传相关方法
 const chooseImage = () => {
+  if (completeImages.value.length >= 3) {
+    uni.showToast({ title: '最多上传3张照片', icon: 'none' })
+    return
+  }
+
   uni.chooseImage({
     count: 3 - completeImages.value.length,
     sizeType: ['compressed'],
     sourceType: ['camera', 'album'],
     success: (res) => {
       res.tempFilePaths.forEach(path => {
-        // 这里应该调用图片上传API，暂时使用本地路径
-        completeImages.value.push({
-          url: path,
-          path: path
-        })
-      })
-    },
-    fail: (err) => {
-      console.error('选择图片失败:', err)
-      uni.showToast({
-        title: '选择图片失败',
-        icon: 'none'
+        completeImages.value.push({ url: path })
       })
     }
   })
@@ -727,93 +719,352 @@ const deleteImage = (index) => {
   completeImages.value.splice(index, 1)
 }
 
-const previewImage = (url) => {
+const previewImage = (index) => {
   const urls = completeImages.value.map(img => img.url)
   uni.previewImage({
-    current: url,
-    urls: urls
+    urls: urls,
+    current: index
   })
 }
 
-// 导出方法供页面生命周期使用
-defineExpose({
-  onShow: () => {
-    loadData(true)
+const confirmComplete = async () => {
+  if (completeImages.value.length === 0) {
+    uni.showToast({ title: '请上传完成照片', icon: 'none' })
+    return
   }
-})
+
+  try {
+    uni.showLoading({ title: '提交中...' })
+    const imageUrls = completeImages.value.map(img => img.url).join(',')
+    
+    const response = await completeAssignment(currentItem.value.assignmentId, {
+      images: imageUrls,
+      processRemark: completeRemark.value
+    })
+
+    if (response.code === 200) {
+      uni.showToast({ title: '提交成功', icon: 'success' })
+      closeCompleteModal()
+      loadData(true)
+    } else {
+      uni.showToast({ title: response.msg || '提交失败', icon: 'none' })
+    }
+  } catch (error) {
+    console.error('完成维修失败:', error)
+    uni.showToast({ title: '操作失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+// ==================== 辅助函数 ====================
+const getStatusText = (status) => {
+  const map = {
+    '0': '待派单',
+    '1': '已派单',
+    '2': '维修中',
+    '3': '已完成',
+    '4': '已取消'
+  }
+  return map[status] || '未知'
+}
+
+const getWorkOrderStatusText = (status) => {
+  const map = {
+    '0': '待处理',
+    '1': '处理中',
+    '2': '已完成',
+    '3': '已拒绝'
+  }
+  return map[status] || '未知'
+}
+
+const getStatusIcon = (status) => {
+  const map = {
+    '0': '⏳',
+    '1': '🔧',
+    '2': '✅',
+    '3': '❌'
+  }
+  return map[status] || '📋'
+}
+
+const getSpecialtyText = (specialty) => {
+  if (!specialty) return '未知'
+  const map = { '0': '电工', '1': '水工', '2': '木工', '3': '水泥工' }
+  return specialty.split(',').map(s => map[s] || '未知').join('、')
+}
+
+const formatTimeAgo = (time) => {
+  if (!time) return ''
+  try {
+    const now = Date.now()
+    const past = new Date(time).getTime()
+    const diff = now - past
+    
+    const minute = 60 * 1000
+    const hour = 60 * minute
+    const day = 24 * hour
+    
+    if (diff < minute) return '刚刚'
+    if (diff < hour) return `${Math.floor(diff / minute)}分钟前`
+    if (diff < day) return `${Math.floor(diff / hour)}小时前`
+    if (diff < 7 * day) return `${Math.floor(diff / day)}天前`
+    
+    const date = new Date(time)
+    return `${date.getMonth() + 1}/${date.getDate()}`
+  } catch (error) {
+    return ''
+  }
+}
 </script>
 
 <style lang="scss" scoped>
-.page-container {
+.repair-list-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+  background: linear-gradient(180deg, #f5f7fa 0%, #ffffff 100%);
 }
 
-.status-bar {
-  background: transparent;
-}
-
-.header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20rpx 30rpx 40rpx;
-  border-radius: 0 0 40rpx 40rpx;
-}
-
-.header-content {
+// ==================== 导航栏 ====================
+.nav-bar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  padding: 16rpx 32rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4rpx 24rpx rgba(102, 126, 234, 0.25);
 }
 
-.back-btn, .add-btn {
-  width: 80rpx;
-  height: 80rpx;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
+.nav-left,
+.nav-right {
+  width: 72rpx;
+  height: 72rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(10rpx);
-  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  backdrop-filter: blur(20rpx);
+  transition: all 0.3s;
+
+  &:active {
+    transform: scale(0.9);
+    background: rgba(255, 255, 255, 0.3);
+  }
 }
 
-.back-btn:active, .add-btn:active {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(0.95);
-}
-
-.back-btn .iconfont, .add-btn .iconfont {
+.nav-icon {
+  font-size: 40rpx;
+  font-weight: bold;
   color: white;
-  font-size: 32rpx;
 }
 
-.header-title {
+.nav-center {
   flex: 1;
   text-align: center;
+  padding: 0 20rpx;
 }
 
-.title-text {
-  color: white;
+.nav-title {
+  display: block;
   font-size: 36rpx;
   font-weight: bold;
+  color: white;
+  line-height: 1.3;
 }
 
-.main-content {
+.nav-count {
+  display: block;
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 4rpx;
+}
+
+// ==================== 筛选区域 ====================
+.filter-section {
+  padding: 24rpx 0;
+  background: white;
+}
+
+.filter-scroll {
+  white-space: nowrap;
+  padding: 0 32rpx;
+}
+
+.filter-chip {
+  display: inline-block;
+  margin-right: 20rpx;
+  transition: all 0.3s;
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.chip-content {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 28rpx;
+  background: #f5f7fa;
+  border-radius: 48rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.3s;
+}
+
+.filter-active .chip-content {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 6rpx 20rpx rgba(102, 126, 234, 0.3);
+}
+
+.chip-icon {
+  font-size: 32rpx;
+  margin-right: 12rpx;
+}
+
+.chip-label {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.filter-active .chip-label {
+  color: white;
+}
+
+.chip-badge {
+  margin-left: 12rpx;
+  padding: 4rpx 12rpx;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #666;
+}
+
+.filter-active .chip-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+}
+
+// ==================== 搜索区域 ====================
+.search-section {
+  padding: 16rpx 32rpx;
+  background: white;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  height: 80rpx;
+  padding: 0 32rpx;
+  background: #f5f7fa;
+  border-radius: 48rpx;
+  transition: all 0.3s;
+
+  &:focus-within {
+    background: #eef2f7;
+    box-shadow: 0 0 0 4rpx rgba(102, 126, 234, 0.1);
+  }
+}
+
+.search-icon-left {
+  font-size: 32rpx;
+  margin-right: 16rpx;
+}
+
+.search-input {
   flex: 1;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.search-clear {
+  font-size: 40rpx;
+  color: #999;
+  padding: 0 8rpx;
+  
+  &:active {
+    opacity: 0.6;
+  }
+}
+
+// ==================== 内容滚动区 ====================
+.content-scroll {
+  overflow: hidden;
+}
+
+.refresh-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 30rpx;
-  margin-top: -20rpx;
 }
 
-.repair-list, .workorder-list {
-  margin-bottom: 40rpx;
+.refresh-spinner {
+  width: 32rpx;
+  height: 32rpx;
+  border: 3rpx solid #f0f0f0;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 16rpx;
 }
 
-/* 添加进入动画 */
-.repair-item, .workorder-item {
-  animation: slideInUp 0.6s ease-out;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-@keyframes slideInUp {
+.refresh-text {
+  font-size: 26rpx;
+  color: #999;
+}
+
+// ==================== 列表容器 ====================
+.list-container {
+  padding: 0 32rpx 40rpx;
+}
+
+// 学生报修列表项
+.repair-item {
+  background: white;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  transition: all 0.3s;
+  animation: slideUp 0.5s ease-out backwards;
+
+  &:active {
+    transform: translateY(-4rpx);
+    box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+  }
+}
+
+// 维修人员工单列表项
+.workorder-item {
+  position: relative;
+  background: white;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  transition: all 0.3s;
+  animation: slideUp 0.5s ease-out backwards;
+
+  &:active {
+    transform: translateY(-4rpx);
+    box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+  }
+
+  &.priority-high {
+    border-left: 6rpx solid #ff6b6b;
+  }
+
+  &.priority-medium {
+    border-left: 6rpx solid #4dabf7;
+  }
+}
+
+@keyframes slideUp {
   from {
     opacity: 0;
     transform: translateY(30rpx);
@@ -824,902 +1075,564 @@ defineExpose({
   }
 }
 
-.repair-item, .workorder-item {
+.urgent-flag {
+  position: absolute;
+  top: -8rpx;
+  right: 32rpx;
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+  border-radius: 50%;
+  box-shadow: 0 4rpx 16rpx rgba(255, 107, 107, 0.4);
+  font-size: 32rpx;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+// ==================== 卡片内容 ====================
+.item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.status-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  margin-right: 16rpx;
+  flex-shrink: 0;
+
+  &.dot-0 { background: #ffa502; }
+  &.dot-1 { background: #3498db; }
+  &.dot-2 { background: #00bcd4; }
+  &.dot-3 { background: #4caf50; }
+  &.dot-4 { background: #95a5a6; }
+}
+
+.avatar-circle {
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 36rpx;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+
+  &.avatar-0 { background: rgba(255, 165, 2, 0.15); }
+  &.avatar-1 { background: rgba(0, 188, 212, 0.15); }
+  &.avatar-2 { background: rgba(76, 175, 80, 0.15); }
+  &.avatar-3 { background: rgba(244, 67, 54, 0.15); }
+}
+
+.header-info {
   display: flex;
   flex-direction: column;
-  padding: 30rpx;
-  margin-bottom: 20rpx;
-  background: white;
-  border-radius: 24rpx;
-  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
-  border: 1rpx solid rgba(255, 255, 255, 0.8);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.repair-item::before, .workorder-item::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 6rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.repair-item:active, .workorder-item:active {
-  transform: translateY(-4rpx) scale(0.98);
-  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.12);
-}
-
-.repair-content, .workorder-content {
   flex: 1;
+  min-width: 0;
 }
 
-.repair-header, .workorder-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24rpx;
-  padding-bottom: 16rpx;
-  border-bottom: 1rpx solid #f0f2f5;
-}
-
-.repair-title, .workorder-title {
-  font-size: 34rpx;
+.info-name {
+  font-size: 30rpx;
   font-weight: 600;
-  color: #1a1a1a;
-  flex: 1;
-  line-height: 1.4;
-  margin-right: 20rpx;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.info-no {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 6rpx;
+}
+
+.request-no {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-tag {
+  padding: 10rpx 20rpx;
+  border-radius: 24rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &.tag-0 { background: #fff4e6; color: #ff9500; }
+  &.tag-1 { background: #e3f2fd; color: #2196f3; }
+  &.tag-2 { background: #e0f2f1; color: #00bcd4; }
+  &.tag-3 { background: #e8f5e9; color: #4caf50; }
+  &.tag-4 { background: #f5f5f5; color: #999; }
+}
+
+.item-body {
+  margin-bottom: 20rpx;
+}
+
+.body-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.row-icon {
+  font-size: 28rpx;
+  margin-right: 12rpx;
+  flex-shrink: 0;
+}
+
+.row-text {
+  font-size: 28rpx;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.body-desc {
+  margin-bottom: 20rpx;
+}
+
+.desc-text {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.6;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  line-clamp: 2;
   overflow: hidden;
 }
 
-.repair-status, .workorder-status {
-  padding: 12rpx 20rpx;
-  border-radius: 24rpx;
-  font-size: 24rpx;
-  font-weight: 500;
-  letter-spacing: 0.5rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10rpx);
+.body-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16rpx;
 }
 
-.status-pending {
-  background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
-  color: #d63031;
-}
-
-.status-assigned {
-  background: linear-gradient(135deg, #74b9ff, #0984e3);
-  color: white;
-}
-
-.status-processing {
-  background: linear-gradient(135deg, #00cec9, #00b894);
-  color: white;
-}
-
-.status-completed {
-  background: linear-gradient(135deg, #00b894, #00a085);
-  color: white;
-}
-
-.status-cancelled {
-  background: linear-gradient(135deg, #fd79a8, #e84393);
-  color: white;
-}
-
-.status-manual {
-  background: linear-gradient(135deg, #fdcb6e, #e17055);
-  color: white;
-}
-
-.status-rejected {
-  background: linear-gradient(135deg, #fd79a8, #e84393);
-  color: white;
-}
-
-.repair-info, .workorder-info {
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-  margin-bottom: 24rpx;
-  padding: 20rpx;
-  background: linear-gradient(135deg, #f8f9fa, #ffffff);
-  border-radius: 16rpx;
-  border: 1rpx solid #f0f2f5;
-}
-
-.info-row {
+.info-cell {
   display: flex;
   align-items: center;
+  padding: 16rpx;
+  background: #f8f9fc;
+  border-radius: 12rpx;
+}
+
+.cell-icon {
   font-size: 28rpx;
-  line-height: 1.5;
+  margin-right: 8rpx;
+  flex-shrink: 0;
 }
 
-.info-label {
-  color: #8c8c8c;
-  min-width: 140rpx;
-  font-weight: 500;
-  position: relative;
+.cell-text {
+  font-size: 24rpx;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.info-label::after {
-  content: ':';
-  margin-left: 4rpx;
+.item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #f5f7fa;
+}
+
+.footer-time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.footer-arrow {
+  font-size: 40rpx;
   color: #d9d9d9;
+  font-weight: bold;
 }
 
-.info-value {
-  color: #262626;
-  flex: 1;
-  font-weight: 400;
+// ==================== 操作按钮 ====================
+.item-actions {
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #f5f7fa;
 }
 
-.workorder-actions {
+.action-group {
   display: flex;
   gap: 16rpx;
-  margin-top: 24rpx;
-  padding-top: 20rpx;
-  border-top: 1rpx solid #f0f2f5;
 }
 
 .action-btn {
   flex: 1;
-  padding: 20rpx 24rpx;
-  border-radius: 20rpx;
-  text-align: center;
-  font-size: 28rpx;
-  font-weight: 600;
-  letter-spacing: 0.5rpx;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  border: none;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
-}
-
-.action-btn:active {
-  transform: translateY(2rpx);
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
-}
-
-.reject-btn {
-  background: linear-gradient(135deg, #ff7675, #d63031);
-  color: white;
-  box-shadow: 0 4rpx 16rpx rgba(214, 48, 49, 0.3);
-}
-
-.reject-btn:active {
-  background: linear-gradient(135deg, #d63031, #b71c1c);
-  box-shadow: 0 2rpx 8rpx rgba(214, 48, 49, 0.4);
-}
-
-.accept-btn {
-  background: linear-gradient(135deg, #00b894, #00a085);
-  color: white;
-  box-shadow: 0 4rpx 16rpx rgba(0, 184, 148, 0.3);
-}
-
-.accept-btn:active {
-  background: linear-gradient(135deg, #00a085, #008f72);
-  box-shadow: 0 2rpx 8rpx rgba(0, 184, 148, 0.4);
-}
-
-.complete-btn {
-  background: linear-gradient(135deg, #0984e3, #74b9ff);
-  color: white;
-  box-shadow: 0 4rpx 16rpx rgba(9, 132, 227, 0.3);
-}
-
-.complete-btn:active {
-  background: linear-gradient(135deg, #74b9ff, #0984e3);
-  box-shadow: 0 2rpx 8rpx rgba(9, 132, 227, 0.4);
-}
-
-/* 工单完成信息样式 */
-.workorder-completion {
-  margin-top: 24rpx;
-  padding: 20rpx;
-  background: linear-gradient(135deg, rgba(248, 249, 250, 0.8), rgba(255, 255, 255, 0.6));
-  border-radius: 16rpx;
-  border: 1rpx solid rgba(240, 242, 245, 0.8);
-}
-
-.completion-info {
   display: flex;
   align-items: center;
-  margin-bottom: 12rpx;
+  justify-content: center;
+  height: 72rpx;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  transition: all 0.3s;
+
+  &:active {
+    transform: scale(0.96);
+  }
 }
 
-.completion-label {
-  font-size: 26rpx;
-  color: #8c8c8c;
-  font-weight: 500;
-  min-width: 140rpx;
+.btn-icon {
+  font-size: 32rpx;
+  margin-right: 8rpx;
 }
 
-.completion-time {
-  font-size: 26rpx;
-  color: #262626;
-  font-weight: 400;
+.btn-reject {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+  color: white;
+  box-shadow: 0 4rpx 16rpx rgba(255, 107, 107, 0.3);
 }
 
-.reject-reason {
-  display: flex;
-  align-items: flex-start;
-  padding-top: 12rpx;
-  border-top: 1rpx solid rgba(240, 242, 245, 0.6);
+.btn-accept {
+  background: linear-gradient(135deg, #51cf66, #37b24d);
+  color: white;
+  box-shadow: 0 4rpx 16rpx rgba(81, 207, 102, 0.3);
 }
 
-.reason-label {
-  font-size: 26rpx;
-  color: #8c8c8c;
-  font-weight: 500;
-  min-width: 140rpx;
-  margin-top: 2rpx;
+.btn-complete {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 4rpx 16rpx rgba(102, 126, 234, 0.3);
 }
 
-.reason-text {
-  font-size: 26rpx;
-  color: #e53e3e;
-  font-weight: 400;
-  line-height: 1.5;
-  flex: 1;
-}
-
-.repair-arrow {
-  margin-left: 20rpx;
-}
-
-.repair-arrow .iconfont {
-  color: #ccc;
-  font-size: 24rpx;
-}
-
-.empty-state {
+// ==================== 空状态 ====================
+.empty-container {
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 120rpx 48rpx;
+  text-align: center;
+}
+
+.empty-animation {
+  width: 160rpx;
+  height: 160rpx;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  padding: 120rpx 40rpx;
-  text-align: center;
-  background: white;
-  border-radius: 24rpx;
-  margin: 20rpx 0;
-  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.06);
-}
-
-.empty-icon {
-  font-size: 140rpx;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  border-radius: 50%;
   margin-bottom: 32rpx;
-  opacity: 0.6;
+  animation: float 3s ease-in-out infinite;
 }
 
-.empty-text {
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-16rpx); }
+}
+
+.empty-emoji {
+  font-size: 80rpx;
+}
+
+.empty-title {
   font-size: 32rpx;
-  color: #8c8c8c;
-  margin-bottom: 48rpx;
-  line-height: 1.5;
-}
-
-.empty-btn {
-  padding: 24rpx 48rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 50rpx;
-  box-shadow: 0 6rpx 20rpx rgba(102, 126, 234, 0.3);
-  transition: all 0.3s ease;
-}
-
-.empty-btn:active {
-  transform: translateY(2rpx);
-  box-shadow: 0 4rpx 16rpx rgba(102, 126, 234, 0.4);
-}
-
-.btn-text {
-  color: white;
-  font-size: 28rpx;
-}
-
-.loading-more, .no-more {
-  text-align: center;
-  padding: 30rpx;
-}
-
-.loading-text, .no-more-text {
-  color: #999;
-  font-size: 28rpx;
-}
-
-.modal-content {
-  padding: 20rpx;
-}
-
-.modal-label {
-  display: block;
-  font-size: 28rpx;
+  font-weight: 600;
   color: #333;
   margin-bottom: 16rpx;
-  margin-top: 20rpx;
 }
 
-.modal-label:first-child {
-  margin-top: 0;
+.empty-desc {
+  font-size: 26rpx;
+  color: #999;
+  margin-bottom: 48rpx;
 }
 
-/* 图标字体样式 */
-.iconfont {
-  font-family: 'iconfont';
+.empty-action {
+  padding: 24rpx 64rpx;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 48rpx;
+  color: white;
+  font-size: 28rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.3);
+
+  &:active {
+    transform: scale(0.95);
+  }
 }
 
-.icon-back::before {
-  content: '‹';
+// ==================== 加载状态 ====================
+.loading-more,
+.no-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+  font-size: 26rpx;
+  color: #999;
 }
 
-.icon-add::before {
-  content: '+';
+.loading-spinner {
+  width: 28rpx;
+  height: 28rpx;
+  border: 3rpx solid #f0f0f0;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 12rpx;
 }
 
-.icon-arrow-right::before {
-  content: '›';
+.loading-text {
+  font-size: 26rpx;
+  color: #999;
 }
 
-/* 弹窗样式 */
-.modal-mask {
+// ==================== 弹窗样式 ====================
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(10rpx);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  animation: modalMaskFadeIn 0.3s ease-out;
+  animation: fadeIn 0.3s;
 }
 
-@keyframes modalMaskFadeIn {
-  from {
-    opacity: 0;
-    backdrop-filter: blur(0);
-  }
-  to {
-    opacity: 1;
-    backdrop-filter: blur(10rpx);
-  }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.reject-modal, .complete-modal {
-  background: linear-gradient(145deg, #ffffff, #f8f9fa);
-  border-radius: 32rpx;
+.modal-container {
   width: 640rpx;
-  max-height: 85vh;
+  max-height: 80vh;
+  background: white;
+  border-radius: 32rpx;
   overflow: hidden;
-  margin: 0 30rpx;
-  box-shadow:
-    0 20rpx 60rpx rgba(102, 126, 234, 0.15),
-    0 8rpx 24rpx rgba(0, 0, 0, 0.1),
-    inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
-  border: 1rpx solid rgba(255, 255, 255, 0.2);
-  animation: modalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  position: relative;
+  animation: slideIn 0.3s;
 }
 
-@keyframes modalSlideIn {
+@keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(60rpx) scale(0.9);
+    transform: translateY(60rpx);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
-}
-
-.reject-modal::before, .complete-modal::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 8rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 32rpx 32rpx 0 0;
 }
 
 .modal-header {
-  padding: 48rpx 40rpx 32rpx;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
-  border-bottom: 1rpx solid rgba(240, 242, 245, 0.8);
-  text-align: center;
   position: relative;
-  margin-top: 8rpx;
-}
-
-.modal-header::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60rpx;
-  height: 4rpx;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 2rpx;
+  padding: 40rpx;
+  text-align: center;
+  border-bottom: 1rpx solid #f5f7fa;
 }
 
 .modal-title {
   font-size: 36rpx;
   font-weight: 600;
-  color: #1a1a1a;
-  letter-spacing: 1rpx;
-  position: relative;
-  display: inline-block;
+  color: #333;
 }
 
-.modal-title::before {
-  content: '';
+.modal-close {
   position: absolute;
-  top: 50%;
-  left: -40rpx;
-  transform: translateY(-50%);
-  width: 24rpx;
-  height: 24rpx;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 50%;
-  opacity: 0.8;
-}
+  top: 32rpx;
+  right: 32rpx;
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+  color: #999;
+  line-height: 1;
 
-.modal-title::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: -40rpx;
-  transform: translateY(-50%);
-  width: 24rpx;
-  height: 24rpx;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 50%;
-  opacity: 0.8;
+  &:active {
+    opacity: 0.6;
+  }
 }
 
 .modal-body {
   padding: 40rpx;
   max-height: 60vh;
   overflow-y: auto;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(248, 249, 250, 0.5));
-}
-
-.modal-body::-webkit-scrollbar {
-  width: 8rpx;
-}
-
-.modal-body::-webkit-scrollbar-track {
-  background: rgba(240, 242, 245, 0.5);
-  border-radius: 4rpx;
-}
-
-.modal-body::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 4rpx;
-}
-
-.modal-content {
-  display: flex;
-  flex-direction: column;
-  gap: 32rpx;
 }
 
 .modal-label {
-  font-size: 30rpx;
-  color: #262626;
-  font-weight: 600;
-  margin-bottom: 20rpx;
-  position: relative;
-  padding-left: 20rpx;
-}
-
-.modal-label::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 6rpx;
-  height: 24rpx;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 3rpx;
-}
-
-.photo-requirement {
-  margin-bottom: 24rpx;
-  padding: 24rpx;
-  background: linear-gradient(135deg, rgba(255, 107, 107, 0.05), rgba(255, 107, 107, 0.02));
-  border-radius: 20rpx;
-  border: 1rpx solid rgba(255, 107, 107, 0.1);
-}
-
-.requirement-text {
-  font-size: 26rpx;
-  color: #ff6b6b;
-  margin-top: 12rpx;
   display: block;
-  font-weight: 500;
-  line-height: 1.5;
-  position: relative;
-  padding-left: 32rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20rpx;
+
+  &.required::before {
+    content: '* ';
+    color: #ff6b6b;
+  }
 }
 
-.requirement-text::before {
-  content: '⚠️';
-  position: absolute;
-  left: 0;
-  top: 0;
-  font-size: 24rpx;
-}
-
-.reject-textarea, .complete-textarea {
+.modal-textarea {
   width: 100%;
   min-height: 160rpx;
   padding: 24rpx;
-  border: 2rpx solid rgba(102, 126, 234, 0.2);
-  border-radius: 20rpx;
-  font-size: 30rpx;
+  background: #f8f9fc;
+  border-radius: 16rpx;
+  font-size: 28rpx;
   line-height: 1.6;
-  background: linear-gradient(145deg, #ffffff, #f8f9fa);
+  color: #333;
   box-sizing: border-box;
-  transition: all 0.3s ease;
-  box-shadow:
-    inset 0 2rpx 8rpx rgba(0, 0, 0, 0.05),
-    0 0 0 0 rgba(102, 126, 234, 0.2);
-  color: #262626;
-  resize: none;
 }
 
-.reject-textarea:focus, .complete-textarea:focus {
-  border-color: #667eea;
-  background: #ffffff;
-  box-shadow:
-    inset 0 2rpx 8rpx rgba(0, 0, 0, 0.05),
-    0 0 0 4rpx rgba(102, 126, 234, 0.1),
-    0 8rpx 24rpx rgba(102, 126, 234, 0.15);
-  outline: none;
-  transform: translateY(-2rpx);
-}
-
-.reject-textarea::placeholder, .complete-textarea::placeholder {
-  color: #bbb;
-  font-weight: 400;
-}
-
-.char-count {
-  text-align: right;
-  margin-top: 16rpx;
-  padding: 8rpx 16rpx;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
-  border-radius: 12rpx;
+.char-counter {
   display: block;
-  width: fit-content;
-  margin-left: auto;
-}
-
-.count-text {
+  text-align: right;
   font-size: 24rpx;
-  color: #8c8c8c;
-  font-weight: 500;
+  color: #999;
+  margin-top: 12rpx;
 }
 
-.image-upload-area {
+.image-upload-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 24rpx;
-  padding: 24rpx;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(248, 249, 250, 0.6));
-  border-radius: 20rpx;
-  border: 2rpx dashed rgba(102, 126, 234, 0.2);
-  transition: all 0.3s ease;
-  margin-bottom: 24rpx;
+  gap: 20rpx;
+  margin-bottom: 16rpx;
 }
 
-.image-upload-area:hover {
-  border-color: rgba(102, 126, 234, 0.4);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(248, 249, 250, 0.8));
-}
-
-.image-item {
+.image-preview {
   position: relative;
   width: 180rpx;
   height: 180rpx;
-  border-radius: 20rpx;
+  border-radius: 16rpx;
   overflow: hidden;
-  box-shadow:
-    0 8rpx 24rpx rgba(0, 0, 0, 0.1),
-    0 4rpx 8rpx rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-  border: 2rpx solid rgba(255, 255, 255, 0.8);
 }
 
-.image-item:hover {
-  transform: translateY(-4rpx);
-  box-shadow:
-    0 12rpx 32rpx rgba(0, 0, 0, 0.15),
-    0 6rpx 12rpx rgba(0, 0, 0, 0.08);
-}
-
-.uploaded-image {
+.preview-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
 }
 
-.image-item:hover .uploaded-image {
-  transform: scale(1.05);
-}
-
-.delete-btn {
+.image-delete {
   position: absolute;
-  top: 12rpx;
-  right: 12rpx;
+  top: 8rpx;
+  right: 8rpx;
   width: 48rpx;
   height: 48rpx;
-  background: linear-gradient(135deg, rgba(255, 107, 107, 0.9), rgba(214, 48, 49, 0.9));
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.3);
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10rpx);
-}
-
-.delete-btn:active {
-  transform: scale(0.9);
-  background: linear-gradient(135deg, rgba(214, 48, 49, 0.9), rgba(183, 28, 28, 0.9));
-}
-
-.delete-icon {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  font-size: 32rpx;
   color: white;
-  font-size: 24rpx;
-  font-weight: bold;
+
+  &:active {
+    opacity: 0.8;
+  }
 }
 
-.upload-btn {
+.image-upload-btn {
   width: 180rpx;
   height: 180rpx;
-  border: 3rpx dashed rgba(102, 126, 234, 0.3);
-  border-radius: 20rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(145deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
-  color: #667eea;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
+  background: #f8f9fc;
+  border: 2rpx dashed #d9d9d9;
+  border-radius: 16rpx;
+  transition: all 0.3s;
 
-.upload-btn::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 0;
-  height: 0;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-  border-radius: 50%;
-  transition: all 0.4s ease;
-}
-
-.upload-btn:active::before {
-  width: 200rpx;
-  height: 200rpx;
-}
-
-.upload-btn:active {
-  transform: scale(0.95);
-  border-color: #667eea;
-  background: linear-gradient(145deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  &:active {
+    background: #eef2f7;
+  }
 }
 
 .upload-icon {
   font-size: 56rpx;
-  margin-bottom: 12rpx;
-  font-weight: 300;
-  position: relative;
-  z-index: 1;
+  color: #999;
+  line-height: 1;
 }
 
 .upload-text {
-  font-size: 26rpx;
-  font-weight: 500;
-  position: relative;
-  z-index: 1;
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 12rpx;
+}
+
+.upload-hint {
+  display: block;
+  font-size: 24rpx;
+  color: #ff6b6b;
+  margin-bottom: 24rpx;
 }
 
 .modal-footer {
   display: flex;
-  border-top: 1rpx solid rgba(240, 242, 245, 0.8);
-  background: linear-gradient(135deg, rgba(248, 249, 250, 0.8), rgba(255, 255, 255, 0.9));
+  border-top: 1rpx solid #f5f7fa;
   padding: 24rpx;
   gap: 16rpx;
 }
 
 .modal-btn {
   flex: 1;
-  padding: 32rpx 24rpx;
-  text-align: center;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16rpx;
   font-size: 32rpx;
   font-weight: 600;
-  border-radius: 20rpx;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  letter-spacing: 1rpx;
+  transition: all 0.3s;
+
+  &:active {
+    transform: scale(0.96);
+  }
 }
 
-.modal-btn::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  transition: all 0.4s ease;
+.btn-cancel {
+  background: #f5f7fa;
+  color: #666;
 }
 
-.modal-btn:active::before {
-  width: 300rpx;
-  height: 300rpx;
-}
-
-.cancel-btn {
-  background: linear-gradient(135deg, #dc3545, #c82333);
-  color: white;
-  border: 2rpx solid transparent;
-  box-shadow: 0 4rpx 12rpx rgba(220, 53, 69, 0.3);
-}
-
-.cancel-btn::before {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.cancel-btn:active {
-  background: linear-gradient(135deg, #c82333, #bd2130);
-  transform: translateY(1rpx) scale(0.98);
-  box-shadow: 0 2rpx 8rpx rgba(220, 53, 69, 0.4);
-}
-
-.confirm-btn, .submit-btn {
+.btn-confirm {
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
-  border: 2rpx solid transparent;
   box-shadow: 0 6rpx 20rpx rgba(102, 126, 234, 0.3);
-}
 
-.confirm-btn::before, .submit-btn::before {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.confirm-btn:active, .submit-btn:not(.disabled):active {
-  background: linear-gradient(135deg, #5a6fd8, #6a42a0);
-  transform: translateY(2rpx) scale(0.98);
-  box-shadow: 0 4rpx 16rpx rgba(102, 126, 234, 0.4);
-}
-
-.submit-btn.disabled {
-  background: linear-gradient(135deg, rgba(204, 204, 204, 0.6), rgba(170, 170, 170, 0.6));
-  color: rgba(255, 255, 255, 0.7);
-  box-shadow: none;
-  pointer-events: none;
-  cursor: not-allowed;
-}
-
-.submit-btn.disabled::before {
-  display: none;
-}
-
-/* 弹窗退出动画 */
-.modal-mask.closing {
-  animation: modalMaskFadeOut 0.3s ease-in forwards;
-}
-
-@keyframes modalMaskFadeOut {
-  from {
-    opacity: 1;
-    backdrop-filter: blur(10rpx);
-  }
-  to {
-    opacity: 0;
-    backdrop-filter: blur(0);
-  }
-}
-
-.reject-modal.closing, .complete-modal.closing {
-  animation: modalSlideOut 0.3s ease-in forwards;
-}
-
-@keyframes modalSlideOut {
-  from {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(-40rpx) scale(0.95);
-  }
-}
-
-/* 响应式优化 */
-@media (max-width: 750rpx) {
-  .reject-modal, .complete-modal {
-    width: 90vw;
-    margin: 0 5vw;
-  }
-
-  .modal-header {
-    padding: 40rpx 32rpx 24rpx;
-  }
-
-  .modal-body {
-    padding: 32rpx;
-  }
-
-  .modal-footer {
-    padding: 20rpx;
-  }
-
-  .image-item, .upload-btn {
-    width: 160rpx;
-    height: 160rpx;
-  }
-
-  .image-upload-area {
-    gap: 20rpx;
-    padding: 20rpx;
-  }
-}
-
-/* 深色模式适配 */
-@media (prefers-color-scheme: dark) {
-  .reject-modal, .complete-modal {
-    background: linear-gradient(145deg, #2a2a2a, #1f1f1f);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-
-  .modal-header {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-    border-bottom-color: rgba(255, 255, 255, 0.1);
-  }
-
-  .modal-title {
-    color: #ffffff;
-  }
-
-  .modal-label {
-    color: #e0e0e0;
-  }
-
-  .reject-textarea, .complete-textarea {
-    background: linear-gradient(145deg, #333333, #2a2a2a);
-    border-color: rgba(102, 126, 234, 0.3);
-    color: #ffffff;
-  }
-
-  .reject-textarea::placeholder, .complete-textarea::placeholder {
-    color: #888;
+  &.disabled {
+    opacity: 0.5;
+    pointer-events: none;
   }
 }
 </style>

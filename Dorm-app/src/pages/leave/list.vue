@@ -1,667 +1,1077 @@
 <template>
-  <view class="page-container">
+  <view class="leave-list-page">
     <!-- 状态栏占位 -->
     <view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
 
-    <!-- 头部区域 -->
-    <view class="custom-navbar">
-      <view class="navbar-content">
-        <view class="navbar-left" @click="goBack">
-          <text class="iconfont icon-arrow-left">‹</text>
-        </view>
-        <view class="navbar-title">
-          <text>离校申请</text>
-        </view>
-        <view class="navbar-right" @click="goToRegistration">
-          <text class="iconfont icon-add">+</text>
-        </view>
+    <!-- 顶部导航栏 -->
+    <view class="nav-bar">
+      <view class="nav-left" @click="goBack">
+        <text class="nav-icon">←</text>
+      </view>
+      <view class="nav-center">
+        <text class="nav-title">离校管理</text>
+        <text class="nav-count">{{ totalCount }}条记录</text>
+      </view>
+      <view class="nav-right" @click="goToAdd">
+        <text class="nav-icon">+</text>
       </view>
     </view>
 
-    <!-- 主要内容区域 -->
-    <scroll-view 
-      class="main-content" 
-      scroll-y="true"
-      @scrolltolower="onReachBottom"
-      refresher-enabled
-      @refresherrefresh="onRefresh"
-      :refresher-triggered="refreshing"
-    >
-      <!-- 离校申请列表 -->
-      <view class="leave-list">
+    <!-- 快速筛选卡片 -->
+    <view class="filter-section">
+      <scroll-view class="filter-scroll" scroll-x show-scrollbar="false">
         <view 
-          v-for="(item, index) in leaveList" 
-          :key="index"
+          v-for="filter in filterOptions" 
+          :key="filter.value"
+          class="filter-chip"
+          :class="{ 'filter-active': activeFilter === filter.value }"
+          @click="changeFilter(filter.value)"
+        >
+          <view class="chip-content">
+            <text class="chip-icon">{{ filter.icon }}</text>
+            <text class="chip-label">{{ filter.label }}</text>
+            <text v-if="filter.count > 0" class="chip-badge">{{ filter.count }}</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 搜索栏 -->
+    <view class="search-section">
+      <view class="search-box">
+        <text class="search-icon-left">🔍</text>
+        <input 
+          class="search-input" 
+          v-model="searchText"
+          placeholder="搜索目的地或申请编号"
+          @input="handleSearchInput"
+          confirm-type="search"
+        />
+        <text v-if="searchText" class="search-clear" @click="clearSearch">×</text>
+      </view>
+    </view>
+
+    <!-- 主列表区域 -->
+    <scroll-view 
+      class="content-scroll"
+      :style="{ height: contentHeight + 'px' }"
+      scroll-y
+      :refresher-enabled="true"
+      :refresher-triggered="refreshing"
+      @refresherrefresh="onPullRefresh"
+      @scrolltolower="onLoadMore"
+      :lower-threshold="100"
+      enhanced
+      :show-scrollbar="false"
+    >
+      <!-- 下拉刷新提示 -->
+      <view v-if="refreshing" class="refresh-indicator">
+        <view class="refresh-spinner"></view>
+        <text class="refresh-text">刷新中...</text>
+      </view>
+
+      <!-- 数据列表 -->
+      <view class="list-container">
+        <view 
+          v-for="(item, index) in displayList" 
+          :key="item.leaveId"
           class="leave-item"
+          :class="'priority-' + getPriorityLevel(item)"
+          :style="{ animationDelay: (index % 8) * 0.05 + 's' }"
           @click="viewDetail(item)"
         >
-          <view class="leave-content">
-            <view class="leave-header">
-              <text class="leave-title">{{ item.destination || '离校申请' }}</text>
-              <view class="leave-status" :class="getStatusClass(item.approveStatus, item.status)">
-                <text class="status-text">{{ getStatusText(item.approveStatus, item.status) }}</text>
-              </view>
+          <!-- 紧急标记 -->
+          <view v-if="isOverdue(item)" class="overdue-flag">
+            <text>⚠</text>
+          </view>
+
+          <!-- 卡片头部 -->
+          <view class="item-header">
+            <view class="header-left">
+              <view class="status-dot" :class="'dot-' + getStatusType(item)"></view>
+              <text class="leave-id">No.{{ item.leaveId }}</text>
             </view>
-            <view class="leave-info">
-              <view class="info-row">
-                <text class="info-label">申请编号：</text>
-                <text class="info-value">{{ item.leaveId }}</text>
-              </view>
-              <view class="info-row">
-                <text class="info-label">目的地：</text>
-                <text class="info-value">{{ item.destination }}</text>
-              </view>
-              <view class="info-row">
-                <text class="info-label">离校时间：</text>
-                <text class="info-value">{{ formatDate(item.leaveTime) }}</text>
-              </view>
-              <view class="info-row">
-                <text class="info-label">预计返校：</text>
-                <text class="info-value">{{ formatDate(item.expectedReturnTime) }}</text>
-              </view>
+            <view class="status-tag" :class="'tag-' + getStatusType(item)">
+              {{ getStatusLabel(item) }}
+            </view>
+          </view>
+
+          <!-- 卡片内容 -->
+          <view class="item-body">
+            <view class="body-row destination-row">
+              <text class="row-icon">📍</text>
+              <text class="row-text destination-text">{{ item.destination || '未填写目的地' }}</text>
             </view>
             
-            <!-- 操作按钮 -->
-            <view v-if="canCancel(item) || canReturn(item)" class="leave-actions">
-              <view v-if="canCancel(item)" class="action-btn cancel-btn" @click.stop="cancelApplication(item)">
+            <view class="time-section">
+              <view class="time-row">
+                <text class="time-icon">🚶</text>
+                <view class="time-info">
+                  <text class="time-label">离校时间</text>
+                  <text class="time-value">{{ formatDateTime(item.leaveTime) }}</text>
+                </view>
+              </view>
+              <view class="time-arrow">→</view>
+              <view class="time-row">
+                <text class="time-icon">🏠</text>
+                <view class="time-info">
+                  <text class="time-label">返校时间</text>
+                  <text class="time-value">{{ formatDateTime(item.expectedReturnTime) }}</text>
+                </view>
+              </view>
+            </view>
+
+            <view v-if="item.reason" class="body-row">
+              <text class="row-icon">📝</text>
+              <text class="row-text reason-text">{{ item.reason }}</text>
+            </view>
+          </view>
+
+          <!-- 操作按钮区 -->
+          <view v-if="showActions(item)" class="item-actions">
+            <view class="action-group">
+              <view 
+                v-if="canCancel(item)" 
+                class="action-btn btn-cancel"
+                @click.stop="handleCancel(item)"
+              >
+                <text class="btn-icon">✕</text>
                 <text class="btn-text">取消申请</text>
               </view>
-              <view v-if="canReturn(item)" class="action-btn return-btn" @click.stop="handleConfirmReturn(item)">
+              <view 
+                v-if="canReturn(item)" 
+                class="action-btn btn-return"
+                @click.stop="handleReturn(item)"
+              >
+                <text class="btn-icon">✓</text>
                 <text class="btn-text">确认返校</text>
               </view>
             </view>
           </view>
-          <view class="leave-arrow">
-            <text class="iconfont icon-arrow-right">›</text>
+
+          <!-- 时间标记 -->
+          <view class="item-footer">
+            <text class="footer-time">{{ formatTimeAgo(item.createTime || item.leaveTime) }}</text>
+            <text class="footer-arrow">›</text>
           </view>
         </view>
       </view>
 
       <!-- 空状态 -->
-      <view v-if="!loading && leaveList.length === 0" class="empty-state">
-        <text class="empty-icon">📝</text>
-        <text class="empty-text">暂无离校申请记录</text>
-        <view class="empty-btn" @click="goToRegistration">
-          <text class="btn-text">立即申请</text>
+      <view v-if="!loading && displayList.length === 0" class="empty-container">
+        <view class="empty-animation">
+          <text class="empty-emoji">{{ emptyIcon }}</text>
+        </view>
+        <text class="empty-title">{{ emptyTitle }}</text>
+        <text class="empty-desc">{{ emptyDesc }}</text>
+        <view v-if="!searchText && activeFilter === 'all'" class="empty-action" @click="goToAdd">
+          <text>立即申请</text>
         </view>
       </view>
 
       <!-- 加载更多 -->
-      <view v-if="loading" class="loading-more">
+      <view v-if="loadingMore" class="loading-more">
+        <view class="loading-spinner"></view>
         <text class="loading-text">加载中...</text>
       </view>
-      
-      <!-- 没有更多数据 -->
-      <view v-if="!pageParams.hasMore && leaveList.length > 0" class="no-more">
-        <text class="no-more-text">没有更多数据了</text>
+
+      <!-- 无更多数据 -->
+      <view v-if="noMore && displayList.length > 0 && !loading" class="no-more">
+        <text>— 已加载全部 —</text>
       </view>
     </scroll-view>
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import {
-  getLeaveApplicationList,
+import { ref, computed, onMounted } from 'vue'
+import { 
+  getLeaveApplicationList, 
   cancelLeaveApplication,
-  confirmReturn as apiConfirmReturn
+  confirmReturn 
 } from '@/api/leave/registration'
 
-// 响应式数据
+// ==================== 状态管理 ====================
+// 页面基础数据
 const statusBarHeight = ref(0)
+const contentHeight = ref(600)
 const loading = ref(false)
 const refreshing = ref(false)
+const loadingMore = ref(false)
+const noMore = ref(false)
+
+// 列表数据
 const leaveList = ref([])
+const pageNum = ref(1)
+const pageSize = 20
 
-// 分页参数
-const pageParams = ref({
-  pageNum: 1,
-  pageSize: 10,
-  hasMore: true
+// 筛选和搜索
+const activeFilter = ref('all')
+const searchText = ref('')
+let searchTimer = null
+
+// ==================== 计算属性 ====================
+const totalCount = computed(() => leaveList.value.length)
+
+// 筛选选项
+const filterOptions = computed(() => {
+  const list = leaveList.value
+  return [
+    { value: 'all', label: '全部', icon: '📋', count: list.length },
+    { value: 'pending', label: '待审批', icon: '⏳', count: list.filter(i => getStatusType(i) === 'pending').length },
+    { value: 'approved', label: '已批准', icon: '✅', count: list.filter(i => getStatusType(i) === 'approved').length },
+    { value: 'away', label: '离校中', icon: '🚶', count: list.filter(i => getStatusType(i) === 'away').length },
+    { value: 'returned', label: '已返校', icon: '🏠', count: list.filter(i => getStatusType(i) === 'returned').length },
+    { value: 'rejected', label: '已拒绝', icon: '❌', count: list.filter(i => getStatusType(i) === 'rejected').length },
+    { value: 'overdue', label: '逾期', icon: '⚠️', count: list.filter(i => getStatusType(i) === 'overdue').length }
+  ]
 })
 
-// 初始化页面
-onMounted(() => {
-  const systemInfo = uni.getSystemInfoSync()
-  statusBarHeight.value = systemInfo.statusBarHeight || 0
-  loadData()
-})
+// 显示列表（应用筛选和搜索）
+const displayList = computed(() => {
+  let list = leaveList.value
 
-// 加载离校申请列表
-const loadData = async (refresh = true) => {
-  if (loading.value) return
-  
-  try {
-    loading.value = true
-    
-    if (refresh) {
-      pageParams.value.pageNum = 1
-      leaveList.value = []
-    }
-    
-    const params = {
-      pageNum: pageParams.value.pageNum,
-      pageSize: pageParams.value.pageSize
-    }
-    
-    const response = await getLeaveApplicationList(params)
-    
-    if (response.code === 200) {
-      const newData = response.rows || []
-      
-      if (refresh) {
-        leaveList.value = newData
-      } else {
-        leaveList.value.push(...newData)
-      }
-      
-      pageParams.value.hasMore = newData.length === pageParams.value.pageSize
-      pageParams.value.pageNum++
-    }
-    
-  } catch (error) {
-    console.error('加载离校申请列表失败:', error)
-    uni.showToast({
-      title: '加载失败',
-      icon: 'none'
+  // 状态筛选
+  if (activeFilter.value !== 'all') {
+    list = list.filter(item => {
+      const type = getStatusType(item)
+      return type === activeFilter.value
     })
-  } finally {
-    loading.value = false
-    if (refreshing.value) {
-      refreshing.value = false
-    }
+  }
+
+  // 搜索过滤
+  if (searchText.value.trim()) {
+    const keyword = searchText.value.toLowerCase()
+    list = list.filter(item => {
+      const searchFields = [
+        item.destination,
+        String(item.leaveId),
+        item.reason
+      ].filter(Boolean).join(' ').toLowerCase()
+      return searchFields.includes(keyword)
+    })
+  }
+
+  return list
+})
+
+// 空状态
+const emptyIcon = computed(() => {
+  if (searchText.value) return '🔍'
+  if (activeFilter.value !== 'all') return '📭'
+  return '✈️'
+})
+
+const emptyTitle = computed(() => {
+  if (searchText.value) return '未找到相关内容'
+  if (activeFilter.value !== 'all') return '暂无数据'
+  return '暂无离校记录'
+})
+
+const emptyDesc = computed(() => {
+  if (searchText.value) return '试试其他关键词'
+  if (activeFilter.value !== 'all') return '切换其他状态查看'
+  return '点击右上角+号发起离校申请'
+})
+
+// ============ 生命周期 ============
+onMounted(() => {
+  initPage()
+  loadData(true)
+})
+
+// ==================== 页面初始化 ====================
+const initPage = () => {
+  try {
+    const systemInfo = uni.getSystemInfoSync()
+    statusBarHeight.value = systemInfo.statusBarHeight || 0
+    
+    // 计算内容高度：屏幕高度 - 状态栏 - 导航栏(88rpx≈44px) - 筛选(160rpx≈80px) - 搜索(120rpx≈60px)
+    contentHeight.value = systemInfo.windowHeight - statusBarHeight.value - 44 - 80 - 60
+  } catch (error) {
+    console.error('页面初始化失败:', error)
+    contentHeight.value = 500
   }
 }
 
-// 下拉刷新
-const onRefresh = () => {
-  refreshing.value = true
-  loadData()
+// ==================== 数据加载 ====================
+const loadData = async (refresh = false) => {
+  if (loading.value && !refresh) return
+  
+  try {
+    if (refresh) {
+      loading.value = true
+      refreshing.value = true
+      pageNum.value = 1
+      noMore.value = false
+    } else {
+      loadingMore.value = true
+    }
+
+    const response = await getLeaveApplicationList({
+      pageNum: pageNum.value,
+      pageSize: pageSize
+    })
+
+    if (response.code === 200) {
+      const newData = response.rows || []
+      
+      if (refresh || pageNum.value === 1) {
+        leaveList.value = newData
+      } else {
+        leaveList.value = [...leaveList.value, ...newData]
+      }
+
+      noMore.value = newData.length < pageSize
+      if (!noMore.value) pageNum.value++
+    }
+  } catch (error) {
+    console.error('加载离校列表失败:', error)
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  } finally {
+    loading.value = false
+    refreshing.value = false
+    loadingMore.value = false
+  }
 }
 
-// 上拉加载更多
-const onReachBottom = () => {
-  if (pageParams.value.hasMore && !loading.value) {
+// 获取状态类型
+const getStatusType = (item) => {
+  if (!item) return 'unknown'
+  
+  // approveStatus: 0-待审批, 1-已批准, 2-已拒绝, 3-已取消
+  // status: 0-离校中, 1-已返校, 2-逾期未返
+  if (item.approveStatus === '0') return 'pending'
+  if (item.approveStatus === '2') return 'rejected'
+  if (item.approveStatus === '3') return 'cancelled'
+  if (item.approveStatus === '1') {
+    if (item.status === '0') return 'away'
+    if (item.status === '1') return 'returned'
+    if (item.status === '2') return 'overdue'
+  }
+  return 'approved'
+}
+
+// 获取状态标签
+const getStatusLabel = (item) => {
+  const typeMap = {
+    pending: '待审批',
+    approved: '已批准',
+    rejected: '已拒绝',
+    cancelled: '已取消',
+    away: '离校中',
+    returned: '已返校',
+    overdue: '逾期未返'
+  }
+  return typeMap[getStatusType(item)] || '未知'
+}
+
+// 格式化日期时间
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '--'
+  
+  try {
+    const date = new Date(dateStr)
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hour = String(date.getHours()).padStart(2, '0')
+    const minute = String(date.getMinutes()).padStart(2, '0')
+    return `${month}/${day} ${hour}:${minute}`
+  } catch (e) {
+    return '--'
+  }
+}
+
+// ==================== 事件处理 ====================
+const onPullRefresh = () => {
+  loadData(true)
+}
+
+const onLoadMore = () => {
+  if (!noMore.value && !loadingMore.value && !loading.value) {
     loadData(false)
   }
 }
 
-// 状态映射配置
-const statusMappings = {
-  // 审批状态映射 (approveStatus)
-  approve: {
-    '0': { text: '待审批', class: 'status-pending' },
-    '1': { text: '已批准', class: 'status-approved' },
-    '2': { text: '已拒绝', class: 'status-rejected' },
-    '3': { text: '已取消', class: 'status-cancelled' }
-  },
-  // 离校状态映射 (status)
-  leave: {
-    '0': { text: '离校中', class: 'status-away' },
-    '1': { text: '已返校', class: 'status-returned' },
-    '2': { text: '逾期未返', class: 'status-overdue' }
-  }
+const handleSearchInput = () => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    // 搜索通过计算属性自动实现
+  }, 300)
 }
 
-// 获取状态样式类
-const getStatusClass = (approveStatus, status) => {
-  // 审批状态优先级处理
-  if (approveStatus === '0') {
-    return statusMappings.approve['0'].class  // 待审批
-  }
-
-  if (approveStatus === '2') {
-    return statusMappings.approve['2'].class  // 已拒绝
-  }
-
-  if (approveStatus === '3') {
-    return statusMappings.approve['3'].class  // 已取消
-  }
-
-  // 审批通过后，根据离校状态判断
-  if (approveStatus === '1') {
-    const leaveStatusConfig = statusMappings.leave[status]
-    return leaveStatusConfig ? leaveStatusConfig.class : 'status-pending'
-  }
-
-  return 'status-pending'
+const clearSearch = () => {
+  searchText.value = ''
 }
 
-// 获取状态文本
-const getStatusText = (approveStatus, status) => {
-  // 审批状态优先级处理
-  if (approveStatus === '0') {
-    return statusMappings.approve['0'].text  // 待审批
-  }
-
-  if (approveStatus === '2') {
-    return statusMappings.approve['2'].text  // 已拒绝
-  }
-
-  if (approveStatus === '3') {
-    return statusMappings.approve['3'].text  // 已取消
-  }
-
-  // 审批通过后，根据离校状态判断
-  if (approveStatus === '1') {
-    const leaveStatusConfig = statusMappings.leave[status]
-    return leaveStatusConfig ? leaveStatusConfig.text : '未知状态'
-  }
-
-  return '未知状态'
+const changeFilter = (value) => {
+  activeFilter.value = value
 }
 
-// 格式化日期时间
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
-}
-
-// 判断是否可以取消申请
-const canCancel = (item) => {
-  // 只有待审批状态才能取消
-  return item.approveStatus === '0'
-}
-
-// 判断是否可以确认返校
-const canReturn = (item) => {
-  // 审批通过且状态为离校中（0）才能确认返校，已取消状态不能确认返校
-  return item.approveStatus === '1' && item.status === '0'
-}
-
-// 取消申请
-const cancelApplication = async (item) => {
-  try {
-    // 显示确认对话框
-    await uni.showModal({
-      title: '确认取消',
-      content: '确定要取消这个离校申请吗？'
-    })
-
-    uni.showLoading({ title: '取消中...' })
-    const response = await cancelLeaveApplication(item.leaveId)
-
-    if (response.code === 200) {
-      uni.showToast({
-        title: '取消成功',
-        icon: 'success'
-      })
-      // 刷新列表数据
-      loadData()
-    } else {
-      uni.showToast({
-        title: response.msg || '取消失败',
-        icon: 'none'
-      })
-    }
-  } catch (error) {
-    if (error.errMsg && error.errMsg.includes('cancel')) {
-      return // 用户取消了确认对话框
-    }
-    console.error('取消申请失败:', error)
-    uni.showToast({
-      title: '取消失败',
-      icon: 'none'
-    })
-  } finally {
-    uni.hideLoading()
-  }
-}
-
-// 确认返校（跳转到详情页面进行地图定位验证）
-const handleConfirmReturn = async (item) => {
-  // 跳转到详情页面，详情页面会进行地图定位验证
-  if (!item || !item.leaveId) {
-    uni.showToast({
-      title: '申请ID不存在',
-      icon: 'none'
-    })
-    return
-  }
-  
-  // 跳转到详情页面，并传递参数标识需要打开地图验证
-  uni.navigateTo({
-    url: `/pages/leave/detail?id=${item.leaveId}&autoOpenMap=true`
-  })
-}
-
-// 页面跳转
 const goBack = () => {
   uni.navigateBack()
 }
 
-const goToRegistration = () => {
+const goToAdd = () => {
   uni.navigateTo({
     url: '/pages/leave/registration'
   })
 }
 
 const viewDetail = (item) => {
-  if (!item || !item.leaveId) {
-    uni.showToast({
-      title: '申请ID不存在',
-      icon: 'none'
-    })
-    console.error('离校申请数据错误:', item)
-    return
-  }
-  
   uni.navigateTo({
     url: `/pages/leave/detail?id=${item.leaveId}`
   })
 }
+
+// ==================== 辅助函数 ====================
+// 获取优先级等级
+const getPriorityLevel = (item) => {
+  if (isOverdue(item)) return 'high'
+  if (getStatusType(item) === 'pending') return 'medium'
+  return 'normal'
+}
+
+// 是否逾期
+const isOverdue = (item) => {
+  return getStatusType(item) === 'overdue'
+}
+
+// 是否显示操作按钮
+const showActions = (item) => {
+  return canCancel(item) || canReturn(item)
+}
+
+// 是否可以取消
+const canCancel = (item) => {
+  return item.approveStatus === '0'
+}
+
+// 是否可以返校
+const canReturn = (item) => {
+  return item.approveStatus === '1' && item.status === '0'
+}
+
+// 取消申请
+const handleCancel = async (item) => {
+  try {
+    const result = await uni.showModal({
+      title: '确认取消',
+      content: '确定要取消这条离校申请吗？',
+      confirmColor: '#f56c6c'
+    })
+
+    if (result.confirm) {
+      uni.showLoading({ title: '处理中...' })
+      const res = await cancelLeaveApplication(item.leaveId)
+      
+      if (res.code === 200) {
+        uni.showToast({
+          title: '取消成功',
+          icon: 'success'
+        })
+        loadData(true)
+      } else {
+        uni.showToast({
+          title: res.msg || '取消失败',
+          icon: 'none'
+        })
+      }
+    }
+  } catch (error) {
+    console.error('取消失败:', error)
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+// 确认返校
+const handleReturn = (item) => {
+  uni.navigateTo({
+    url: `/pages/leave/detail?id=${item.leaveId}&autoOpenMap=true`
+  })
+}
+
+// 时间格式化为"刚刚"、"X分钟前"等
+const formatTimeAgo = (time) => {
+  if (!time) return ''
+  try {
+    const now = Date.now()
+    const past = new Date(time).getTime()
+    const diff = now - past
+    
+    const minute = 60 * 1000
+    const hour = 60 * minute
+    const day = 24 * hour
+    
+    if (diff < minute) return '刚刚'
+    if (diff < hour) return `${Math.floor(diff / minute)}分钟前`
+    if (diff < day) return `${Math.floor(diff / hour)}小时前`
+    if (diff < 7 * day) return `${Math.floor(diff / day)}天前`
+    
+    const date = new Date(time)
+    return `${date.getMonth() + 1}/${date.getDate()}`
+  } catch (error) {
+    return ''
+  }
+}
 </script>
 
 <style lang="scss" scoped>
-.page-container {
-  display: flex;
-  flex-direction: column;
+.leave-list-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+  background: linear-gradient(180deg, #f5f7fa 0%, #ffffff 100%);
 }
 
-.status-bar {
-  background: transparent;
-}
-
-.custom-navbar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20rpx 30rpx;
-}
-
-.navbar-content {
+// ==================== 导航栏 ====================
+.nav-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  height: 88rpx;
+  padding: 16rpx 32rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4rpx 24rpx rgba(102, 126, 234, 0.25);
 }
 
-.navbar-left,
-.navbar-right {
-  width: 80rpx;
-  height: 80rpx;
+.nav-left,
+.nav-right {
+  width: 72rpx;
+  height: 72rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 50%;
-  backdrop-filter: blur(10rpx);
-}
+  backdrop-filter: blur(20rpx);
+  transition: all 0.3s;
 
-.navbar-left .iconfont,
-.navbar-right .iconfont {
-  color: white;
-  font-size: 36rpx;
-  font-weight: bold;
-}
-
-.navbar-title {
-  flex: 1;
-  text-align: center;
-}
-
-.navbar-title text {
-  color: white;
-  font-size: 36rpx;
-  font-weight: bold;
-}
-
-.main-content {
-  flex: 1;
-  background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
-}
-
-.leave-list {
-  padding: 30rpx;
-  
-  .leave-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 24rpx;
-    background-color: #fff;
-    border-radius: 24rpx;
-    overflow: hidden;
-    box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
-    
-    &:active {
-      transform: scale(0.98);
-      box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
-    }
-    
-    .leave-content {
-      flex: 1;
-      padding: 30rpx;
-      
-      .leave-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24rpx;
-        
-        .leave-title {
-          font-size: 32rpx;
-          font-weight: 600;
-          color: #333;
-          flex: 1;
-          margin-right: 20rpx;
-        }
-        
-        .leave-status {
-          padding: 6rpx 20rpx;
-          border-radius: 20rpx;
-          
-          .status-text {
-            font-size: 24rpx;
-            color: #fff;
-            font-weight: 500;
-          }
-          
-          // 审批状态样式
-          &.status-pending {
-            background: linear-gradient(135deg, #ffa500, #ff8c00);  // 待审批 - 橙色渐变
-          }
-
-          &.status-approved {
-            background: linear-gradient(135deg, #52c41a, #389e0d);  // 已批准 - 绿色渐变
-          }
-
-          &.status-rejected {
-            background: linear-gradient(135deg, #ff4d4f, #cf1322);  // 已拒绝 - 红色渐变
-          }
-
-          &.status-cancelled {
-            background: linear-gradient(135deg, #6c757d, #545b62);  // 已取消 - 灰色渐变
-          }
-
-          // 离校状态样式
-          &.status-away {
-            background: linear-gradient(135deg, #1890ff, #096dd9);  // 离校中 - 蓝色渐变
-          }
-
-          &.status-returned {
-            background: linear-gradient(135deg, #52c41a, #389e0d);  // 已返校 - 绿色渐变
-          }
-
-          &.status-overdue {
-            background: linear-gradient(135deg, #ff4d4f, #cf1322);  // 逾期未返 - 红色渐变
-          }
-        }
-      }
-      
-      .leave-info {
-        .info-row {
-          display: flex;
-          margin-bottom: 16rpx;
-          align-items: center;
-          
-          .info-label {
-            width: 160rpx;
-            font-size: 28rpx;
-            color: #666;
-            flex-shrink: 0;
-          }
-          
-          .info-value {
-            flex: 1;
-            font-size: 28rpx;
-            color: #333;
-            font-weight: 500;
-          }
-        }
-        
-        .info-row:last-child {
-          margin-bottom: 0;
-        }
-      }
-      
-      .leave-actions {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: 24rpx;
-        padding-top: 24rpx;
-        border-top: 1rpx solid #f0f0f0;
-        
-        .action-btn {
-          margin-left: 20rpx;
-          padding: 14rpx 32rpx;
-          border-radius: 24rpx;
-          transition: all 0.3s ease;
-          
-          .btn-text {
-            font-size: 28rpx;
-            color: #fff;
-            font-weight: 500;
-          }
-          
-          &.cancel-btn {
-            background: linear-gradient(135deg, #ff4d4f, #cf1322);
-          }
-          
-          &.return-btn {
-            background: linear-gradient(135deg, #1890ff, #096dd9);
-          }
-          
-          &:active {
-            opacity: 0.8;
-            transform: scale(0.95);
-          }
-        }
-      }
-    }
-    
-    .leave-arrow {
-      display: flex;
-      align-items: center;
-      padding: 0 30rpx;
-      color: #999;
-      font-size: 36rpx;
-    }
+  &:active {
+    transform: scale(0.9);
+    background: rgba(255, 255, 255, 0.3);
   }
 }
 
-.empty-state {
+.nav-icon {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: white;
+}
+
+.nav-center {
+  flex: 1;
+  text-align: center;
+  padding: 0 20rpx;
+}
+
+.nav-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: white;
+  line-height: 1.3;
+}
+
+.nav-count {
+  display: block;
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 4rpx;
+}
+
+// ==================== 筛选区域 ====================
+.filter-section {
+  padding: 24rpx 0;
+  background: white;
+}
+
+.filter-scroll {
+  white-space: nowrap;
+  padding: 0 32rpx;
+}
+
+.filter-chip {
+  display: inline-block;
+  margin-right: 20rpx;
+  transition: all 0.3s;
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.chip-content {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 28rpx;
+  background: #f5f7fa;
+  border-radius: 48rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.3s;
+}
+
+.filter-active .chip-content {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 6rpx 20rpx rgba(102, 126, 234, 0.3);
+}
+
+.chip-icon {
+  font-size: 32rpx;
+  margin-right: 12rpx;
+}
+
+.chip-label {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.filter-active .chip-label {
+  color: white;
+}
+
+.chip-badge {
+  margin-left: 12rpx;
+  padding: 4rpx 12rpx;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #666;
+}
+
+.filter-active .chip-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+}
+
+// ==================== 搜索区域 ====================
+.search-section {
+  padding: 16rpx 32rpx;
+  background: white;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  height: 80rpx;
+  padding: 0 32rpx;
+  background: #f5f7fa;
+  border-radius: 48rpx;
+  transition: all 0.3s;
+
+  &:focus-within {
+    background: #eef2f7;
+    box-shadow: 0 0 0 4rpx rgba(102, 126, 234, 0.1);
+  }
+}
+
+.search-icon-left {
+  font-size: 32rpx;
+  margin-right: 16rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.search-clear {
+  font-size: 40rpx;
+  color: #999;
+  padding: 0 8rpx;
+  
+  &:active {
+    opacity: 0.6;
+  }
+}
+
+// ==================== 内容滚动区 ====================
+.content-scroll {
+  overflow: hidden;
+}
+
+.refresh-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30rpx;
+}
+
+.refresh-spinner {
+  width: 32rpx;
+  height: 32rpx;
+  border: 3rpx solid #f0f0f0;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 16rpx;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.refresh-text {
+  font-size: 26rpx;
+  color: #999;
+}
+
+// ==================== 列表容器 ====================
+.list-container {
+  padding: 0 32rpx 40rpx;
+}
+
+// 离校列表项
+.leave-item {
+  position: relative;
+  background: white;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  transition: all 0.3s;
+  animation: slideUp 0.5s ease-out backwards;
+
+  &:active {
+    transform: translateY(-4rpx);
+    box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+  }
+
+  &.priority-high {
+    border-left: 6rpx solid #ff6b6b;
+  }
+
+  &.priority-medium {
+    border-left: 6rpx solid #ffa502;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.overdue-flag {
+  position: absolute;
+  top: -8rpx;
+  right: 32rpx;
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+  border-radius: 50%;
+  box-shadow: 0 4rpx 16rpx rgba(255, 107, 107, 0.4);
+  font-size: 32rpx;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+// ==================== 卡片内容 ====================
+.item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.status-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  margin-right: 16rpx;
+  flex-shrink: 0;
+
+  &.dot-pending { background: #ffa502; }
+  &.dot-approved { background: #4caf50; }
+  &.dot-rejected { background: #f44336; }
+  &.dot-cancelled { background: #95a5a6; }
+  &.dot-away { background: #3498db; }
+  &.dot-returned { background: #4caf50; }
+  &.dot-overdue { background: #ff6b6b; }
+}
+
+.leave-id {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-tag {
+  padding: 10rpx 20rpx;
+  border-radius: 24rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &.tag-pending { background: #fff4e6; color: #ff9500; }
+  &.tag-approved { background: #e8f5e9; color: #4caf50; }
+  &.tag-rejected { background: #ffebee; color: #f44336; }
+  &.tag-cancelled { background: #f5f5f5; color: #999; }
+  &.tag-away { background: #e3f2fd; color: #2196f3; }
+  &.tag-returned { background: #e8f5e9; color: #4caf50; }
+  &.tag-overdue { background: #ffebee; color: #ff6b6b; }
+}
+
+.item-body {
+  margin-bottom: 20rpx;
+}
+
+.body-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.destination-row {
+  margin-bottom: 20rpx;
+}
+
+.row-icon {
+  font-size: 28rpx;
+  margin-right: 12rpx;
+  flex-shrink: 0;
+}
+
+.row-text {
+  font-size: 28rpx;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.destination-text {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.reason-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+}
+
+.time-section {
+  display: flex;
+  align-items: center;
+  padding: 20rpx;
+  background: linear-gradient(135deg, #f5f7fa, #eef2f7);
+  border-radius: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.time-row {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.time-icon {
+  font-size: 28rpx;
+  margin-right: 12rpx;
+  flex-shrink: 0;
+}
+
+.time-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.time-label {
+  font-size: 22rpx;
+  color: #999;
+  margin-bottom: 6rpx;
+}
+
+.time-value {
+  font-size: 26rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.time-arrow {
+  font-size: 28rpx;
+  color: #667eea;
+  margin: 0 16rpx;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #f5f7fa;
+}
+
+.footer-time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.footer-arrow {
+  font-size: 40rpx;
+  color: #d9d9d9;
+  font-weight: bold;
+}
+
+// ==================== 操作按钮 ====================
+.item-actions {
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #f5f7fa;
+}
+
+.action-group {
+  display: flex;
+  gap: 16rpx;
+}
+
+.action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 72rpx;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  transition: all 0.3s;
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.btn-icon {
+  font-size: 32rpx;
+  margin-right: 8rpx;
+}
+
+.btn-cancel {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+  color: white;
+  box-shadow: 0 4rpx 16rpx rgba(255, 107, 107, 0.3);
+}
+
+.btn-return {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 4rpx 16rpx rgba(102, 126, 234, 0.3);
+}
+
+// ==================== 空状态 ====================
+.empty-container {
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 120rpx 48rpx;
+  text-align: center;
+}
+
+.empty-animation {
+  width: 160rpx;
+  height: 160rpx;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  padding: 160rpx 40rpx;
-  text-align: center;
-  
-  .empty-icon {
-    font-size: 120rpx;
-    margin-bottom: 40rpx;
-  }
-  
-  .empty-text {
-    font-size: 32rpx;
-    color: #666;
-    margin-bottom: 50rpx;
-    font-weight: 500;
-  }
-  
-  .empty-btn {
-    padding: 24rpx 80rpx;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 50rpx;
-    box-shadow: 0 8rpx 32rpx rgba(102, 126, 234, 0.3);
-    transition: all 0.3s ease;
-    
-    .btn-text {
-      font-size: 30rpx;
-      color: #fff;
-      font-weight: 600;
-    }
-    
-    &:active {
-      transform: scale(0.95);
-      box-shadow: 0 4rpx 16rpx rgba(102, 126, 234, 0.2);
-    }
-  }
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  border-radius: 50%;
+  margin-bottom: 32rpx;
+  animation: float 3s ease-in-out infinite;
 }
 
-.loading-more, .no-more {
-  text-align: center;
-  padding: 40rpx 0;
-  
-  .loading-text, .no-more-text {
-    font-size: 28rpx;
-    color: #999;
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-16rpx); }
+}
+
+.empty-emoji {
+  font-size: 80rpx;
+}
+
+.empty-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.empty-desc {
+  font-size: 26rpx;
+  color: #999;
+  margin-bottom: 48rpx;
+}
+
+.empty-action {
+  padding: 24rpx 64rpx;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 48rpx;
+  color: white;
+  font-size: 28rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.3);
+
+  &:active {
+    transform: scale(0.95);
   }
 }
 
-/* 骨架屏加载动画 */
-.loading-more {
-  .loading-text::after {
-    content: '';
-    display: inline-block;
-    width: 20rpx;
-    animation: loading-dots 1.5s infinite;
-  }
+// ==================== 加载状态 ====================
+.loading-more,
+.no-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+  font-size: 26rpx;
+  color: #999;
 }
 
-@keyframes loading-dots {
-  0%, 20% {
-    content: '.';
-  }
-  40% {
-    content: '..';
-  }
-  60%, 100% {
-    content: '...';
-  }
+.loading-spinner {
+  width: 28rpx;
+  height: 28rpx;
+  border: 3rpx solid #f0f0f0;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 12rpx;
 }
 
-/* 全局交互效果 */
-:active {
-  opacity: 0.9;
-}
-
-/* 优化按钮点击效果 */
-.back-btn,
-.add-btn,
-.empty-btn,
-.action-btn {
-  -webkit-tap-highlight-color: transparent;
-  tap-highlight-color: transparent;
-}
-
-/* 滚动条美化 */
-.main-content::-webkit-scrollbar {
-  width: 6rpx;
-}
-
-.main-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.main-content::-webkit-scrollbar-thumb {
-  background: rgba(102, 126, 234, 0.3);
-  border-radius: 3rpx;
-}
-
-.main-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(102, 126, 234, 0.5);
+.loading-text {
+  font-size: 26rpx;
+  color: #999;
 }
 </style>

@@ -95,7 +95,7 @@ spring:
   # RabbitMQ 配置
   rabbitmq:
     # 服务器地址
-    host: 172.18.208.53
+    host: 172.18.192.203
     # 端口
     port: 5672
     # 用户名
@@ -198,7 +198,7 @@ xss:
 
 # Minio配置
 minio:
-  url: http://172.18.208.53:9005
+  url: http://172.18.192.203:9005
   accessKey: root
   secretKey: 12345678
   bucketName: test
@@ -220,7 +220,7 @@ mqtt:
   # 是否启用MQTT服务
   enabled: true
   # MQTT Broker 地址
-  broker-url: tcp://172.18.208.53:1883
+  broker-url: tcp://172.18.192.203:1883
   # 客户端ID
   client-id: dorm-smoke-client
   # MQTT 用户名（可选）
@@ -237,7 +237,7 @@ influxdb:
   # 是否启用InfluxDB服务
   enabled: true
   # InfluxDB服务器地址
-  url: http://172.18.208.53:8086
+  url: http://172.18.192.203:8086
   # 访问令牌
   token: 2OO6DUscgbQSosUjhqFnU2DiZgS_ivpBBP-DK2uXjN-UGM_a8NeUaFokz315k0QoV6LK2SeUgAq-2XxZH_z8rg==
   # 组织名称

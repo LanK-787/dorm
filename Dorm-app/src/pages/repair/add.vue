@@ -4,15 +4,14 @@
     <view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
 
     <!-- 头部区域 -->
-    <view class="header">
-      <view class="header-content">
-        <view class="back-btn" @click="goBack">
-          <text class="iconfont icon-back">‹</text>
+    <view class="custom-navbar">
+      <view class="navbar-content">
+        <view class="navbar-left" @click="goBack">
+          <text class="iconfont icon-arrow-left">‹</text>
         </view>
-        <view class="header-title">
-          <text class="title-text">提交报修</text>
+        <view class="navbar-title">
+          <text>提交报修</text>
         </view>
-        <view class="header-placeholder"></view>
       </view>
     </view>
 
@@ -515,46 +514,46 @@ onMounted(() => {
   background: transparent;
 }
 
-.header {
+.custom-navbar {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20rpx 30rpx 40rpx;
+  padding: 20rpx 30rpx;
 }
 
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.back-btn {
-  width: 80rpx;
-  height: 80rpx;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
+.navbar-content {
   display: flex;
   align-items: center;
   justify-content: center;
+  height: 88rpx;
+  position: relative;
+}
+
+.navbar-left {
+  position: absolute;
+  left: 0;
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
   backdrop-filter: blur(10rpx);
 }
 
-.back-btn .iconfont {
-  color: white;
-  font-size: 32rpx;
-}
-
-.header-title {
-  flex: 1;
-  text-align: center;
-}
-
-.title-text {
+.navbar-left .iconfont {
   color: white;
   font-size: 36rpx;
   font-weight: bold;
 }
 
-.header-placeholder {
-  width: 80rpx;
+.navbar-title {
+  text-align: center;
+}
+
+.navbar-title text {
+  color: white;
+  font-size: 36rpx;
+  font-weight: bold;
 }
 
 .main-content {

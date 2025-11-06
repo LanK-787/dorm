@@ -2,13 +2,17 @@ import config from '@/config'
 import { getToken } from '@/utils/auth'
 import errorCode from '@/utils/errorCode'
 import {toast, showConfirm, tansParams, uniToastErr, sprintf} from '@/utils/common'
-import useUserStore from "@/store/modules/user";
+import useUserStore from "@/store/modules/user"
+import useStudentStore from "@/store/modules/student"
+import useRepairerStore from "@/store/modules/repairer"
 
 let timeout = 10000
 const baseUrl = config.baseUrl
 
 const request = config => {
   const userStore = useUserStore()
+  const studentStore = useStudentStore()
+  const repairerStore = useRepairerStore()
   // 是否需要设置 token
   config.header = config?.header || {}
   const isToken = config.headers?.isToken === false
@@ -46,6 +50,9 @@ const request = config => {
             showConfirm('登录状态已过期，您可以继续留在该页面，或者重新登录?').then(res => {
               if (res.confirm) {
                 userStore.LogOut().then(res => {
+                  // 清空学生和维修人员信息
+                  studentStore.clearCurrentStudent()
+                  repairerStore.clearCurrentRepairer()
                   uni.reLaunch({ url: '/pages/login' })
                 })
               }

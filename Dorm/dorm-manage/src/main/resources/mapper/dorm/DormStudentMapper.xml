@@ -16,6 +16,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="email"    column="email"    />
         <result property="delFlag"    column="del_flag"    />
         <result property="dormId"    column="dorm_id"    />
+        <result property="dormFullName"    column="dorm_full_name"    />
         <result property="createBy"    column="create_by"    />
         <result property="createTime"    column="create_time"    />
         <result property="updateBy"    column="update_by"    />
@@ -24,7 +25,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectDormStudentVo">
-        select student_id, user_id, student_no, name, gender, class_name, phone, status, email, del_flag, dorm_id, create_by, create_time, update_by, update_time, remark from dorm_student
+        select ds.student_id, ds.user_id, ds.student_no, ds.name, ds.gender, ds.class_name, ds.phone, ds.status, ds.email, ds.del_flag, ds.dorm_id, db.full_name as dorm_full_name, ds.create_by, ds.create_time, ds.update_by, ds.update_time, ds.remark 
+        from dorm_student ds
+        left join dorm_building db on ds.dorm_id = db.dorm_id and db.del_flag = '0'
     </sql>
 
     <!-- 宿舍子树查询片段 -->
@@ -42,32 +45,33 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectDormStudentList" parameterType="DormStudent" resultMap="DormStudentResult">
         <include refid="selectDormStudentVo"/>
         <where>  
-            <if test="userId != null "> and user_id = #{userId}</if>
-            <if test="studentNo != null  and studentNo != ''"> and student_no = #{studentNo}</if>
-            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
-            <if test="gender != null  and gender != ''"> and gender = #{gender}</if>
-            <if test="className != null  and className != ''"> and class_name like concat('%', #{className}, '%')</if>
-            <if test="phone != null  and phone != ''"> and phone = #{phone}</if>
-            <if test="status != null  and status != ''"> and status = #{status}</if>
-            <if test="email != null  and email != ''"> and email = #{email}</if>
+            <if test="userId != null "> and ds.user_id = #{userId}</if>
+            <if test="studentNo != null  and studentNo != ''"> and ds.student_no = #{studentNo}</if>
+            <if test="name != null  and name != ''"> and ds.name like concat('%', #{name}, '%')</if>
+            <if test="gender != null  and gender != ''"> and ds.gender = #{gender}</if>
+            <if test="className != null  and className != ''"> and ds.class_name like concat('%', #{className}, '%')</if>
+            <if test="phone != null  and phone != ''"> and ds.phone = #{phone}</if>
+            <if test="status != null  and status != ''"> and ds.status = #{status}</if>
+            <if test="email != null  and email != ''"> and ds.email = #{email}</if>
             <if test="dormId != null">
-                and dorm_id IN (
+                and ds.dorm_id IN (
                     <include refid="dormIdSubtree"/>
                 )
             </if>
-            and del_flag = '0'
+            and ds.del_flag = '0'
         </where>
     </select>
     
     <select id="selectDormStudentByStudentId" parameterType="Long" resultMap="DormStudentResult">
         <include refid="selectDormStudentVo"/>
-        where student_id = #{studentId}
+        where ds.student_id = #{studentId}
     </select>
 
     <select id="selectDormStudentByUserName" parameterType="String" resultMap="DormStudentResult">
-        select ds.student_id, ds.user_id, ds.student_no, ds.name, ds.gender, ds.class_name, ds.phone, ds.status, ds.email, ds.del_flag, ds.dorm_id, ds.create_by, ds.create_time, ds.update_by, ds.update_time, ds.remark
+        select ds.student_id, ds.user_id, ds.student_no, ds.name, ds.gender, ds.class_name, ds.phone, ds.status, ds.email, ds.del_flag, ds.dorm_id, db.full_name as dorm_full_name, ds.create_by, ds.create_time, ds.update_by, ds.update_time, ds.remark
         from dorm_student ds
         inner join sys_user su on ds.user_id = su.user_id
+        left join dorm_building db on ds.dorm_id = db.dorm_id and db.del_flag = '0'
         where su.user_name = #{userName} and ds.del_flag = '0' and su.del_flag = '0'
     </select>
 

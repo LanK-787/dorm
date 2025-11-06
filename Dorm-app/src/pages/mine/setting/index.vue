@@ -34,6 +34,7 @@
   import { ref, getCurrentInstance } from 'vue'
   import useUserStore from '@/store/modules/user'
   import useStudentStore from '@/store/modules/student'
+  import useRepairerStore from '@/store/modules/repairer'
 
   // 获取当前实例以访问全局属性
   const { proxy } = getCurrentInstance()
@@ -43,6 +44,9 @@
 
   // 获取学生store实例
   const studentStore = useStudentStore()
+
+  // 获取维修人员store实例
+  const repairerStore = useRepairerStore()
 
   // 响应式数据
   const windowHeight = ref(uni.getSystemInfoSync().windowHeight)
@@ -63,8 +67,9 @@
   const handleLogout = () => {
     proxy.$modal.confirm('确定注销并退出系统吗？').then(() => {
       userStore.LogOut().then(() => {
-        // 清空当前学生信息
+        // 清空当前学生信息和维修人员信息
         studentStore.clearCurrentStudent()
+        repairerStore.clearCurrentRepairer()
       }).finally(() => {
         proxy.$tab.reLaunch('/pages/index')
       })

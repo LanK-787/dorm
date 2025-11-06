@@ -57,6 +57,10 @@ public class DormStudent extends BaseEntity
     @Excel(name = "当前宿舍ID → dorm_room.room_id")
     private Long dormId;
 
+    /** 宿舍全称 */
+    @Excel(name = "宿舍全称")
+    private String dormFullName;
+
     public void setStudentId(Long studentId) 
     {
         this.studentId = studentId;
@@ -167,6 +171,16 @@ public class DormStudent extends BaseEntity
         return dormId;
     }
 
+    public void setDormFullName(String dormFullName) 
+    {
+        this.dormFullName = dormFullName;
+    }
+
+    public String getDormFullName() 
+    {
+        return dormFullName;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -181,6 +195,7 @@ public class DormStudent extends BaseEntity
             .append("email", getEmail())
             .append("delFlag", getDelFlag())
             .append("dormId", getDormId())
+            .append("dormFullName", getDormFullName())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

@@ -1,40 +1,56 @@
 <template>
   <view class="normal-login-container">
-    <view class="logo-content align-center justify-center flex">
-      <image style="width: 100rpx;height: 100rpx;" :src="globalConfig.appInfo.logo" mode="widthFix">
-      </image>
-      <text class="title">智慧宿舍</text>
-    </view>
-    <view class="login-form-content">
-      <view class="input-item flex align-center">
-        <view class="iconfont icon-user icon"></view>
-        <input v-model="loginForm.username" class="input" type="text" placeholder="请输入账号" maxlength="30" />
+    <!-- 背景图片 -->
+    <image class="background-image" src="/static/images/background.png" mode="aspectFill"></image>
+    
+    <!-- 遮罩层 -->
+    <view class="overlay"></view>
+    
+    <!-- 内容区域 -->
+    <view class="content-wrapper">
+      <view class="logo-content align-center justify-center flex">
+        <image class="logo-img" :src="globalConfig.appInfo.logo" mode="widthFix"></image>
+        <text class="title">智慧宿舍</text>
       </view>
-      <view class="input-item flex align-center">
-        <view class="iconfont icon-password icon"></view>
-        <input v-model="loginForm.password" type="password" class="input" placeholder="请输入密码" maxlength="20" />
-      </view>
-      <view class="input-item flex align-center" style="width: 60%;margin: 0px;" v-if="captchaEnabled">
-        <view class="iconfont icon-code icon"></view>
-        <input v-model="loginForm.code" type="number" class="input" placeholder="请输入验证码" maxlength="4" />
-        <view class="login-code"> 
-          <image :src="codeUrl" @click="getCode" class="login-code-img"></image>
+      
+      <view class="login-form-content">
+        <view class="form-card">
+          <view class="input-item flex align-center">
+            <view class="iconfont icon-user icon"></view>
+            <input v-model="loginForm.username" class="input" type="text" placeholder="请输入账号" maxlength="30" />
+          </view>
+          
+          <view class="input-item flex align-center">
+            <view class="iconfont icon-password icon"></view>
+            <input v-model="loginForm.password" type="password" class="input" placeholder="请输入密码" maxlength="20" />
+          </view>
+          
+          <view class="input-item flex align-center captcha-item" v-if="captchaEnabled">
+            <view class="iconfont icon-code icon"></view>
+            <input v-model="loginForm.code" type="number" class="input" placeholder="请输入验证码" maxlength="4" />
+            <view class="login-code"> 
+              <image :src="codeUrl" @click="getCode" class="login-code-img"></image>
+            </view>
+          </view>
+          
+          <view class="action-btn">
+            <button @click="handleLogin" class="login-btn cu-btn block lg round">登录</button>
+          </view>
+          
+          <view class="reg text-center" v-if="register">
+            <text class="text-grey1">没有账号？</text>
+            <text @click="handleUserRegister" class="text-blue">立即注册</text>
+          </view>
+        </view>
+        
+        <view class="xieyi text-center">
+          <text class="text-white-light">登录即代表同意</text>
+          <text @click="handleUserAgrement" class="text-white">《用户协议》</text>
+          <text class="text-white-light"> 和 </text>
+          <text @click="handlePrivacy" class="text-white">《隐私协议》</text>
         </view>
       </view>
-      <view class="action-btn">
-        <button @click="handleLogin" class="login-btn cu-btn block bg-blue lg round">登录</button>
-      </view>
-      <view class="reg text-center" v-if="register">
-        <text class="text-grey1">没有账号？</text>
-        <text @click="handleUserRegister" class="text-blue">立即注册</text>
-      </view>
-      <view class="xieyi text-center">
-        <text class="text-grey1">登录即代表同意</text>
-        <text @click="handleUserAgrement" class="text-blue">《用户协议》</text>
-        <text @click="handlePrivacy" class="text-blue">《隐私协议》</text>
-      </view>
     </view>
-     
   </view>
 </template>
 
@@ -43,6 +59,7 @@
   import { getCodeImg } from '@/api/login'
   import useUserStore from '@/store/modules/user'
   import useRepairerStore from '@/store/modules/repairer'
+  import useStudentStore from '@/store/modules/student'
   import { isStudent, isStudentInfoFilled } from '@/api/dorm/student'
 
 
@@ -84,6 +101,7 @@
   // Pinia store
   const userStore = useUserStore()
   const repairerStore = useRepairerStore()
+  const studentStore = useStudentStore()
 
   // 生命周期钩子
   onMounted(() => {
@@ -170,9 +188,37 @@
     }
   }
 
+  // 显示个性化欢迎弹窗
+  const showWelcomeModal = (userName, userType) => {
+    let welcomeMessage = ''
+    
+    if (userType === 'student') {
+      welcomeMessage = `欢迎回来，${userName}同学！\n祝你学习进步，生活愉快～`
+    } else if (userType === 'repairer') {
+      welcomeMessage = `欢迎回来，${userName}维修师傅！\n感谢您的辛勤付出～`
+    } else {
+      welcomeMessage = `欢迎回来，${userName}！\n祝你工作顺利～`
+    }
+    
+    // 先跳转到首页
+    proxy.$tab.reLaunch('/pages/index')
+    
+    // 跳转后立即显示欢迎提示
+    uni.showToast({
+      title: welcomeMessage,
+      icon: 'none',
+      duration: 2500,
+      mask: false
+    })
+  }
+
   // 登录成功后，处理函数
   const loginSuccess = async () => {
     try {
+      // 清空之前的用户相关数据，避免数据混乱
+      studentStore.clearCurrentStudent()
+      repairerStore.clearCurrentRepairer()
+      
       // 设置用户信息
       userStore.GetInfo().then(async () => {
         try {
@@ -190,13 +236,17 @@
             // 是学生账号，检查学生信息是否完整
             const studentInfo = await isStudentInfoFilled(loginForm.username)
             if(studentInfo.data){
-              // 学生信息已完善
-              proxy.$modal.msgSuccess('学生账号登录成功')
-
-              // 基于用户类型的差异化处理逻辑
-              if (isStudentAccount.value) {
-                // 学生账号的处理逻辑
-                proxy.$tab.reLaunch('/pages/index')
+              // 学生信息已完善，获取学生详细信息
+              try {
+                const studentDetail = await studentStore.fetchStudentDetail()
+                const studentName = studentDetail?.name || loginForm.username
+                
+                // 显示学生欢迎弹窗
+                showWelcomeModal(studentName, 'student')
+              } catch (error) {
+                console.error('获取学生详细信息失败:', error)
+                // 降级处理：使用用户名显示欢迎信息
+                showWelcomeModal(loginForm.username, 'student')
               }
             } else {
               // 学生信息未完善，引导用户完善信息
@@ -211,13 +261,23 @@
           } else {
             // 非学生账号，检查是否为维修人员
             if (userStore.roles && userStore.roles.includes('repairer')) {
-              proxy.$modal.msgSuccess('维修人员账号登录成功')
+              // 获取维修人员详细信息
+              try {
+                const repairerData = await repairerStore.fetchRepairerByUserId(userStore.id)
+                const repairerName = repairerData?.name || userStore.nickName || loginForm.username
+                
+                // 显示维修人员欢迎弹窗
+                showWelcomeModal(repairerName, 'repairer')
+              } catch (error) {
+                console.error('获取维修人员详细信息失败:', error)
+                // 降级处理：使用昵称或用户名显示欢迎信息
+                showWelcomeModal(userStore.nickName || loginForm.username, 'repairer')
+              }
             } else {
-              proxy.$modal.msgSuccess('管理员账号登录成功')
+              // 管理员账号
+              const adminName = userStore.nickName || loginForm.username
+              showWelcomeModal(adminName, 'admin')
             }
-
-            // 跳转到首页
-            proxy.$tab.reLaunch('/pages/index')
           }
         } catch (detectionError) {
           console.error('账号检测失败:', detectionError)
@@ -278,81 +338,226 @@
 
 <style lang="scss" scoped>
   page {
-    background-color: #ffffff;
+    background-color: #1a1a2e;
   }
 
   .normal-login-container {
+    position: relative;
     width: 100%;
+    min-height: 100vh;
+    overflow: hidden;
+
+    // 背景图片
+    .background-image {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    // 遮罩层 - 添加渐变遮罩增强可读性
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        180deg,
+        rgba(26, 26, 46, 0.3) 0%,
+        rgba(26, 26, 46, 0.5) 50%,
+        rgba(26, 26, 46, 0.7) 100%
+      );
+      z-index: 1;
+    }
+
+    // 内容区域
+    .content-wrapper {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
     .logo-content {
       width: 100%;
-      font-size: 21px;
+      font-size: 24px;
+      font-weight: bold;
       text-align: center;
-      padding-top: 15%;
+      padding-top: 20%;
+      padding-bottom: 40rpx;
+      animation: fadeInDown 0.8s ease-out;
 
-      image {
-        border-radius: 4px;
+      .logo-img {
+        width: 120rpx;
+        height: 120rpx;
+        border-radius: 20rpx;
+        box-shadow: 0 8rpx 32rpx rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10rpx);
+        padding: 10rpx;
       }
 
       .title {
-        margin-left: 10px;
+        margin-left: 20rpx;
+        color: #ffffff;
+        text-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.3);
+        letter-spacing: 2rpx;
       }
     }
 
     .login-form-content {
       text-align: center;
-      margin: 20px auto;
-      margin-top: 15%;
-      width: 80%;
+      margin: 0 auto;
+      width: 85%;
+      animation: fadeInUp 0.8s ease-out;
+
+      .form-card {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(20rpx);
+        border-radius: 40rpx;
+        padding: 60rpx 40rpx 50rpx;
+        box-shadow: 0 16rpx 64rpx rgba(0, 0, 0, 0.3);
+        border: 1rpx solid rgba(255, 255, 255, 0.18);
+      }
 
       .input-item {
-        margin: 20px auto;
-        background-color: #f5f6f7;
-        height: 45px;
-        border-radius: 20px;
+        margin: 30rpx auto;
+        background: rgba(255, 255, 255, 0.9);
+        height: 90rpx;
+        border-radius: 45rpx;
+        transition: all 0.3s ease;
+        box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+
+        &:hover {
+          box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
+          transform: translateY(-2rpx);
+        }
 
         .icon {
-          font-size: 38rpx;
-          margin-left: 10px;
-          color: #999;
+          font-size: 40rpx;
+          margin-left: 30rpx;
+          color: #666;
+          flex-shrink: 0;
         }
 
         .input {
           width: 100%;
-          font-size: 14px;
-          line-height: 20px;
+          font-size: 28rpx;
+          line-height: 40rpx;
           text-align: left;
-          padding-left: 15px;
+          padding-left: 20rpx;
+          padding-right: 20rpx;
+          color: #333;
         }
+      }
 
+      .captcha-item {
+        width: 100%;
+        padding-right: 20rpx;
+
+        .input {
+          flex: 1;
+          padding-right: 10rpx;
+        }
+      }
+
+      .login-code {
+        height: 76rpx;
+        margin-left: 20rpx;
+        flex-shrink: 0;
+
+        .login-code-img {
+          height: 70rpx;
+          width: 200rpx;
+          border-radius: 12rpx;
+          border: 1rpx solid rgba(0, 0, 0, 0.1);
+          cursor: pointer;
+          transition: all 0.3s ease;
+
+          &:active {
+            opacity: 0.8;
+            transform: scale(0.95);
+          }
+        }
       }
 
       .login-btn {
-        margin-top: 40px;
-        height: 45px;
+        margin-top: 50rpx;
+        height: 90rpx;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff;
+        font-size: 32rpx;
+        font-weight: bold;
+        border: none;
+        box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.4);
+        transition: all 0.3s ease;
+
+        &:active {
+          transform: translateY(2rpx);
+          box-shadow: 0 4rpx 12rpx rgba(102, 126, 234, 0.3);
+        }
       }
-      
+
       .reg {
-        margin-top: 15px;
+        margin-top: 30rpx;
+        font-size: 26rpx;
+
+        .text-grey1 {
+          color: #888;
+        }
+
+        .text-blue {
+          color: #667eea;
+          font-weight: bold;
+          margin-left: 10rpx;
+        }
       }
-      
+
       .xieyi {
-        color: #333;
-        margin-top: 20px;
-      }
-      
-      .login-code {
-        height: 38px;
-        float: right;
-      
-        .login-code-img {
-          height: 38px;
-          position: absolute;
-          margin-left: 10px;
-          width: 200rpx;
+        margin-top: 50rpx;
+        font-size: 24rpx;
+        padding: 0 20rpx;
+
+        .text-white-light {
+          color: rgba(255, 255, 255, 0.7);
+        }
+
+        .text-white {
+          color: #ffffff;
+          font-weight: bold;
+          text-decoration: underline;
+          margin: 0 4rpx;
         }
       }
     }
   }
 
+  // 动画效果
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-40rpx);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(40rpx);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 </style>
+

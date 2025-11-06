@@ -61,6 +61,7 @@
                 </template>
               </el-table-column>
               <el-table-column label="班级名称" align="center" prop="className" :show-overflow-tooltip="true" />
+              <el-table-column label="宿舍全称" align="center" prop="dormFullName" :show-overflow-tooltip="true" />
               <el-table-column label="手机号码" align="center" prop="phone" width="120" />
               <el-table-column label="邮箱地址" align="center" prop="email" :show-overflow-tooltip="true" />
               <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150">

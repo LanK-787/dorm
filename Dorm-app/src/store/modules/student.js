@@ -49,6 +49,44 @@ const useStudentStore = defineStore('studentStore', {
     clearCurrentStudent() {
       this.currentStudent = null
     }
+  },
+
+  // 配置持久化
+  persist: {
+    key: 'studentStore',
+    storage: {
+      getItem: (key) => {
+        try {
+          return uni.getStorageSync(key)
+        } catch (error) {
+          console.error('获取学生存储数据失败:', error)
+          return null
+        }
+      },
+      setItem: (key, value) => {
+        try {
+          uni.setStorageSync(key, value)
+        } catch (error) {
+          console.error('保存学生存储数据失败:', error)
+        }
+      },
+      removeItem: (key) => {
+        try {
+          uni.removeStorageSync(key)
+        } catch (error) {
+          console.error('删除学生存储数据失败:', error)
+        }
+      }
+    },
+    // 指定需要持久化的状态字段
+    paths: ['currentStudent'],
+    // 在状态恢复后进行数据处理
+    afterRestore: (context) => {
+      console.log('学生状态恢复完成')
+      if (context.store.currentStudent) {
+        console.log('已恢复学生信息:', context.store.currentStudent.name)
+      }
+    }
   }
 })
 
