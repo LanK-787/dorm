@@ -15,7 +15,7 @@ import com.dorm.common.utils.StringUtils;
 import com.dorm.common.utils.uuid.Seq;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.web.multipart.MultipartFile;
-import com.dorm.common.config.MinioConfig;
+import com.dorm.common.config.QiniuConfig;
 
 
 /**
@@ -41,9 +41,9 @@ public class FileUploadUtils
     private static String defaultBaseDir = RuoYiConfig.getProfile();
 
     /**
-     * Minio默认上传的地址
+     * 七牛云默认上传的空间名称
      */
-    private static String bucketName = MinioConfig.getBucketName();
+    private static String bucketName = QiniuConfig.getBucketName();
 
     public static void setDefaultBaseDir(String defaultBaseDir)
     {
@@ -131,17 +131,17 @@ public class FileUploadUtils
     }
 
     /**
-     * 以默认BucketName配置上传到Minio服务器
+     * 以默认BucketName配置上传到七牛云服务器
      *
      * @param file 上传的文件
      * @return 文件名称
      * @throws Exception
      */
-    public static final String uploadMinio(MultipartFile file) throws IOException
+    public static final String uploadQiniu(MultipartFile file) throws IOException
     {
         try
         {
-            return uploadMinino(getBucketName(), file, MimeTypeUtils.DEFAULT_ALLOWED_EXTENSION);
+            return uploadQiniuInternal(getBucketName(), file, MimeTypeUtils.DEFAULT_ALLOWED_EXTENSION);
         }
         catch (Exception e)
         {
@@ -150,17 +150,17 @@ public class FileUploadUtils
     }
 
     /**
-     * 自定义bucketName配置上传到Minio服务器
+     * 自定义bucketName配置上传到七牛云服务器
      *
      * @param file 上传的文件
      * @return 文件名称
      * @throws Exception
      */
-    public static final String uploadMinio(MultipartFile file, String bucketName) throws IOException
+    public static final String uploadQiniu(MultipartFile file, String bucketName) throws IOException
     {
         try
         {
-            return uploadMinino(bucketName, file, MimeTypeUtils.DEFAULT_ALLOWED_EXTENSION);
+            return uploadQiniuInternal(bucketName, file, MimeTypeUtils.DEFAULT_ALLOWED_EXTENSION);
         }
         catch (Exception e)
         {
@@ -169,17 +169,17 @@ public class FileUploadUtils
     }
 
     /**
-     * 上传头像到MinIO，使用安全的文件命名策略
+     * 上传头像到七牛云，使用安全的文件命名策略
      *
      * @param file 头像文件
-     * @return MinIO文件URL
+     * @return 七牛云文件URL
      * @throws IOException
      */
-    public static final String uploadAvatarToMinio(MultipartFile file) throws IOException
+    public static final String uploadAvatarToQiniu(MultipartFile file) throws IOException
     {
         try
         {
-            return uploadMinioWithBusinessType(getBucketName(), file, "avatar", MimeTypeUtils.IMAGE_EXTENSION);
+            return uploadQiniuWithBusinessType(getBucketName(), file, "avatar", MimeTypeUtils.IMAGE_EXTENSION);
         }
         catch (Exception e)
         {
@@ -188,9 +188,9 @@ public class FileUploadUtils
     }
 
     /**
-     * 上传文件到MinIO，支持指定业务类型
+     * 上传文件到七牛云，支持指定业务类型
      */
-    private static final String uploadMinioWithBusinessType(String bucketName, MultipartFile file,
+    private static final String uploadQiniuWithBusinessType(String bucketName, MultipartFile file,
             String businessType, String[] allowedExtension)
             throws FileSizeLimitExceededException, IOException, FileNameLengthLimitExceededException,
             InvalidExtensionException
@@ -204,7 +204,7 @@ public class FileUploadUtils
         try
         {
             String fileName = extractSecureFilename(file, businessType);
-            String pathFileName = MinioUtil.uploadFile(bucketName, fileName, file);
+            String pathFileName = QiniuUtil.uploadFile(bucketName, fileName, file);
             return pathFileName;
         }
         catch (Exception e)
@@ -213,7 +213,7 @@ public class FileUploadUtils
         }
     }
 
-    private static final String uploadMinino(String bucketName, MultipartFile file, String[] allowedExtension)
+    private static final String uploadQiniuInternal(String bucketName, MultipartFile file, String[] allowedExtension)
             throws FileSizeLimitExceededException, IOException, FileNameLengthLimitExceededException,
             InvalidExtensionException
     {
@@ -226,7 +226,7 @@ public class FileUploadUtils
         try
         {
             String fileName = extractFilename(file);
-            String pathFileName = MinioUtil.uploadFile(bucketName, fileName, file);
+            String pathFileName = QiniuUtil.uploadFile(bucketName, fileName, file);
             return pathFileName;
         }
         catch (Exception e)

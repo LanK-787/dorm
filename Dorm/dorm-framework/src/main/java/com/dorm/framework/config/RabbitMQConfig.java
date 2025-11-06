@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * RabbitMQ配置类
  * 
- * @author dorm
+ * @author 王新瑜
  */
 @Configuration
 public class RabbitMQConfig {

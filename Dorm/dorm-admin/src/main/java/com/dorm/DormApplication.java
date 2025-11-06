@@ -15,20 +15,22 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @SpringBootApplication(exclude = { DataSourceAutoConfiguration.class }, 
     scanBasePackages = {"com.dorm"})
-public class RuoYiApplication
+public class DormApplication
 {
     public static void main(String[] args)
     {
-        SpringApplication.run(RuoYiApplication.class, args);
-        System.out.println("(♥◠‿◠)ﾉﾞ  宿舍管理系统启动成功   ლ(´ڡ`ლ)ﾞ  \n" +
-                " .-------.       ____     __        \n" +
-                " |  _ _   \\      \\   \\   /  /    \n" +
-                " | ( ' )  |       \\  _. /  '       \n" +
-                " |(_ o _) /        _( )_ .'         \n" +
-                " | (_,_).' __  ___(_ o _)'          \n" +
-                " |  |\\ \\  |  ||   |(_,_)'         \n" +
-                " |  | \\ `'   /|   `-'  /           \n" +
-                " |  |  \\    /  \\      /           \n" +
-                " ''-'   `'-'    `-..-'              ");
+        SpringApplication.run(DormApplication.class, args);
+        System.out.println(
+                "╔══════════════════════════════════════════╗\n" +
+                        "║ ██████╗  ██████╗ ██████╗ ███╗   ███╗    ║\n" +
+                        "║ ██╔══██╗██╔═══██╗██╔══██╗████╗ ████║    ║\n" +
+                        "║ ██║  ██║██║   ██║██████╔╝██╔████╔██║    ║\n" +
+                        "║ ██║  ██║██║   ██║██╔══██╗██║╚██╔╝██║    ║\n" +
+                        "║ ███████║╚██████╔╝██║  ██║██║ ╚═╝ ██║    ║\n" +
+                        "║ ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝    ║\n" +
+                        "║                                          ║\n" +
+                        "║          宿舍管理系统启动成功             ║\n" +
+                        "╚══════════════════════════════════════════╝"
+        );
     }
 }

@@ -196,12 +196,12 @@ xss:
   urlPatterns: /system/*,/monitor/*,/tool/*
 
 
-# Minio配置
-minio:
-  url: http://172.18.192.203:9005
-  accessKey: root
-  secretKey: 12345678
-  bucketName: test
+# 七牛云配置
+qiniu:
+  url: http://t5azfp354.hn-bkt.clouddn.com/
+  accessKey: x43e4wM_SLjjT3f_Gt4Mtsi2iVBhYMQzeSwtPKyz
+  secretKey: r77FO_dFtZHaVKrOSYvaAL_lIMUcwBS5Keg3KiV9
+  bucketName: 787dorm
 
 # 文件命名策略配置
 file:

@@ -3,34 +3,36 @@ package com.dorm.common.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import io.minio.MinioClient;
+import com.qiniu.storage.Region;
+import com.qiniu.storage.UploadManager;
+import com.qiniu.util.Auth;
 
 /**
- * Minio 配置信息
+ * 七牛云配置信息
  *
  * @author ruoyi
  */
 @Configuration
-@ConfigurationProperties(prefix = "minio")
-public class MinioConfig
+@ConfigurationProperties(prefix = "qiniu")
+public class QiniuConfig
 {
     /**
-     * 服务地址
+     * 访问域名
      */
     private static String url;
 
     /**
-     * 用户名
+     * AccessKey
      */
     private static String accessKey;
 
     /**
-     * 密码
+     * SecretKey
      */
     private static String secretKey;
 
     /**
-     * 存储桶名称
+     * 存储空间名称
      */
     private static String bucketName;
 
@@ -41,7 +43,7 @@ public class MinioConfig
 
     public void setUrl(String url)
     {
-        MinioConfig.url = url;
+        QiniuConfig.url = url;
     }
 
     public static String getAccessKey()
@@ -51,7 +53,7 @@ public class MinioConfig
 
     public void setAccessKey(String accessKey)
     {
-        MinioConfig.accessKey = accessKey;
+        QiniuConfig.accessKey = accessKey;
     }
 
     public static String getSecretKey()
@@ -61,7 +63,7 @@ public class MinioConfig
 
     public void setSecretKey(String secretKey)
     {
-        MinioConfig.secretKey = secretKey;
+        QiniuConfig.secretKey = secretKey;
     }
 
     public static String getBucketName()
@@ -71,12 +73,28 @@ public class MinioConfig
 
     public void setBucketName(String bucketName)
     {
-        MinioConfig.bucketName = bucketName;
+        QiniuConfig.bucketName = bucketName;
     }
 
+    /**
+     * 创建七牛云认证对象
+     */
     @Bean
-    public MinioClient getMinioClient()
+    public Auth getAuth()
     {
-        return MinioClient.builder().endpoint(url).credentials(accessKey, secretKey).build();
+        return Auth.create(accessKey, secretKey);
+    }
+
+    /**
+     * 创建七牛云上传管理器
+     */
+    @Bean
+    public UploadManager getUploadManager()
+    {
+        // 华南区域配置（up-z2.qiniup.com）
+        com.qiniu.storage.Configuration cfg = new com.qiniu.storage.Configuration(Region.huanan());
+        cfg.resumableUploadAPIVersion = com.qiniu.storage.Configuration.ResumableUploadAPIVersion.V2;
+        return new UploadManager(cfg);
     }
 }
+

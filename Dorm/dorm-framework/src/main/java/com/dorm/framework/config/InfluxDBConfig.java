@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * InfluxDB配置类
  * 
- * @author dorm
+ * @author 王新瑜
  * @since 2025-09-01
  */
 @Configuration
