@@ -8,7 +8,7 @@
         </view>
         <view class="nav-title">通告详情</view>
         <view class="nav-right">
-          <text class="iconfont icon-share" @click="handleShare">⋯</text>
+          <text class="iconfont icon-share" @click="handleShare"></text>
         </view>
       </view>
     </view>
@@ -68,7 +68,7 @@
             </text>
           </view>
           <view class="action-btn" @click="handleShare">
-            <text class="iconfont icon-share">📤</text>
+            <text class="iconfont icon-share"></text>
             <text class="action-text">分享</text>
           </view>
         </view>
@@ -112,6 +112,44 @@ export default {
     this.noticeId = options.id
     this.initPage()
     this.loadNoticeDetail()
+  },
+
+  // 微信小程序分享配置
+  onShareAppMessage() {
+    if (!this.noticeInfo) {
+      return {
+        title: '宿舍通知',
+        path: `/pages/notice/detail?id=${this.noticeId}`
+      }
+    }
+
+    const shareTitle = this.noticeInfo.noticeTitle || '宿舍通知'
+    const shareContent = this.getShareContent()
+    const shareImageUrl = this.noticeInfo.coverImage ? this.getImageUrl(this.noticeInfo.coverImage) : ''
+
+    return {
+      title: shareTitle,
+      path: `/pages/notice/detail?id=${this.noticeId}`,
+      imageUrl: shareImageUrl || '/static/logo.png'
+    }
+  },
+
+  // 微信小程序分享到朋友圈配置
+  onShareTimeline() {
+    if (!this.noticeInfo) {
+      return {
+        title: '宿舍通知'
+      }
+    }
+
+    const shareTitle = this.noticeInfo.noticeTitle || '宿舍通知'
+    const shareImageUrl = this.noticeInfo.coverImage ? this.getImageUrl(this.noticeInfo.coverImage) : ''
+
+    return {
+      title: shareTitle,
+      query: `id=${this.noticeId}`,
+      imageUrl: shareImageUrl || '/static/logo.png'
+    }
   },
 
   methods: {
@@ -358,16 +396,410 @@ export default {
 
     // 分享功能
     handleShare() {
+      if (!this.noticeInfo) {
+        uni.showToast({
+          title: '通知信息加载中',
+          icon: 'none'
+        })
+        return
+      }
+
+      // 准备分享内容
+      const shareTitle = this.noticeInfo.noticeTitle || '宿舍通知'
+      const shareContent = this.getShareContent()
+      const shareImageUrl = this.noticeInfo.coverImage ? this.getImageUrl(this.noticeInfo.coverImage) : ''
+
+      // 根据平台显示不同的分享选项
+      let itemList = []
+
+      // #ifdef MP-WEIXIN
+      // 微信小程序环境：支持微信分享
+      itemList = ['分享给微信好友', '复制分享内容', '复制通知标题', '保存封面图片']
+      // #endif
+
+      // #ifdef H5
+      // H5环境：检测是否在微信浏览器中
+      const isWeChat = /MicroMessenger/i.test(navigator.userAgent)
+      itemList = isWeChat
+        ? ['分享给微信好友', '复制分享内容', '复制通知标题', '保存封面图片']
+        : ['复制分享内容', '复制通知标题', '保存封面图片']
+      // #endif
+
+      // #ifdef APP-PLUS
+      // App环境：支持微信分享（需要配置微信SDK）
+      itemList = ['分享给微信好友', '分享到朋友圈', '复制分享内容', '复制通知标题', '保存封面图片']
+      // #endif
+
+      // #ifndef MP-WEIXIN || H5 || APP-PLUS
+      // 其他平台：只支持复制和保存
+      itemList = ['复制分享内容', '复制通知标题', '保存封面图片']
+      // #endif
+
+      // 显示分享选项
       uni.showActionSheet({
-        itemList: ['分享到微信', '分享到朋友圈', '复制链接'],
+        itemList: itemList,
         success: (res) => {
-          console.log('选择了第' + (res.tapIndex + 1) + '个按钮')
+          const selectedOption = itemList[res.tapIndex]
+
+          switch (selectedOption) {
+            case '分享给微信好友':
+              this.shareToWechat(shareTitle, shareContent, shareImageUrl, 'WXSceneSession')
+              break
+            case '分享到朋友圈':
+              this.shareToWechat(shareTitle, shareContent, shareImageUrl, 'WXSceneTimeline')
+              break
+            case '复制分享内容':
+              this.copyShareContent(shareTitle, shareContent)
+              break
+            case '复制通知标题':
+              this.copyToClipboard(shareTitle, '标题已复制')
+              break
+            case '保存封面图片':
+              if (shareImageUrl) {
+                this.saveImageToAlbum(shareImageUrl)
+              } else {
+                uni.showToast({
+                  title: '该通知没有封面图片',
+                  icon: 'none'
+                })
+              }
+              break
+          }
+        },
+        fail: (err) => {
+          console.log('用户取消分享', err)
+        }
+      })
+    },
+
+    // 分享到微信
+    shareToWechat(title, content, imageUrl, scene = 'WXSceneSession') {
+      // #ifdef MP-WEIXIN
+      // 微信小程序：使用按钮的 open-type="share" 或者 onShareAppMessage
+      // 这里我们触发页面的分享功能
+      this.triggerWechatMiniProgramShare(title, content, imageUrl)
+      // #endif
+
+      // #ifdef H5
+      // H5环境：使用微信JS-SDK
+      this.shareToWechatH5(title, content, imageUrl, scene)
+      // #endif
+
+      // #ifdef APP-PLUS
+      // App环境：使用uni.share API
+      this.shareToWechatApp(title, content, imageUrl, scene)
+      // #endif
+
+      // #ifndef MP-WEIXIN || H5 || APP-PLUS
+      // 其他平台：降级到复制分享内容
+      uni.showToast({
+        title: '当前平台不支持微信分享',
+        icon: 'none'
+      })
+      this.copyShareContent(title, content)
+      // #endif
+    },
+
+    // 微信小程序分享
+    triggerWechatMiniProgramShare(title, content, imageUrl) {
+      // 微信小程序需要通过 onShareAppMessage 实现分享
+      // 这里我们提示用户使用右上角的分享按钮
+      uni.showModal({
+        title: '分享提示',
+        content: '请点击右上角的"..."按钮，选择"转发"分享给好友',
+        showCancel: false,
+        confirmText: '我知道了'
+      })
+
+      // 同时复制分享内容，方便用户粘贴
+      this.copyShareContent(title, content)
+    },
+
+    // H5微信分享
+    shareToWechatH5(title, content, imageUrl, scene) {
+      // 检测是否在微信浏览器中
+      const isWeChat = /MicroMessenger/i.test(navigator.userAgent)
+
+      if (!isWeChat) {
+        uni.showToast({
+          title: '请在微信中打开',
+          icon: 'none'
+        })
+        return
+      }
+
+      // H5环境需要配置微信JS-SDK
+      // 这里提示用户使用微信自带的分享功能
+      uni.showModal({
+        title: '分享提示',
+        content: '请点击右上角的"..."按钮，选择"发送给朋友"或"分享到朋友圈"',
+        showCancel: false,
+        confirmText: '我知道了'
+      })
+
+      // 同时复制分享内容
+      this.copyShareContent(title, content)
+    },
+
+    // App微信分享
+    shareToWechatApp(title, content, imageUrl, scene) {
+      // 构建分享链接（App环境可能没有window对象）
+      let shareUrl = ''
+      // #ifdef H5
+      shareUrl = window.location.href
+      // #endif
+      // #ifndef H5
+      // App环境使用配置的基础URL
+      const baseUrl = this.$config?.baseUrl || 'http://localhost:8080'
+      shareUrl = `${baseUrl}/pages/notice/detail?id=${this.noticeId}`
+      // #endif
+
+      uni.share({
+        provider: 'weixin',
+        scene: scene, // WXSceneSession: 分享到聊天界面, WXSceneTimeline: 分享到朋友圈
+        type: 0, // 0: 图文分享
+        title: title,
+        summary: content,
+        imageUrl: imageUrl || '/static/logo.png',
+        href: shareUrl,
+        success: (res) => {
+          console.log('分享成功:', res)
           uni.showToast({
-            title: '分享功能开发中',
+            title: '分享成功',
+            icon: 'success'
+          })
+        },
+        fail: (err) => {
+          console.error('分享失败:', err)
+
+          // 如果是用户取消，不显示错误
+          if (err.errMsg && err.errMsg.includes('cancel')) {
+            return
+          }
+
+          // 其他错误，降级到复制分享内容
+          uni.showModal({
+            title: '分享失败',
+            content: '微信分享功能暂不可用，已为您复制分享内容',
+            showCancel: false,
+            success: () => {
+              this.copyShareContent(title, content)
+            }
+          })
+        }
+      })
+    },
+
+    // 获取分享内容摘要
+    getShareContent() {
+      if (!this.noticeInfo?.noticeContent) return ''
+
+      // 移除HTML标签，获取纯文本
+      let content = this.noticeInfo.noticeContent
+        .replace(/<[^>]+>/g, '') // 移除HTML标签
+        .replace(/&nbsp;/g, ' ') // 替换空格实体
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/\s+/g, ' ') // 合并多个空格
+        .trim()
+
+      // 限制长度，生成摘要
+      const maxLength = 100
+      if (content.length > maxLength) {
+        content = content.substring(0, maxLength) + '...'
+      }
+
+      return content
+    },
+
+    // 复制分享内容（标题 + 内容摘要）
+    copyShareContent(title, content) {
+      const shareText = `【${this.getNoticeTypeText(this.noticeInfo.noticeType)}】${title}\n\n${content}\n\n发布时间：${this.formatTime(this.noticeInfo.createTime)}`
+
+      this.copyToClipboard(shareText, '分享内容已复制到剪贴板')
+    },
+
+    // 复制到剪贴板
+    copyToClipboard(text, successMsg = '复制成功') {
+      // #ifdef H5
+      // H5环境使用浏览器API
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text)
+          .then(() => {
+            uni.showToast({
+              title: successMsg,
+              icon: 'success'
+            })
+          })
+          .catch((err) => {
+            console.error('复制失败:', err)
+            this.fallbackCopyToClipboard(text, successMsg)
+          })
+      } else {
+        this.fallbackCopyToClipboard(text, successMsg)
+      }
+      // #endif
+
+      // #ifndef H5
+      // 非H5环境使用uni-app API
+      uni.setClipboardData({
+        data: text,
+        success: () => {
+          uni.showToast({
+            title: successMsg,
+            icon: 'success'
+          })
+        },
+        fail: (err) => {
+          console.error('复制失败:', err)
+          uni.showToast({
+            title: '复制失败，请重试',
             icon: 'none'
           })
         }
       })
+      // #endif
+    },
+
+    // H5降级方案：使用传统方法复制
+    fallbackCopyToClipboard(text, successMsg) {
+      const textArea = document.createElement('textarea')
+      textArea.value = text
+      textArea.style.position = 'fixed'
+      textArea.style.top = '-9999px'
+      textArea.style.left = '-9999px'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+
+      try {
+        const successful = document.execCommand('copy')
+        if (successful) {
+          uni.showToast({
+            title: successMsg,
+            icon: 'success'
+          })
+        } else {
+          throw new Error('复制命令执行失败')
+        }
+      } catch (err) {
+        console.error('降级复制方案失败:', err)
+        uni.showToast({
+          title: '复制失败，请手动复制',
+          icon: 'none'
+        })
+      } finally {
+        document.body.removeChild(textArea)
+      }
+    },
+
+    // 保存图片到相册
+    saveImageToAlbum(imageUrl) {
+      uni.showLoading({
+        title: '保存中...'
+      })
+
+      // #ifdef H5
+      // H5环境：下载图片
+      this.downloadImage(imageUrl)
+      // #endif
+
+      // #ifndef H5
+      // 非H5环境：保存到相册
+      uni.downloadFile({
+        url: imageUrl,
+        success: (res) => {
+          if (res.statusCode === 200) {
+            uni.saveImageToPhotosAlbum({
+              filePath: res.tempFilePath,
+              success: () => {
+                uni.hideLoading()
+                uni.showToast({
+                  title: '图片已保存到相册',
+                  icon: 'success'
+                })
+              },
+              fail: (err) => {
+                uni.hideLoading()
+                console.error('保存图片失败:', err)
+
+                // 可能是权限问题
+                if (err.errMsg.includes('auth')) {
+                  uni.showModal({
+                    title: '需要相册权限',
+                    content: '请在设置中允许访问相册',
+                    confirmText: '去设置',
+                    success: (modalRes) => {
+                      if (modalRes.confirm) {
+                        uni.openSetting()
+                      }
+                    }
+                  })
+                } else {
+                  uni.showToast({
+                    title: '保存失败，请重试',
+                    icon: 'none'
+                  })
+                }
+              }
+            })
+          } else {
+            uni.hideLoading()
+            uni.showToast({
+              title: '图片下载失败',
+              icon: 'none'
+            })
+          }
+        },
+        fail: (err) => {
+          uni.hideLoading()
+          console.error('下载图片失败:', err)
+          uni.showToast({
+            title: '下载失败，请重试',
+            icon: 'none'
+          })
+        }
+      })
+      // #endif
+    },
+
+    // H5环境下载图片
+    downloadImage(imageUrl) {
+      // 创建一个隐藏的a标签来触发下载
+      const link = document.createElement('a')
+      link.href = imageUrl
+      link.download = `notice_cover_${this.noticeId}.jpg`
+      link.target = '_blank'
+
+      // 对于跨域图片，尝试使用fetch下载
+      fetch(imageUrl)
+        .then(response => response.blob())
+        .then(blob => {
+          const url = window.URL.createObjectURL(blob)
+          link.href = url
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(url)
+
+          uni.hideLoading()
+          uni.showToast({
+            title: '图片已下载',
+            icon: 'success'
+          })
+        })
+        .catch(err => {
+          console.error('H5下载图片失败:', err)
+          // 降级方案：直接打开图片
+          window.open(imageUrl, '_blank')
+          uni.hideLoading()
+          uni.showToast({
+            title: '请右键保存图片',
+            icon: 'none'
+          })
+        })
     }
   }
 }

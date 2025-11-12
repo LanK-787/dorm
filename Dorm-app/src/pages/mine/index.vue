@@ -45,8 +45,8 @@
         </view>
       </view>
 
-      <!-- 统计卡片 -->
-      <view class="stats-card">
+      <!-- 统计卡片 - 学生 -->
+      <view v-if="userStore.roles?.includes('student')" class="stats-card">
         <view class="stats-item">
           <text class="stats-value">{{ leaveCount || 0 }}</text>
           <text class="stats-label">离校申请</text>
@@ -55,9 +55,29 @@
           <text class="stats-value">{{ repairCount || 0 }}</text>
           <text class="stats-label">报修记录</text>
         </view>
+      </view>
+
+      <!-- 统计卡片 - 维修工 -->
+      <view v-else-if="userStore.roles?.includes('repairer')" class="stats-card">
+        <view class="stats-item">
+          <text class="stats-value">{{ repairCount || 0 }}</text>
+          <text class="stats-label">待处理工单</text>
+        </view>
+      </view>
+
+      <!-- 统计卡片 - 默认 -->
+      <view v-else class="stats-card">
         <view class="stats-item">
           <text class="stats-value">{{ noticeCount || 0 }}</text>
           <text class="stats-label">未读通知</text>
+        </view>
+        <view class="stats-item">
+          <text class="stats-value">0</text>
+          <text class="stats-label">我的消息</text>
+        </view>
+        <view class="stats-item">
+          <text class="stats-value">0</text>
+          <text class="stats-label">我的收藏</text>
         </view>
       </view>
 
@@ -67,7 +87,7 @@
           <view class="action-icon-wrapper icon-friendfill-bg">
             <text class="iconfont icon-friendfill"></text>
           </view>
-          <text>交流群</text>
+          <text>宿舍公共号</text>
         </view>
         <view class="action-item" hover-class="action-item-hover" @click="handleBuilding">
           <view class="action-icon-wrapper icon-service-bg">
@@ -142,6 +162,10 @@ import { ref, computed, getCurrentInstance, onMounted } from 'vue'
 import useUserStore from '@/store/modules/user'
 import useStudentStore from '@/store/modules/student'
 import useRepairerStore from '@/store/modules/repairer'
+import { getLeaveApplicationList } from '@/api/leave/registration'
+import { listRequest } from '@/api/dorm/request'
+import { getPendingAssignments, getProcessingAssignments } from '@/api/repairer/workorder'
+import { listNotices } from '@/api/dorm/notices'
 
 // 获取当前实例以访问全局属性
 const { proxy } = getCurrentInstance()
@@ -191,22 +215,78 @@ const initData = async () => {
     if (userStore.roles?.includes('repairer')) {
       const repairerData = await repairerStore.fetchRepairerByUserId(userStore.id)
       if (repairerData) {
-        // TODO: 获取维修人员相关统计数据
-        repairCount.value = 0 // 待处理的维修工单数
+        // 获取维修人员的待处理工单数（待接单 + 处理中）
+        await loadRepairerStats()
       }
-    }
-
-    if (userStore.roles?.includes('student')) {
+    } else if (userStore.roles?.includes('student')) {
       await studentStore.fetchStudentDetail()
-      // TODO: 获取学生相关统计数据
-      leaveCount.value = 0 // 进行中的离校申请数
+      // 获取学生的离校申请数和报修记录数
+      await loadStudentStats()
+    } else {
+      // 其他角色（如管理员）获取未读通知数
+      await loadNoticeStats()
     }
-
-    // TODO: 获取未读通知数
-    noticeCount.value = 0
   } catch (error) {
     console.error('获取用户数据失败:', error)
-    proxy.$modal.msgError('数据加载失败，请稍后重试')
+    // 静默失败，不影响页面显示
+  }
+}
+
+// 加载维修人员统计数据
+const loadRepairerStats = async () => {
+  try {
+    // 获取待处理工单数（待接单）
+    const pendingResponse = await getPendingAssignments({ pageNum: 1, pageSize: 1 })
+    const pendingCount = pendingResponse.total || 0
+    console.log('维修工-待接单工单数:', pendingCount)
+
+    // 获取处理中工单数
+    const processingResponse = await getProcessingAssignments({ pageNum: 1, pageSize: 1 })
+    const processingCount = processingResponse.total || 0
+    console.log('维修工-处理中工单数:', processingCount)
+
+    // 总的待处理工单数 = 待接单 + 处理中
+    repairCount.value = pendingCount + processingCount
+    console.log('维修工-总工单数:', repairCount.value)
+  } catch (error) {
+    console.error('获取维修工单统计失败:', error)
+    repairCount.value = 0
+  }
+}
+
+// 加载学生统计数据
+const loadStudentStats = async () => {
+  try {
+    // 获取离校申请数（进行中的申请：待审批 + 已批准未返校）
+    const leaveResponse = await getLeaveApplicationList({ pageNum: 1, pageSize: 1 })
+    leaveCount.value = leaveResponse.total || 0
+    console.log('学生-离校申请数:', leaveCount.value)
+
+    // 获取报修记录数
+    const repairResponse = await listRequest({ pageNum: 1, pageSize: 1 })
+    repairCount.value = repairResponse.total || 0
+    console.log('学生-报修记录数:', repairCount.value)
+  } catch (error) {
+    console.error('获取学生统计数据失败:', error)
+    leaveCount.value = 0
+    repairCount.value = 0
+  }
+}
+
+// 加载通知统计数据
+const loadNoticeStats = async () => {
+  try {
+    // 获取未读通知数（状态为已发布的通知）
+    const noticeResponse = await listNotices({
+      pageNum: 1,
+      pageSize: 1,
+      status: '0' // 已发布状态
+    })
+    noticeCount.value = noticeResponse.total || 0
+    console.log('未读通知数:', noticeCount.value)
+  } catch (error) {
+    console.error('获取通知统计失败:', error)
+    noticeCount.value = 0
   }
 }
 
@@ -419,18 +499,22 @@ onMounted(() => {
   justify-content: space-around;
   background: white;
   border-radius: 20rpx;
-  padding: 30rpx;
+  padding: 40rpx 30rpx;
   margin: 0 30rpx 30rpx 30rpx;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  min-height: 140rpx;
 
   .stats-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8rpx;
+    justify-content: center;
+    gap: 12rpx;
+    flex: 1;
+    min-width: 150rpx;
 
     .stats-value {
-      font-size: 40rpx;
+      font-size: 48rpx;
       font-weight: bold;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       -webkit-background-clip: text;
@@ -440,8 +524,9 @@ onMounted(() => {
     }
 
     .stats-label {
-      font-size: 24rpx;
+      font-size: 26rpx;
       color: #666;
+      white-space: nowrap;
     }
   }
 }
