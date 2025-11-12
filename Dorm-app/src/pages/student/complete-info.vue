@@ -66,13 +66,6 @@
           {{ submitting ? '提交中...' : '提交信息' }}
         </button>
         
-        <button 
-          type="default" 
-          class="skip-btn" 
-          @click="handleSkip"
-        >
-          暂时跳过
-        </button>
       </view>
     </view>
   </view>
@@ -223,11 +216,25 @@
     gap: 15px;
     
     .submit-btn {
+      width: 100%;
       background-color: #007aff;
-      border-radius: 8px;
-      height: 50px;
-      font-size: 16px;
-      font-weight: bold;
+      border-radius: 12px;
+      height: 48px;
+      font-size: 17px;
+      font-weight: 600;
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(0, 122, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: 1px;
+      transition: background 0.2s, box-shadow 0.2s;
+      border: none;
+      padding: 0 20px;
+    }
+    .submit-btn:active {
+      background-color: #005ecb;
+      box-shadow: 0 2px 8px rgba(0, 122, 255, 0.16);
     }
     
     .skip-btn {

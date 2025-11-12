@@ -176,7 +176,7 @@
         </template>
       </el-table-column>
       <el-table-column label="拒绝原因" align="center" prop="rejectReason" />
-      <el-table-column label="图片URL，多个以逗号分隔，用于完成维修后图片上传" align="center" prop="images" />
+      <el-table-column label="图片URL" align="center" prop="images" />
       <el-table-column label="处理备注" align="center" prop="processRemark" />
       <el-table-column label="创建时间" align="center" prop="createTime" width="200" sortable="custom">
         <template #default="scope">

@@ -250,7 +250,8 @@
               }
             } else {
               // 学生信息未完善，引导用户完善信息
-              proxy.$modal.msgError('学生信息未完善，请先完善个人信息')
+              // proxy.$modal.msgError('学生信息未完善，请先完善个人信息')
+              proxy.$modal.alert('学生信息未完善，请先完善个人信息', '温馨提示')
 
               // 跳转到学生信息完善页面
               setTimeout(() => {

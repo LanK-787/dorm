@@ -70,17 +70,36 @@
           </view>
         </view>
 
-        <!-- 图片展示 -->
-        <view v-if="imageList.length > 0" class="info-card">
+        <!-- 报修图片展示 -->
+        <view v-if="repairImageList.length > 0" class="info-card">
           <view class="card-title">
-            <text class="title-text">相关图片</text>
+            <text class="title-text">报修图片</text>
+            <text class="title-subtitle">（学生提交时上传）</text>
           </view>
           <view class="image-grid">
-            <view 
-              v-for="(image, index) in imageList" 
-              :key="index"
+            <view
+              v-for="(image, index) in repairImageList"
+              :key="'repair-' + index"
               class="image-item"
-              @click="previewImage(index)"
+              @click="previewRepairImage(index)"
+            >
+              <image :src="image" mode="aspectFill" class="image-content" />
+            </view>
+          </view>
+        </view>
+
+        <!-- 维修图片展示 -->
+        <view v-if="maintenanceImageList.length > 0" class="info-card">
+          <view class="card-title">
+            <text class="title-text">维修图片</text>
+            <text class="title-subtitle">（维修工完成后上传）</text>
+          </view>
+          <view class="image-grid">
+            <view
+              v-for="(image, index) in maintenanceImageList"
+              :key="'maintenance-' + index"
+              class="image-item"
+              @click="previewMaintenanceImage(index)"
             >
               <image :src="image" mode="aspectFill" class="image-content" />
             </view>
@@ -161,7 +180,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getRequest, updateRequest } from '@/api/dorm/request'
+import { getRequest, updateRequest, getAssignmentByRequestId } from '@/api/dorm/request'
 import { getAssignmentDetail } from '@/api/repairer/workorder'
 import useUserStore from '@/store/modules/user'
 
@@ -169,7 +188,8 @@ import useUserStore from '@/store/modules/user'
 const statusBarHeight = ref(0)
 const loading = ref(true)
 const repairDetail = ref(null)
-const imageList = ref([])
+const repairImageList = ref([])        // 报修图片列表（学生上传）
+const maintenanceImageList = ref([])   // 维修图片列表（维修工上传）
 
 // 获取用户store
 const userStore = useUserStore()
@@ -246,23 +266,48 @@ const loadDetail = async () => {
     if (isRepairer.value) {
       // 维修人员查看工单详情
       response = await getAssignmentDetail(assignmentId.value)
+
+      if (response.code === 200) {
+        repairDetail.value = response.data
+
+        // 处理报修图片（来自报修工单的 requestImages 字段）
+        if (repairDetail.value.requestImages) {
+          repairImageList.value = repairDetail.value.requestImages.split(',').filter(url => url.trim())
+        }
+
+        // 处理维修图片（来自派单的 images 字段）
+        if (repairDetail.value.images) {
+          maintenanceImageList.value = repairDetail.value.images.split(',').filter(url => url.trim())
+        }
+      } else {
+        uni.showToast({
+          title: response.msg || '加载失败',
+          icon: 'none'
+        })
+      }
     } else {
       // 学生查看报修详情
       response = await getRequest(requestId.value)
-    }
 
-    if (response.code === 200) {
-      repairDetail.value = response.data
+      if (response.code === 200) {
+        repairDetail.value = response.data
 
-      // 处理图片列表
-      if (repairDetail.value.images) {
-        imageList.value = repairDetail.value.images.split(',').filter(url => url.trim())
+        // 处理报修图片（来自报修工单的 images 字段）
+        if (repairDetail.value.images) {
+          repairImageList.value = repairDetail.value.images.split(',').filter(url => url.trim())
+        }
+
+        // 如果报修已完成，尝试获取维修图片
+        // 需要通过 requestId 查询对应的派单记录
+        if (['2', '3'].includes(repairDetail.value.status)) {
+          await loadMaintenanceImages()
+        }
+      } else {
+        uni.showToast({
+          title: response.msg || '加载失败',
+          icon: 'none'
+        })
       }
-    } else {
-      uni.showToast({
-        title: response.msg || '加载失败',
-        icon: 'none'
-      })
     }
   } catch (error) {
     console.error('加载详情失败:', error)
@@ -272,6 +317,19 @@ const loadDetail = async () => {
     })
   } finally {
     loading.value = false
+  }
+}
+
+// 学生查看时，加载维修图片
+const loadMaintenanceImages = async () => {
+  try {
+    const assignmentResponse = await getAssignmentByRequestId(requestId.value)
+    if (assignmentResponse.code === 200 && assignmentResponse.data && assignmentResponse.data.images) {
+      maintenanceImageList.value = assignmentResponse.data.images.split(',').filter(url => url.trim())
+    }
+  } catch (error) {
+    console.error('加载维修图片失败:', error)
+    // 静默失败，不影响页面显示
   }
 }
 
@@ -310,9 +368,16 @@ const cancelRepair = async () => {
   })
 }
 
-const previewImage = (index) => {
+const previewRepairImage = (index) => {
   uni.previewImage({
-    urls: imageList.value,
+    urls: repairImageList.value,
+    current: index
+  })
+}
+
+const previewMaintenanceImage = (index) => {
+  uni.previewImage({
+    urls: maintenanceImageList.value,
     current: index
   })
 }
@@ -527,12 +592,21 @@ onMounted(() => {
 
 .card-title {
   margin-bottom: 30rpx;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
 }
 
 .card-title .title-text {
   font-size: 32rpx;
   font-weight: bold;
   color: #333;
+}
+
+.card-title .title-subtitle {
+  font-size: 24rpx;
+  color: #999;
+  font-weight: normal;
 }
 
 .info-list {

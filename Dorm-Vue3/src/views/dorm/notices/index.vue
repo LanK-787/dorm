@@ -107,7 +107,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table ref="noticesTable" v-loading="loading" :data="noticesList" @selection-change="handleSelectionChange">
+    <el-table ref="noticesTable" v-loading="loading" :data="noticesList" @selection-change="handleSelectionChange" :default-sort="{ prop: 'createTime', order: 'descending' }">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="序号" align="center" prop="noticeId" />
       <el-table-column label="封面图片" align="center" width="120">
@@ -157,7 +157,6 @@
           <dict-tag :options="dorm_notice_type" :value="scope.row.noticeType"/>
         </template>
       </el-table-column>
-      <el-table-column label="公告内容" align="center" prop="noticeContent" />
       <el-table-column label="状态" align="center" prop="status">
         <template #default="scope">
           <dict-tag :options="sys_notice_status" :value="scope.row.status"/>
@@ -168,7 +167,7 @@
           <dict-tag :options="is_carousel" :value="scope.row.isCarousel"/>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
+      <el-table-column label="创建时间" align="center" prop="createTime" width="180" sortable :sort-orders="['descending', 'ascending']" :default-sort="'descending'">
         <template #default="scope">
           <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
         </template>
@@ -305,12 +304,13 @@
 
 <script setup name="Notices">
 import { listNotices, getNotices, delNotices, addNotices, updateNotices, batchUpdateStatus, batchUpdateCarousel } from "@/api/dorm/notices"
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { Plus, Picture } from '@element-plus/icons-vue'
 import { getToken } from "@/utils/auth"
 import { isExternal } from "@/utils/validate"
 
 const { proxy } = getCurrentInstance()
+const route = useRoute()
 const { sys_notice_status, dorm_notice_type, is_carousel } = proxy.useDict('sys_notice_status', 'dorm_notice_type', 'is_carousel')
 
 const noticesList = ref([])
@@ -326,7 +326,7 @@ const router = useRouter()
 const uploadUrl = ref(import.meta.env.VITE_APP_BASE_API + "/common/upload")
 const headers = ref({ Authorization: "Bearer " + getToken() })
 const previewImages = ref([]) // 用于存储所有可预览的图片列表
-const defaultImage = ref(new URL('@/assets/images/profile.jpg', import.meta.url).href) // 默认图片
+const defaultImage = ref(new URL('@/assets/images/no.jpg', import.meta.url).href) // 默认图片
 const imageViewerVisible = ref(false) // 控制图片预览器的显示状态
 
 // 批量操作相关变量
@@ -594,9 +594,9 @@ function handleSelectionChange(selection) {
 
 /** 新增按钮操作 */
 function handleAdd() {
-  reset()
-  open.value = true
-  title.value = "添加宿舍公告"
+  router.push({
+    path: '/dorm/notices-detail/add'
+  })
 }
 
 /** 修改按钮操作 */
@@ -784,6 +784,17 @@ function cancelBatchCarousel() {
   batchCarouselOpen.value = false
   batchCarouselForm.value = { isCarousel: '0' }
 }
+
+// 监听路由查询参数变化，实现自动刷新
+watch(() => route.query.refresh, (newVal) => {
+  if (newVal) {
+    // 检测到刷新参数，执行列表刷新
+    console.log('检测到刷新参数，开始刷新列表')
+    getList()
+    // 刷新后清除查询参数，避免重复刷新
+    router.replace({ path: '/dorm/notices' })
+  }
+}, { immediate: false })
 
 // 监听预览器的打开和关闭
 onMounted(() => {

@@ -20,7 +20,9 @@ import com.dorm.common.core.domain.AjaxResult;
 import com.dorm.common.enums.BusinessType;
 import com.dorm.common.utils.SecurityUtils;
 import com.dorm.manage.domain.DormRepairRequest;
+import com.dorm.manage.domain.DormRepairAssignment;
 import com.dorm.manage.service.IDormRepairRequestService;
+import com.dorm.manage.service.IDormRepairAssignmentService;
 import com.dorm.common.utils.poi.ExcelUtil;
 import com.dorm.common.core.page.TableDataInfo;
 
@@ -36,6 +38,9 @@ public class DormRepairRequestController extends BaseController
 {
     @Autowired
     private IDormRepairRequestService dormRepairRequestService;
+
+    @Autowired
+    private IDormRepairAssignmentService dormRepairAssignmentService;
 
     /**
      * 查询报修工单列表
@@ -107,6 +112,44 @@ public class DormRepairRequestController extends BaseController
         }
 
         return success(repairRequest);
+    }
+
+    /**
+     * 根据报修工单ID获取派单信息（用于学生查看维修图片）
+     */
+    @PreAuthorize("@ss.hasPermi('dorm:request:query')")
+    @GetMapping(value = "/{requestId}/assignment")
+    public AjaxResult getAssignmentByRequestId(@PathVariable("requestId") Long requestId)
+    {
+        // 先验证用户是否有权限查看该报修工单
+        DormRepairRequest repairRequest = dormRepairRequestService.selectDormRepairRequestByRequestId(requestId);
+
+        if (repairRequest == null) {
+            return error("工单不存在");
+        }
+
+        // 基于用户角色的权限控制
+        if (!SecurityUtils.hasRole("admin")) {
+            // 非管理员用户，只能查看自己的工单
+            Long currentUserId = SecurityUtils.getUserId();
+            if (!currentUserId.equals(repairRequest.getUserId())) {
+                logger.warn("用户[{}]尝试访问其他用户的工单派单信息[{}]", SecurityUtils.getUsername(), requestId);
+                return error("无权限访问此工单");
+            }
+        }
+
+        // 查询该报修工单对应的派单记录
+        DormRepairAssignment queryAssignment = new DormRepairAssignment();
+        queryAssignment.setRequestId(requestId);
+        List<DormRepairAssignment> assignments = dormRepairAssignmentService.selectDormRepairAssignmentListWithDetails(queryAssignment);
+
+        if (assignments.isEmpty()) {
+            // 没有派单记录，返回空
+            return success(null);
+        }
+
+        // 返回第一条派单记录（通常一个报修工单只有一条派单记录）
+        return success(assignments.get(0));
     }
 
     /**

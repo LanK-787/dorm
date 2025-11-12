@@ -28,6 +28,7 @@
         <result property="contactPhone"    column="contact_phone"    />
         <result property="requestStatus"    column="request_status"    />
         <result property="dormName"    column="dorm_name"    />
+        <result property="requestImages"    column="request_images"    />
     </resultMap>
 
     <sql id="selectDormRepairAssignmentVo">
@@ -157,7 +158,7 @@
             a.assignment_id, a.request_id, a.request_no, a.repairer_id, a.repairer_name, a.specialty,
             a.assign_time, a.process_status, a.accept_time, a.complete_time, a.reject_time,
             a.reject_reason, a.images, a.process_remark, a.create_by, a.create_time, a.update_by, a.update_time,
-            r.description, r.reporter_name, r.contact_phone, r.status as request_status,
+            r.description, r.reporter_name, r.contact_phone, r.status as request_status, r.images as request_images,
             d.full_name as dorm_name
         FROM dorm_repair_assignment a
         LEFT JOIN dorm_repair_request r ON a.request_id = r.request_id

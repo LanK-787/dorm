@@ -68,7 +68,7 @@
           @click="goToDetail(notice)"
           v-memo="[notice.noticeId, notice.noticeTitle, notice.noticeType, notice.createTime]"
         >
-          <view class="notice-content">
+          <view class="notice-content" :class="{ 'has-thumb': notice.coverImage }">
             <view class="notice-header">
               <text class="notice-title">{{ notice.noticeTitle }}</text>
               <view class="notice-badge" v-if="notice.isCarousel === '1'">
@@ -89,7 +89,6 @@
             :lazy-load-strategy="1"
             :show-menu-by-longpress="false"
           />
-          <view v-else class="notice-thumb-placeholder"></view>
         </view>
       </view>
 
@@ -313,7 +312,7 @@ export default {
       return this.noticeTypes[type] || '公告'
     },
 
-    // 格式化时间 - 优化性能和缓存管理
+    // 格式化时间 - 移动端友好显示，优化性能和缓存管理
     formatTime(timeStr) {
       if (!timeStr) return ''
       
@@ -330,20 +329,49 @@ export default {
         
         const now = new Date()
         const diff = now - date
+        const diffSeconds = Math.floor(diff / 1000)
+        const diffMinutes = Math.floor(diffSeconds / 60)
         
         let result
-        // 小于1天显示时分
-        if (diff < 24 * 60 * 60 * 1000) {
-          result = date.toLocaleTimeString('zh-CN', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-          })
-        } else {
-          // 大于1天显示月日
-          result = date.toLocaleDateString('zh-CN', { 
-            month: '2-digit', 
-            day: '2-digit' 
-          })
+        
+        // 判断是否是同一天
+        const isToday = this.isSameDay(date, now)
+        const isYesterday = this.isYesterday(date, now)
+        
+        // 1分钟内：刚刚
+        if (diffSeconds < 60) {
+          result = '刚刚'
+        } 
+        // 1小时内：X分钟前
+        else if (diffMinutes < 60) {
+          result = `${diffMinutes}分钟前`
+        }
+        // 今天的其他时间：今天 HH:mm
+        else if (isToday) {
+          const hour = String(date.getHours()).padStart(2, '0')
+          const minute = String(date.getMinutes()).padStart(2, '0')
+          result = `今天 ${hour}:${minute}`
+        }
+        // 昨天：昨天 HH:mm
+        else if (isYesterday) {
+          const hour = String(date.getHours()).padStart(2, '0')
+          const minute = String(date.getMinutes()).padStart(2, '0')
+          result = `昨天 ${hour}:${minute}`
+        }
+        // 今年：MM-DD HH:mm
+        else if (date.getFullYear() === now.getFullYear()) {
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
+          const hour = String(date.getHours()).padStart(2, '0')
+          const minute = String(date.getMinutes()).padStart(2, '0')
+          result = `${month}-${day} ${hour}:${minute}`
+        }
+        // 去年或更早：YYYY-MM-DD
+        else {
+          const year = date.getFullYear()
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
+          result = `${year}-${month}-${day}`
         }
         
         // 限制缓存大小，避免内存占用过高
@@ -359,6 +387,20 @@ export default {
         console.error('时间格式化错误:', error)
         return ''
       }
+    },
+    
+    // 判断是否是同一天
+    isSameDay(date1, date2) {
+      return date1.getFullYear() === date2.getFullYear() &&
+             date1.getMonth() === date2.getMonth() &&
+             date1.getDate() === date2.getDate()
+    },
+    
+    // 判断是否是昨天
+    isYesterday(date, now) {
+      const yesterday = new Date(now)
+      yesterday.setDate(yesterday.getDate() - 1)
+      return this.isSameDay(date, yesterday)
     },
 
     // 跳转详情 - 优化性能和交互
@@ -503,7 +545,10 @@ export default {
 
 .notice-content {
   flex: 1;
-  margin-right: 20rpx;
+  
+  &.has-thumb {
+    margin-right: 20rpx;
+  }
 }
 
 .notice-header {
@@ -566,20 +611,6 @@ export default {
   transition: opacity 0.3s ease;
 }
 
-.notice-thumb-placeholder {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 16rpx;
-  flex-shrink: 0;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  animation: placeholder-pulse 1.5s infinite;
-}
-
-@keyframes placeholder-pulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 0.8; }
-  100% { opacity: 0.6; }
-}
 
 .loading-more, .no-more {
   text-align: center;

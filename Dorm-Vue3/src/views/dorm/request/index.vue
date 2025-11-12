@@ -144,7 +144,7 @@
       <el-table-column label="问题描述" align="center" prop="description" />
       <el-table-column label="报修人" align="center" prop="reporterName" />
       <el-table-column label="联系方式" align="center" prop="contactPhone" />
-      <el-table-column label="图片URL，多个以逗号分隔" align="center" prop="images" />
+      <el-table-column label="图片URL" align="center" prop="images" />
       <el-table-column label="状态" align="center" prop="status">
         <template #default="scope">
           <dict-tag :options="repair_request_status" :value="scope.row.status"/>
@@ -207,9 +207,9 @@
         <el-form-item label="联系方式" prop="contactPhone">
           <el-input v-model="form.contactPhone" placeholder="请输入联系方式" />
         </el-form-item>
-        <el-form-item label="图片URL，多个以逗号分隔" prop="images">
+        <!-- <el-form-item label="图片URL，多个以逗号分隔" prop="images">
           <el-input v-model="form.images" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
+        </el-form-item> -->
         <el-form-item label="状态" prop="status">
           <el-select v-model="form.status" placeholder="请选择状态">
             <el-option

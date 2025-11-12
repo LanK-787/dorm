@@ -6,6 +6,8 @@ import com.dorm.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import com.dorm.manage.mapper.DormRepairRequestMapper;
 import com.dorm.manage.domain.DormRepairRequest;
 import com.dorm.manage.service.IDormRepairRequestService;
@@ -89,33 +91,67 @@ public class DormRepairRequestServiceImpl implements IDormRepairRequestService
         if (result > 0) {
             logger.info("工单保存成功，开始触发智能派单：工单ID[{}]，编号[{}]，专长[{}]",
                        dormRepairRequest.getRequestId(), dormRepairRequest.getRequestNo(), dormRepairRequest.getSpecialty());
-            try {
-                // 首先尝试发送异步派单消息
-                SmartDispatchMessage dispatchMessage = new SmartDispatchMessage(
-                    dormRepairRequest.getRequestId(),
-                    dormRepairRequest.getRequestNo(),
-                    dormRepairRequest.getSpecialty(),
-                    "AUTO"
-                );
-                logger.debug("准备发送智能派单消息：{}", dispatchMessage);
-                messageProducer.sendSmartDispatchMessage(dispatchMessage);
-                logger.info("智能派单消息发送成功：工单[{}]，消息ID[{}]", dormRepairRequest.getRequestNo(), dispatchMessage.getMessageId());
-            } catch (Exception e) {
-                // 异步派单失败，使用同步派单作为备用方案
-                logger.warn("异步派单消息发送失败，启用同步派单：工单[{}]，错误：{}", dormRepairRequest.getRequestNo(), e.getMessage());
-                try {
-                    ISmartDispatchService.SmartDispatchResult dispatchResult =
-                        smartDispatchService.smartDispatch(dormRepairRequest);
-                    if (dispatchResult.isSuccess()) {
-                        logger.info("同步智能派单成功：工单[{}]派给维修人员[{}]",
-                                   dormRepairRequest.getRequestNo(), dispatchResult.getSelectedRepairer().getName());
-                    } else {
-                        logger.error("同步智能派单失败：工单[{}]，原因：{}",
-                                    dormRepairRequest.getRequestNo(), dispatchResult.getFailureReason());
+            // 构造要发送的消息
+            SmartDispatchMessage dispatchMessage = new SmartDispatchMessage(
+                dormRepairRequest.getRequestId(),
+                dormRepairRequest.getRequestNo(),
+                dormRepairRequest.getSpecialty(),
+                "AUTO"
+            );
+            logger.debug("准备发送智能派单消息：{}", dispatchMessage);
+
+            // 在事务提交后发送消息；若当前无事务同步，则立即发送
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        try {
+                            messageProducer.sendSmartDispatchMessage(dispatchMessage);
+                            logger.info("智能派单消息发送成功（事务提交后）：工单[{}]，消息ID[{}]",
+                                       dormRepairRequest.getRequestNo(), dispatchMessage.getMessageId());
+                        } catch (Exception e) {
+                            logger.warn("事务提交后异步派单消息发送失败，启用同步派单兜底：工单[{}]，错误：{}",
+                                       dormRepairRequest.getRequestNo(), e.getMessage());
+                            try {
+                                ISmartDispatchService.SmartDispatchResult dispatchResult =
+                                    smartDispatchService.smartDispatch(dormRepairRequest);
+                                if (dispatchResult.isSuccess()) {
+                                    logger.info("同步智能派单成功：工单[{}]派给维修人员[{}]",
+                                               dormRepairRequest.getRequestNo(), dispatchResult.getSelectedRepairer().getName());
+                                } else {
+                                    logger.error("同步智能派单失败：工单[{}]，原因：{}",
+                                                dormRepairRequest.getRequestNo(), dispatchResult.getFailureReason());
+                                }
+                            } catch (Exception syncException) {
+                                logger.error("同步智能派单也失败：工单[{}]，错误：{}",
+                                            dormRepairRequest.getRequestNo(), syncException.getMessage(), syncException);
+                            }
+                        }
                     }
-                } catch (Exception syncException) {
-                    logger.error("同步智能派单也失败：工单[{}]，错误：{}",
-                                dormRepairRequest.getRequestNo(), syncException.getMessage(), syncException);
+                });
+            } else {
+                try {
+                    messageProducer.sendSmartDispatchMessage(dispatchMessage);
+                    logger.info("智能派单消息发送成功（无事务）：工单[{}]，消息ID[{}]",
+                               dormRepairRequest.getRequestNo(), dispatchMessage.getMessageId());
+                } catch (Exception e) {
+                    // 异步派单失败，使用同步派单作为备用方案
+                    logger.warn("异步派单消息发送失败（无事务），启用同步派单：工单[{}]，错误：{}",
+                               dormRepairRequest.getRequestNo(), e.getMessage());
+                    try {
+                        ISmartDispatchService.SmartDispatchResult dispatchResult =
+                            smartDispatchService.smartDispatch(dormRepairRequest);
+                        if (dispatchResult.isSuccess()) {
+                            logger.info("同步智能派单成功：工单[{}]派给维修人员[{}]",
+                                       dormRepairRequest.getRequestNo(), dispatchResult.getSelectedRepairer().getName());
+                        } else {
+                            logger.error("同步智能派单失败：工单[{}]，原因：{}",
+                                        dormRepairRequest.getRequestNo(), dispatchResult.getFailureReason());
+                        }
+                    } catch (Exception syncException) {
+                        logger.error("同步智能派单也失败：工单[{}]，错误：{}",
+                                    dormRepairRequest.getRequestNo(), syncException.getMessage(), syncException);
+                    }
                 }
             }
         }

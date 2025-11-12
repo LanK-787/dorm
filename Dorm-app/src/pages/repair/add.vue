@@ -4,14 +4,15 @@
     <view class="status-bar" :style="{ height: statusBarHeight + 'px' }"></view>
 
     <!-- 头部区域 -->
-    <view class="custom-navbar">
-      <view class="navbar-content">
-        <view class="navbar-left" @click="goBack">
-          <text class="iconfont icon-arrow-left">‹</text>
+    <view class="header">
+      <view class="header-content">
+        <view class="back-btn" @click="goBack">
+          <text class="iconfont icon-back">‹</text>
         </view>
-        <view class="navbar-title">
-          <text>提交报修</text>
+        <view class="header-title">
+          <text class="title-text">提交报修</text>
         </view>
+        <view class="header-placeholder"></view>
       </view>
     </view>
 
@@ -344,10 +345,12 @@ const getSelectedSpecialtyText = () => {
 }
 
 const onImageSelect = (e) => {
-  console.log('选择图片:', e)
-  // 图片选择后的处理逻辑
+  console.log('选择图片事件:', e)
+
+  // 手动更新 imageList - 这是关键修复！
   if (e.tempFiles && e.tempFiles.length > 0) {
     // 验证图片格式和大小
+    const validFiles = []
     e.tempFiles.forEach(file => {
       const fileSize = file.size / 1024 / 1024 // 转换为MB
       if (fileSize > 5) {
@@ -357,14 +360,27 @@ const onImageSelect = (e) => {
         })
         return
       }
+      validFiles.push(file)
     })
-    console.log('已选择图片数量:', e.tempFiles.length)
+
+    // 手动更新 imageList
+    imageList.value = [...imageList.value, ...validFiles]
+
+    console.log('已选择图片数量:', validFiles.length)
+    console.log('tempFiles 详情:', validFiles)
+    console.log('更新后的 imageList:', imageList.value)
   }
 }
 
 const onImageDelete = (e) => {
-  console.log('删除图片:', e)
-  // 图片删除后的处理逻辑
+  console.log('删除图片事件:', e)
+
+  // 手动更新 imageList
+  if (e.index !== undefined) {
+    imageList.value.splice(e.index, 1)
+  }
+
+  console.log('删除后的 imageList:', imageList.value)
 }
 
 // 上传单个图片
@@ -392,6 +408,9 @@ const submitForm = async () => {
     submitting.value = true
 
     // 处理图片上传
+    console.log('提交表单时的 imageList:', imageList.value)
+    console.log('imageList 长度:', imageList.value ? imageList.value.length : 0)
+
     let uploadedImageUrls = []
     if (imageList.value && imageList.value.length > 0) {
       uni.showLoading({
@@ -399,24 +418,37 @@ const submitForm = async () => {
       })
 
       try {
+        console.log('开始上传图片，imageList:', imageList.value)
+
         // 上传所有图片
         const uploadPromises = imageList.value.map(async (item) => {
+          console.log('处理图片项:', item)
+
           // 如果已经有url或fileID，直接使用
           if (item.url && !item.url.startsWith('blob:')) {
+            console.log('使用已有URL:', item.url)
             return item.url
           }
           if (item.fileID) {
+            console.log('使用fileID:', item.fileID)
             return item.fileID
           }
-          // 否则上传本地文件
-          if (item.path) {
-            return await uploadSingleImage(item.path)
+
+          // 否则上传本地文件 - 修复：使用正确的路径字段
+          const filePath = item.path || item.url
+          if (filePath) {
+            console.log('上传本地文件:', filePath)
+            return await uploadSingleImage(filePath)
           }
+
+          console.warn('图片项没有有效路径:', item)
           return null
         })
 
         uploadedImageUrls = await Promise.all(uploadPromises)
         uploadedImageUrls = uploadedImageUrls.filter(url => url) // 过滤空值
+
+        console.log('图片上传完成，URLs:', uploadedImageUrls)
 
         uni.hideLoading()
       } catch (uploadError) {
@@ -426,11 +458,14 @@ const submitForm = async () => {
           title: '图片上传失败，请重试',
           icon: 'none'
         })
+        submitting.value = false
         return
       }
     }
 
-    form.images = uploadedImageUrls.join(',')
+    // 将上传后的图片URL拼接成字符串
+    const imagesStr = uploadedImageUrls.length > 0 ? uploadedImageUrls.join(',') : ''
+    console.log('最终图片字符串:', imagesStr)
 
     const submitData = {
       dormId: form.dormId,
@@ -438,9 +473,11 @@ const submitForm = async () => {
       description: form.description,
       reporterName: form.reporterName,
       contactPhone: form.contactPhone,
-      images: form.images
+      images: imagesStr
       // 注意：不发送requestNo字段，由后端自动生成
     }
+
+    console.log('提交数据:', submitData)
 
     const response = await addRequest(submitData)
     if (response.code === 200) {
@@ -514,46 +551,46 @@ onMounted(() => {
   background: transparent;
 }
 
-.custom-navbar {
+.header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20rpx 30rpx;
+  padding: 20rpx 30rpx 40rpx;
 }
 
-.navbar-content {
+.header-content {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  height: 88rpx;
-  position: relative;
 }
 
-.navbar-left {
-  position: absolute;
-  left: 0;
+.back-btn {
   width: 80rpx;
   height: 80rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
   backdrop-filter: blur(10rpx);
 }
 
-.navbar-left .iconfont {
+.back-btn .iconfont {
   color: white;
-  font-size: 36rpx;
-  font-weight: bold;
+  font-size: 32rpx;
 }
 
-.navbar-title {
+.header-title {
+  flex: 1;
   text-align: center;
 }
 
-.navbar-title text {
+.title-text {
   color: white;
   font-size: 36rpx;
   font-weight: bold;
+}
+
+.header-placeholder {
+  width: 80rpx;
 }
 
 .main-content {

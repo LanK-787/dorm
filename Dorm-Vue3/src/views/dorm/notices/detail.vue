@@ -99,7 +99,7 @@
             <div class="editor-section">
               <el-form-item label="公告内容" prop="noticeContent" class="editor-form-item">
                 <div class="editor-container">
-                  <editor v-model="form.noticeContent" :min-height="600" class="content-editor" />
+                  <editor v-model="form.noticeContent" :key="editorKey" :min-height="600" class="content-editor" />
                 </div>
               </el-form-item>
             </div>
@@ -124,6 +124,7 @@ const { sys_notice_status, dorm_notice_type, is_carousel } = proxy.useDict('sys_
 const pageLoading = ref(false)
 const submitLoading = ref(false)
 const isEdit = ref(false)
+const editorKey = ref(0) // 富文本编辑器的 key,用于强制刷新
 const uploadUrl = ref(import.meta.env.VITE_APP_BASE_API + "/common/upload")
 const headers = ref({ Authorization: "Bearer " + getToken() })
 
@@ -181,16 +182,19 @@ function initPage() {
   console.log('页面初始化，当前路由:', route)
   console.log('路由参数:', route.params)
 
+  // 检查是否为新增路由
+  const isAddRoute = route.name === 'NoticeAdd' || route.path.includes('/add')
+
   // 从路由参数中获取noticeId
   // 支持多种路由格式：
-  // /dorm/notices-detail/index/1 -> route.params.id = 1
-  // /dorm/notices/detail/1 -> route.params.id = 1
-  // /dorm/notices/:id -> route.params.id = 1
+  // /dorm/notices-detail/index/1 -> route.params.noticesId = 1
+  // /dorm/notices-detail/add -> 新增模式
   const noticeId = route.params.id || route.params.noticeId || route.params.noticesId
 
   console.log('获取到的noticeId:', noticeId)
+  console.log('是否为新增路由:', isAddRoute)
 
-  if (noticeId && noticeId !== 'add' && noticeId !== 'new') {
+  if (!isAddRoute && noticeId && noticeId !== 'add' && noticeId !== 'new') {
     // 编辑模式 - 获取公告详情进行回显
     isEdit.value = true
     getInfo(noticeId)
@@ -268,7 +272,14 @@ function reset() {
     updateTime: null,
     remark: null
   }
-  proxy.resetForm("noticesRef")
+  // 更改 key 强制重新渲染富文本编辑器
+  editorKey.value++
+  // 重置表单验证状态
+  nextTick(() => {
+    if (proxy.$refs.noticesRef) {
+      proxy.$refs.noticesRef.clearValidate()
+    }
+  })
 }
 
 // 封面图片上传前的校验
@@ -332,7 +343,13 @@ function submitForm() {
         // 新增操作
         addNotices(submitData).then(() => {
           proxy.$modal.msgSuccess("创建成功")
-          goBack()
+          // 清空表单内容
+          reset()
+          // 跳转回列表页
+          router.push({
+            path: '/dorm/notices',
+            query: { refresh: Date.now() } // 添加时间戳触发列表刷新
+          })
         }).catch(error => {
           console.error('创建失败:', error)
           proxy.$modal.msgError("创建失败")

@@ -47,8 +47,9 @@
           <image 
             :src="getImageUrl(noticeInfo.coverImage)"
             class="cover-image"
-            mode="aspectFill"
+            mode="widthFix"
             @click="previewImage"
+            lazy-load
           />
         </view>
 
@@ -173,36 +174,127 @@ export default {
       return this.noticeTypes[type] || '公告'
     },
 
-    // 格式化时间
+    // 格式化时间 - 移动端友好显示
     formatTime(timeStr) {
       if (!timeStr) return ''
       
-      const date = new Date(timeStr)
-      return date.toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      try {
+        const date = new Date(timeStr)
+        
+        // 检查是否为有效日期
+        if (isNaN(date.getTime())) return ''
+        
+        // 格式化为 YYYY-MM-DD HH:mm 格式，移动端更清晰易读
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        const hour = String(date.getHours()).padStart(2, '0')
+        const minute = String(date.getMinutes()).padStart(2, '0')
+        
+        return `${year}-${month}-${day} ${hour}:${minute}`
+      } catch (error) {
+        console.error('时间格式化错误:', error)
+        return ''
+      }
     },
 
-    // 格式化内容
+    // 格式化内容 - 处理图片自适应
     formatContent(content) {
       if (!content) return ''
       
-      // 简单的HTML转换，实际项目中可能需要更复杂的处理
-      return content.replace(/\n/g, '<br/>')
+      let html = content
+      
+      // 处理换行
+      html = html.replace(/\n/g, '<br/>')
+      
+      // 处理图片标签：统一处理URL和样式
+      html = html.replace(/<img([^>]*?)>/gi, (match, attrs) => {
+        // 提取src属性
+        const srcMatch = attrs.match(/src=["']([^"']*?)["']/i)
+        let src = srcMatch ? srcMatch[1] : ''
+        
+        // 处理图片URL，确保使用完整的URL
+        if (src) {
+          src = this.getImageUrl(src)
+        }
+        
+        // 处理style属性
+        let styleValue = 'max-width:100%;width:100%;height:auto;display:block;margin:20rpx 0;border-radius:8rpx;'
+        if (attrs.includes('style=')) {
+          const styleMatch = attrs.match(/style=["']([^"']*?)["']/i)
+          if (styleMatch) {
+            const existingStyle = styleMatch[1]
+            // 保留原有样式，但确保包含自适应样式
+            styleValue = existingStyle
+            if (!styleValue.includes('max-width')) {
+              styleValue += ';max-width:100%'
+            }
+            if (!styleValue.includes('width:100%')) {
+              styleValue += ';width:100%'
+            }
+            if (!styleValue.includes('height:auto') && !styleValue.includes('height: auto')) {
+              styleValue += ';height:auto'
+            }
+            if (!styleValue.includes('display:block')) {
+              styleValue += ';display:block'
+            }
+          }
+        }
+        
+        // 移除原有的src和style属性，重新构建
+        let newAttrs = attrs
+          .replace(/src=["'][^"']*?["']/gi, '')
+          .replace(/style=["'][^"']*?["']/gi, '')
+          .trim()
+        
+        // 构建新的img标签
+        return `<img src="${src}" style="${styleValue}" ${newAttrs}>`.replace(/\s+/g, ' ').trim()
+      })
+      
+      return html
     },
 
+    // 获取所有图片URL（用于预览）
+    getAllImageUrls() {
+      const imageUrls = []
+      
+      // 添加封面图片
+      if (this.noticeInfo?.coverImage) {
+        imageUrls.push(this.getImageUrl(this.noticeInfo.coverImage))
+      }
+      
+      // 从正文内容中提取所有图片URL
+      if (this.noticeInfo?.noticeContent) {
+        const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi
+        let match
+        const content = this.noticeInfo.noticeContent
+        
+        while ((match = imgRegex.exec(content)) !== null) {
+          const imgSrc = match[1]
+          if (imgSrc) {
+            const imgUrl = this.getImageUrl(imgSrc)
+            // 避免重复
+            if (!imageUrls.includes(imgUrl)) {
+              imageUrls.push(imgUrl)
+            }
+          }
+        }
+      }
+      
+      return imageUrls
+    },
+    
     // 预览图片
     previewImage() {
-      if (this.noticeInfo?.coverImage) {
+      const imageUrls = this.getAllImageUrls()
+      if (imageUrls.length > 0) {
         uni.previewImage({
-          urls: [this.getImageUrl(this.noticeInfo.coverImage)]
+          urls: imageUrls,
+          current: imageUrls[0] // 从封面图片开始预览
         })
       }
     },
+    
 
     // 返回上一页
     goBack() {
@@ -424,17 +516,45 @@ export default {
 
 .cover-image {
   width: 100%;
-  height: 400rpx;
+  max-width: 100%;
+  height: auto;
   border-radius: 16rpx;
+  display: block;
 }
 
 .notice-content {
   padding: 0 40rpx 40rpx;
   
   ::v-deep rich-text {
-    line-height: 1.6;
+    line-height: 1.8;
     font-size: 30rpx;
     color: #333;
+    word-wrap: break-word;
+    word-break: break-all;
+    
+    // 确保图片自适应
+    img {
+      max-width: 100% !important;
+      width: 100% !important;
+      height: auto !important;
+      display: block !important;
+      margin: 20rpx 0 !important;
+      border-radius: 8rpx;
+      box-sizing: border-box;
+    }
+    
+    // 处理其他内容
+    p {
+      margin: 20rpx 0;
+      line-height: 1.8;
+    }
+    
+    // 处理视频等媒体
+    video {
+      max-width: 100% !important;
+      width: 100% !important;
+      height: auto !important;
+    }
   }
 }
 

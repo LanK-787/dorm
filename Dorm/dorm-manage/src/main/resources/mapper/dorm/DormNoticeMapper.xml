@@ -34,6 +34,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="status != null  and status != ''"> and status = #{status}</if>
             <if test="isCarousel != null  and isCarousel != ''"> and is_carousel = #{isCarousel}</if>
         </where>
+        order by create_time desc
     </select>
     
     <select id="selectDormNoticeByNoticeId" parameterType="Long" resultMap="DormNoticeResult">

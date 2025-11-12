@@ -141,6 +141,12 @@ export const dynamicRoutes = [
         component: () => import('@/views/dorm/notices/detail'),
         name: 'NoticeDetail',
         meta: { title: '通知详情', activeMenu: '/dorm/notices' }
+      },
+      {
+        path: 'add',
+        component: () => import('@/views/dorm/notices/detail'),
+        name: 'NoticeAdd',
+        meta: { title: '新增公告', activeMenu: '/dorm/notices' }
       }
     ]
   },

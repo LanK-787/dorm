@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * 智能派单消息
  * 
- * @author AI助手
+ * @author 王新瑜
  * @date 2025-06-18
  */
 public class SmartDispatchMessage extends BaseMessage {
@@ -27,6 +27,9 @@ public class SmartDispatchMessage extends BaseMessage {
     
     /** 延时时间（毫秒，用于延时派单） */
     private Long delayTime;
+    
+    /** 是否超过最大重试次数（消息反序列化兼容） */
+    private Boolean maxRetryExceeded;
 
     public SmartDispatchMessage() {
         super();
@@ -86,6 +89,14 @@ public class SmartDispatchMessage extends BaseMessage {
 
     public void setDelayTime(Long delayTime) {
         this.delayTime = delayTime;
+    }
+
+    public Boolean getMaxRetryExceeded() {
+        return maxRetryExceeded;
+    }
+
+    public void setMaxRetryExceeded(Boolean maxRetryExceeded) {
+        this.maxRetryExceeded = maxRetryExceeded;
     }
 
     @Override

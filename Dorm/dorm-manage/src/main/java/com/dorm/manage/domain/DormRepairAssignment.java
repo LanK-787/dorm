@@ -91,6 +91,9 @@ public class DormRepairAssignment extends BaseEntity
     /** 宿舍完整名称（关联查询字段，不存储在数据库） */
     private String dormName;
 
+    /** 报修图片（关联查询字段，来自报修工单的images字段，不存储在数据库） */
+    private String requestImages;
+
     public void setAssignmentId(Long assignmentId)
     {
         this.assignmentId = assignmentId;
@@ -279,6 +282,16 @@ public class DormRepairAssignment extends BaseEntity
     public String getDormName()
     {
         return dormName;
+    }
+
+    public void setRequestImages(String requestImages)
+    {
+        this.requestImages = requestImages;
+    }
+
+    public String getRequestImages()
+    {
+        return requestImages;
     }
 
     @Override

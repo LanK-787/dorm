@@ -69,14 +69,25 @@
           <text class="more-text" @click="navigateTo('/pages/notice/list')">查看更多</text>
         </view>
         <view class="news-list">
-          <view v-for="(item, index) in newsList" :key="index" class="news-item" @click="handleNewsClick(item)">
-            <view class="news-content">
-              <text class="news-title">{{ item.title }}</text>
-              <text class="news-time">{{ item.time }}</text>
+          <!-- 加载状态 -->
+          <view v-if="newsLoading" class="news-loading">
+            <text class="loading-text">加载中...</text>
+          </view>
+          <!-- 数据列表 -->
+          <view v-else-if="newsList.length > 0">
+            <view v-for="(item, index) in newsList" :key="item.id || index" class="news-item" @click="handleNewsClick(item)">
+              <view class="news-content">
+                <text class="news-title">{{ item.title }}</text>
+                <text class="news-time">{{ item.time }}</text>
+              </view>
+              <view class="news-arrow">
+                <text class="iconfont icon-arrow-right"></text>
+              </view>
             </view>
-            <view class="news-arrow">
-              <text class="iconfont icon-arrow-right"></text>
-            </view>
+          </view>
+          <!-- 空状态 -->
+          <view v-else class="news-empty">
+            <text class="empty-text">暂无最新动态</text>
           </view>
         </view>
       </view>
@@ -88,6 +99,7 @@
 import { ref, onMounted, computed } from 'vue'
 import NoticeSwiper from '@/components/NoticeSwiper/NoticeSwiper.vue'
 import { getUnreadCount } from '@/api/repairer/workorder'
+import { listNotices } from '@/api/dorm/notices'
 import useUserStore from '@/store/modules/user'
 
 // 获取用户store
@@ -96,23 +108,8 @@ const userStore = useUserStore()
 // 响应式数据
 const statusBarHeight = ref(0)
 const unreadCount = ref(0)
-const newsList = ref([
-  {
-    id: 1,
-    title: '关于宿舍卫生检查的通知',
-    time: '2024-01-15'
-  },
-  {
-    id: 2,
-    title: '春节放假安排及注意事项',
-    time: '2024-01-14'
-  },
-  {
-    id: 3,
-    title: '宿舍网络维护公告',
-    time: '2024-01-13'
-  }
-])
+const newsList = ref([])
+const newsLoading = ref(false)
 
 // 计算属性：判断是否为维修人员
 const isRepairer = computed(() => {
@@ -134,12 +131,110 @@ const initPage = () => {
 
 // 刷新数据
 const refreshData = async () => {
-  // 这里可以刷新最新动态等数据
-  console.log('刷新首页数据')
+  // 刷新最新动态等数据
+  await loadLatestNews()
 
   // 如果是维修人员，获取未读工单数量
   if (isRepairer.value) {
     await loadUnreadCount()
+  }
+}
+
+// 加载最新动态
+const loadLatestNews = async () => {
+  try {
+    newsLoading.value = true
+    const params = {
+      pageNum: 1,
+      pageSize: 5, // 只获取最新的5条
+      status: '0' // 只获取已发布的（0=正常，1=关闭）
+    }
+    
+    const response = await listNotices(params)
+    if (response.code === 200) {
+      let list = response.rows || []
+      
+      // 确保按创建时间倒序排序（最新的在前）
+      list.sort((a, b) => {
+        const timeA = new Date(a.createTime || 0).getTime()
+        const timeB = new Date(b.createTime || 0).getTime()
+        return timeB - timeA
+      })
+      
+      // 格式化数据
+      newsList.value = list.map(item => ({
+        id: item.noticeId,
+        title: item.noticeTitle || '',
+        time: formatNewsTime(item.createTime)
+      }))
+    } else {
+      console.error('获取最新动态失败:', response.msg)
+      // 失败时保持空数组，不显示错误提示（首页不应该因为一个小模块失败而报错）
+      newsList.value = []
+    }
+  } catch (error) {
+    console.error('加载最新动态异常:', error)
+    // 异常时保持空数组
+    newsList.value = []
+  } finally {
+    newsLoading.value = false
+  }
+}
+
+// 格式化新闻时间
+const formatNewsTime = (timeStr) => {
+  if (!timeStr) return ''
+  
+  try {
+    const date = new Date(timeStr)
+    // 检查日期是否有效
+    if (isNaN(date.getTime())) {
+      return timeStr
+    }
+    
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    
+    // 如果时间差为负数（未来时间），直接返回日期
+    if (diff < 0) {
+      const month = date.getMonth() + 1
+      const day = date.getDate()
+      return `${month}-${day}`
+    }
+    
+    const seconds = Math.floor(diff / 1000)
+    const minutes = Math.floor(seconds / 60)
+    const hours = Math.floor(minutes / 60)
+    const days = Math.floor(hours / 24)
+    
+    // 如果是今天，显示相对时间
+    if (days === 0) {
+      if (hours === 0) {
+        if (minutes === 0) {
+          return '刚刚'
+        }
+        return `${minutes}分钟前`
+      }
+      return `${hours}小时前`
+    }
+    
+    // 如果是昨天
+    if (days === 1) {
+      return '昨天'
+    }
+    
+    // 如果是一周内
+    if (days < 7) {
+      return `${days}天前`
+    }
+    
+    // 超过一周，显示月-日
+    const month = date.getMonth() + 1
+    const day = date.getDate()
+    return `${month}-${day}`
+  } catch (error) {
+    console.error('格式化时间失败:', error)
+    return timeStr
   }
 }
 
@@ -474,6 +569,18 @@ defineExpose({
 .news-arrow .iconfont {
   color: #ccc;
   font-size: 24rpx;
+}
+
+.news-loading,
+.news-empty {
+  padding: 60rpx 30rpx;
+  text-align: center;
+}
+
+.loading-text,
+.empty-text {
+  font-size: 28rpx;
+  color: #999;
 }
 
 /* 图标字体样式 */

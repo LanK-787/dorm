@@ -43,6 +43,14 @@ export function delRequest(requestId) {
   })
 }
 
+// 根据报修工单ID获取派单信息（用于学生查看维修图片）
+export function getAssignmentByRequestId(requestId) {
+  return request({
+    url: '/dorm/request/' + requestId + '/assignment',
+    method: 'get'
+  })
+}
+
 // 查询宿舍下拉树结构（用于报修表单）
 export function dormTreeSelect() {
   return request({
