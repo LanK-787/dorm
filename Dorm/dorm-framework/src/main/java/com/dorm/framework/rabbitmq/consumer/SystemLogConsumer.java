@@ -14,7 +14,7 @@ import java.io.IOException;
 /**
  * 系统日志消息消费者
  * 
- * @author dorm
+ * @author 王新瑜
  */
 @Component
 public class SystemLogConsumer {

@@ -17,7 +17,7 @@ import java.util.Map;
  * 烟雾报警测试控制器
  * 用于测试InfluxDB烟雾报警接口
  * 
- * @author dorm
+ * @author 王新瑜
  * @since 2025-09-02
  */
 @RestController

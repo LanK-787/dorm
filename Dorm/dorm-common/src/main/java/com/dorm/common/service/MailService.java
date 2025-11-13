@@ -3,7 +3,7 @@ package com.dorm.common.service;
 /**
  * 邮件服务接口
  * 
- * @author dorm
+ * @author 王新瑜
  * @date 2025-09-08
  */
 public interface MailService {

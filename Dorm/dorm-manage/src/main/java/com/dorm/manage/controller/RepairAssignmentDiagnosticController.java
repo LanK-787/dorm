@@ -22,7 +22,7 @@ import java.util.Map;
 /**
  * 维修派单诊断Controller
  * 
- * @author AI助手
+ * @author 王新瑜
  * @date 2025-06-18
  */
 @RestController

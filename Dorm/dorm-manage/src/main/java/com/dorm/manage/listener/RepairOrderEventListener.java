@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 /**
  * 维修工单事件监听器
  * 
- * @author dorm
+ * @author 王新瑜
  */
 @Component
 public class RepairOrderEventListener {

@@ -6,7 +6,7 @@ import org.springframework.context.ApplicationEvent;
 /**
  * 维修工单事件
  * 
- * @author dorm
+ * @author 王新瑜
  */
 public class RepairOrderEvent extends ApplicationEvent {
 

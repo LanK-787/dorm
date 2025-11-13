@@ -16,7 +16,7 @@ import java.util.UUID;
 /**
  * 消息生产者服务
  * 
- * @author dorm
+ * @author 王新瑜
  */
 @Service
 public class MessageProducer {

@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * 邮件配置类
  * 
- * @author dorm
+ * @author 王新瑜
  * @date 2025-09-08
  */
 @Configuration

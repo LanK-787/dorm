@@ -9,6 +9,7 @@ import com.influxdb.client.QueryApi;
 import com.influxdb.client.WriteApiBlocking;
 import com.influxdb.client.domain.WritePrecision;
 import com.influxdb.client.write.Point;
+import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +27,7 @@ import java.util.*;
  * InfluxDB 时序数据库服务类
  * 用于处理宿舍管理系统的时序数据，如设备监控、用户行为分析等
  * 
- * @author dorm
+ * @author 王新瑜
  * @since 2025-09-01
  */
 @Service
@@ -671,6 +672,72 @@ public class InfluxDBService {
         }
     }
         
+    /**
+     * 获取指定宿舍的最新烟雾数据
+     * 用于设备管理列表查询时获取每个设备的实时数据
+     *
+     * @param dormId 宿舍ID
+     * @param hours 查询时间范围（小时）
+     * @return 最新烟雾数据，包含smokePpm和lastUpdate
+     */
+    public Map<String, Object> getLatestSmokeData(String dormId, int hours) {
+        Map<String, Object> result = new HashMap<>();
+
+        if (!isConnected()) {
+            log.warn("InfluxDB未连接，无法查询宿舍 {} 的烟雾数据", dormId);
+            return result;
+        }
+
+        try {
+            Instant end = Instant.now();
+            Instant start = end.minus(hours, ChronoUnit.HOURS);
+
+            // 查询该宿舍的最新烟雾数据
+            String query = String.format(
+                "from(bucket: \"%s\") " +
+                "|> range(start: %s, stop: %s) " +
+                "|> filter(fn: (r) => r._measurement == \"smoke\") " +
+                "|> filter(fn: (r) => r._field == \"smokePpm\") " +
+                "|> filter(fn: (r) => r.dorm_id == \"%s\") " +
+                "|> last()",
+                influxDBConfig.getBucket(), start, end, dormId
+            );
+
+            log.debug("查询宿舍 {} 的最新烟雾数据: {}", dormId, query);
+
+            QueryApi queryApi = client.getQueryApi();
+            List<FluxTable> tables = queryApi.query(query, influxDBConfig.getOrg());
+
+            if (!tables.isEmpty()) {
+                for (FluxTable table : tables) {
+                    List<FluxRecord> records = table.getRecords();
+                    if (!records.isEmpty()) {
+                        FluxRecord record = records.get(0);
+                        Object value = record.getValue();
+                        Instant time = record.getTime();
+
+                        if (value != null) {
+                            result.put("smokePpm", ((Number) value).doubleValue());
+                        }
+                        if (time != null) {
+                            result.put("lastUpdate", Date.from(time));
+                        }
+
+                        log.debug("宿舍 {} 的最新烟雾数据: smokePpm={}, time={}",
+                            dormId, value, time);
+                        break;
+                    }
+                }
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            log.error("查询宿舍 {} 的烟雾数据失败: {}", dormId, e.getMessage(), e);
+            return result;
+        }
+    }
+
     /**
      * 获取状态优先级（简化为三级）
      */

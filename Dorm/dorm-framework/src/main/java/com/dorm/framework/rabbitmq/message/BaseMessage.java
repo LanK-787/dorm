@@ -9,7 +9,7 @@ import java.util.UUID;
 /**
  * 消息基类
  * 
- * @author dorm
+ * @author 王新瑜
  */
 public abstract class BaseMessage implements Serializable {
 

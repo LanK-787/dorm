@@ -3,7 +3,7 @@ package com.dorm.framework.rabbitmq.message;
 /**
  * 用户注册消息
  * 
- * @author dorm
+ * @author 王新瑜
  */
 public class UserRegisterMessage extends BaseMessage {
 

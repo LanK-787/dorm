@@ -3,7 +3,7 @@ package com.dorm.framework.rabbitmq.message;
 /**
  * 维修工单消息
  * 
- * @author dorm
+ * @author 王新瑜
  */
 public class RepairOrderMessage extends BaseMessage {
 

@@ -10,7 +10,7 @@ import com.dorm.common.core.domain.BaseEntity;
 /**
  * 派单历史记录对象 dorm_repair_dispatch_history
  * 
- * @author AI助手
+ * @author 王新瑜
  * @date 2025-06-18
  */
 public class DormRepairDispatchHistory extends BaseEntity

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
  * 智能派单系统启动检查器
  * 在系统启动时检查各个组件是否正常工作
  * 
- * @author AI助手
+ * @author 王新瑜
  * @date 2025-06-18
  */
 @Component

@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
  * 设备状态定时任务
  * 用于定期检查和更新设备的在线/离线状态
  * 
- * @author dorm
+ * @author 王新瑜
  * @since 2025-09-07
  */
 @Component

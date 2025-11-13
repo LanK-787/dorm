@@ -16,7 +16,7 @@ import java.util.Map;
  * MQTT烟雾传感器数据订阅服务
  * 订阅MQTT消息并将烟雾传感器数据写入InfluxDB
  * 
- * @author dorm
+ * @author 王新瑜
  * @since 2025-09-01
  */
 @Service

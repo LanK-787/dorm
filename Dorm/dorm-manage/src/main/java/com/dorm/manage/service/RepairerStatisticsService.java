@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 /**
  * 维修人员统计服务
  * 
- * @author dorm
+ * @author 王新瑜
  */
 @Service
 public class RepairerStatisticsService {

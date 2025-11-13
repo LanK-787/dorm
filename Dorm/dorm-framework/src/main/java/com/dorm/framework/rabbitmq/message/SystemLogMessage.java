@@ -3,7 +3,7 @@ package com.dorm.framework.rabbitmq.message;
 /**
  * 系统日志消息
  * 
- * @author dorm
+ * @author 王新瑜
  */
 public class SystemLogMessage extends BaseMessage {
 

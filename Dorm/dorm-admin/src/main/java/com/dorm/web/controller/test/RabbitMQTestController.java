@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 /**
  * RabbitMQ测试控制器
  * 
- * @author dorm
+ * @author 王新瑜
  */
 @Api(tags = "RabbitMQ测试接口")
 @RestController

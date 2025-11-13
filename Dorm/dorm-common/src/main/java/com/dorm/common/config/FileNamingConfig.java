@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 /**
  * 文件命名策略配置
  * 
- * @author dorm
+ * @author 王新瑜
  */
 @Component
 @ConfigurationProperties(prefix = "file.naming")

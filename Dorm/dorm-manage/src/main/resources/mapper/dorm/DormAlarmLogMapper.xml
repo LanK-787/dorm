@@ -26,7 +26,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="selectDormAlarmLogList" parameterType="DormAlarmLog" resultMap="DormAlarmLogResult">
         <include refid="selectDormAlarmLogVo"/>
-        <where>  
+        <where>
             <if test="deviceId != null "> and a.device_id = #{deviceId}</if>
             <if test="dormId != null "> and a.dorm_id = #{dormId}</if>
             <if test="dormIds != null and dormIds.size() > 0">
@@ -42,6 +42,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="handledTime != null "> and a.handled_time = #{handledTime}</if>
             <if test="remarks != null  and remarks != ''"> and a.remarks = #{remarks}</if>
         </where>
+        order by a.alarm_time desc
     </select>
     
     <select id="selectDormAlarmLogByAlarmId" parameterType="Long" resultMap="DormAlarmLogResult">

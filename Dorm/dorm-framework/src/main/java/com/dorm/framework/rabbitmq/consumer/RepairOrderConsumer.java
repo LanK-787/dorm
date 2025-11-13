@@ -17,7 +17,7 @@ import java.io.IOException;
 /**
  * 维修工单消息消费者
  * 
- * @author dorm
+ * @author 王新瑜
  */
 @Component
 public class RepairOrderConsumer {

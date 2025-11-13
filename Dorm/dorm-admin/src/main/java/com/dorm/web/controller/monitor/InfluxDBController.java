@@ -7,7 +7,9 @@ import com.dorm.common.core.domain.entity.DormBuilding;
 import com.dorm.framework.web.service.InfluxDBService;
 import com.dorm.manage.service.IDormAlarmLogService;
 import com.dorm.manage.domain.DormAlarmLog;
+import com.dorm.manage.domain.DormAlarmDevice;
 import com.dorm.manage.service.IDormBuildingService;
+import com.dorm.manage.service.IDormAlarmDeviceService;
 import com.dorm.common.service.MailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,16 +19,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Date;
+import java.util.*;
+import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * InfluxDB监控控制器
  * 
- * @author dorm
+ * @author 王新瑜
  * @since 2025-09-01
  */
 @RestController
@@ -37,13 +37,16 @@ public class InfluxDBController extends BaseController {
     
     @Autowired
     private InfluxDBService influxDBService;
-    
+
     @Autowired
     private IDormBuildingService dormBuildingService;
-    
+
     @Autowired
     private IDormAlarmLogService dormAlarmLogService;
-    
+
+    @Autowired
+    private IDormAlarmDeviceService dormAlarmDeviceService;
+
     @Autowired(required = false)
     private MailService mailService;
     
@@ -401,62 +404,147 @@ public class InfluxDBController extends BaseController {
         // 1. 记录到系统日志
         // 2. 更新监控统计数据
     }
+    /**
+     * 获取烟雾监控大屏数据（基于设备管理列表）
+     * 该接口返回的数据固定为设备管理列表中的设备，确保大屏显示内容的稳定性
+     */
     @PreAuthorize("@ss.hasPermi('monitor:influxdb:view')")
     @GetMapping("/smoke/overview")
     public AjaxResult getSmokeOverview(@RequestParam(defaultValue = "1") int hours) {
         try {
-            // 获取烟雾数据概览
-            Map<String, Object> overview = influxDBService.getSmokeDataOverview(hours);
-            
-            // 获取房间详情并添加宿舍信息
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> roomDetails = (List<Map<String, Object>>) overview.get("roomDetails");
-            
-            if (roomDetails != null && !roomDetails.isEmpty()) {
-                // 为每个房间添加宿舍信息
-                for (Map<String, Object> roomDetail : roomDetails) {
-                    String dormIdStr = (String) roomDetail.get("dorm_id");
-                    if (dormIdStr != null) {
-                        try {
-                            Long dormId = Long.valueOf(dormIdStr);
-                            DormBuilding dormInfo = dormBuildingService.selectDormBuildingByDormId(dormId);
-                            
-                            if (dormInfo != null) {
-                                // 添加宿舍详细信息
-                                roomDetail.put("fullName", dormInfo.getFullName() != null ? dormInfo.getFullName() : dormInfo.getBuildingName());
-                                roomDetail.put("buildingName", dormInfo.getBuildingName());
-                                roomDetail.put("dormManager", dormInfo.getDormManager());
-                                roomDetail.put("phone", dormInfo.getPhone());
-                                roomDetail.put("maxCapacity", dormInfo.getMaxCapacity());
-                                roomDetail.put("currentCount", dormInfo.getCurrentCount());
-                                
-                                // 实现智能信息继承机制，当房间级没有宿管信息时，自动继承上级楼栋的宿管信息
-                                if ((dormInfo.getDormManager() == null || dormInfo.getDormManager().trim().isEmpty()) &&
-                                    dormInfo.getParentId() != null && !dormInfo.getParentId().equals(0L)) {
-                                    
-                                    // 递归查找父级宿管信息
-                                    DormBuilding parentDorm = findParentWithManager(dormInfo.getParentId());
-                                    if (parentDorm != null) {
-                                        roomDetail.put("dormManager", parentDorm.getDormManager());
-                                        roomDetail.put("phone", parentDorm.getPhone());
-                                    }
-                                }
-                            } else {
-                                // 如果找不到宿舍信息，设置默认值
-                                roomDetail.put("fullName", "宿舍 " + dormIdStr);
-                                roomDetail.put("buildingName", dormIdStr);
-                            }
-                        } catch (NumberFormatException e) {
-                            // 如果 dormId 不是数字，设置默认值
-                            roomDetail.put("fullName", "宿舍 " + dormIdStr);
-                            roomDetail.put("buildingName", dormIdStr);
+            log.info("开始查询烟雾监控大屏数据，基于设备管理列表");
+
+            // 1. 查询所有烟雾报警设备（设备类型为0）
+            DormAlarmDevice queryDevice = new DormAlarmDevice();
+            queryDevice.setDeviceType(0); // 0为烟雾报警器
+            List<DormAlarmDevice> allDevices = dormAlarmDeviceService.selectDormAlarmDeviceList(queryDevice);
+
+            log.info("从设备管理列表查询到 {} 个烟雾报警设备", allDevices.size());
+
+            // 2. 统计数据
+            int totalRooms = allDevices.size();
+            int normalRooms = 0;
+            int alertRooms = 0;
+            int offlineRooms = 0;
+
+            // 3. 构建房间详情列表
+            List<Map<String, Object>> roomDetails = new ArrayList<>();
+
+            // 定义烟雾浓度阈值
+            double alertThreshold = 300.0; // 报警阈值
+
+            for (DormAlarmDevice device : allDevices) {
+                Map<String, Object> roomDetail = new HashMap<>();
+
+                // 设备基本信息
+                roomDetail.put("device_id", device.getDeviceId());
+                roomDetail.put("dorm_id", device.getDormId() != null ? device.getDormId().toString() : "");
+                roomDetail.put("deviceName", device.getDeviceName());
+                roomDetail.put("location", device.getLocation());
+
+                // 从InfluxDB查询该设备的最新烟雾数据
+                Double smokePpm = null;
+                Date lastUpdate = null;
+
+                try {
+                    if (device.getDormId() != null) {
+                        // 查询该宿舍的最新烟雾数据
+                        Map<String, Object> latestData = influxDBService.getLatestSmokeData(
+                            device.getDormId().toString(), hours);
+
+                        if (latestData != null && !latestData.isEmpty()) {
+                            smokePpm = (Double) latestData.get("smokePpm");
+                            lastUpdate = (Date) latestData.get("lastUpdate");
                         }
                     }
+                } catch (Exception e) {
+                    log.warn("查询设备 {} 的烟雾数据失败: {}", device.getDeviceId(), e.getMessage());
                 }
+
+                // 如果没有从InfluxDB获取到数据，使用默认值
+                if (smokePpm == null) {
+                    smokePpm = 0.0;
+                }
+                if (lastUpdate == null) {
+                    lastUpdate = device.getLastOnlineTime();
+                }
+
+                roomDetail.put("smokePpm", smokePpm);
+                roomDetail.put("lastUpdate", lastUpdate);
+
+                // 根据设备状态和烟雾值判断状态
+                String level;
+                String statusText;
+
+                if (device.getStatus() == null || device.getStatus() == 0) {
+                    // 设备离线
+                    level = "info";
+                    statusText = "离线";
+                    offlineRooms++;
+                } else if (smokePpm >= alertThreshold) {
+                    // 烟雾报警
+                    level = "danger";
+                    statusText = "报警";
+                    alertRooms++;
+                } else {
+                    // 正常
+                    level = "success";
+                    statusText = "正常";
+                    normalRooms++;
+                }
+
+                roomDetail.put("level", level);
+                roomDetail.put("statusText", statusText);
+
+                // 获取宿舍详细信息
+                if (device.getDormId() != null) {
+                    DormBuilding dormInfo = dormBuildingService.selectDormBuildingByDormId(device.getDormId());
+
+                    if (dormInfo != null) {
+                        roomDetail.put("fullName", dormInfo.getFullName() != null ?
+                            dormInfo.getFullName() : dormInfo.getBuildingName());
+                        roomDetail.put("buildingName", dormInfo.getBuildingName());
+                        roomDetail.put("dormManager", dormInfo.getDormManager());
+                        roomDetail.put("phone", dormInfo.getPhone());
+                        roomDetail.put("maxCapacity", dormInfo.getMaxCapacity());
+                        roomDetail.put("currentCount", dormInfo.getCurrentCount());
+
+                        // 智能信息继承机制
+                        if ((dormInfo.getDormManager() == null || dormInfo.getDormManager().trim().isEmpty()) &&
+                            dormInfo.getParentId() != null && !dormInfo.getParentId().equals(0L)) {
+                            DormBuilding parentDorm = findParentWithManager(dormInfo.getParentId());
+                            if (parentDorm != null) {
+                                roomDetail.put("dormManager", parentDorm.getDormManager());
+                                roomDetail.put("phone", parentDorm.getPhone());
+                            }
+                        }
+                    } else {
+                        roomDetail.put("fullName", device.getDormFullName() != null ?
+                            device.getDormFullName() : "宿舍 " + device.getDormId());
+                    }
+                } else {
+                    roomDetail.put("fullName", device.getDeviceName());
+                }
+
+                roomDetails.add(roomDetail);
             }
-            
+
+            // 4. 组装返回数据
+            Map<String, Object> overview = new HashMap<>();
+            overview.put("totalRooms", totalRooms);
+            overview.put("normalRooms", normalRooms);
+            overview.put("alertRooms", alertRooms);
+            overview.put("offlineRooms", offlineRooms);
+            overview.put("roomDetails", roomDetails);
+            overview.put("alertThreshold", alertThreshold);
+            overview.put("lastUpdate", new Date());
+
+            log.info("烟雾监控大屏数据查询成功: 总设备={}, 正常={}, 报警={}, 离线={}",
+                totalRooms, normalRooms, alertRooms, offlineRooms);
+
             return success(overview);
         } catch (Exception e) {
+            log.error("获取烟雾监控大屏数据失败: {}", e.getMessage(), e);
             return error("获取烟雾数据概览失败: " + e.getMessage());
         }
     }

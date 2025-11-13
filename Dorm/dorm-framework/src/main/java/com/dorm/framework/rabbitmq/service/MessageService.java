@@ -7,7 +7,7 @@ import com.dorm.framework.rabbitmq.message.UserRegisterMessage;
 /**
  * 消息服务接口
  * 
- * @author dorm
+ * @author 王新瑜
  */
 public interface MessageService {
 

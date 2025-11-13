@@ -19,7 +19,7 @@ import java.util.Map;
 /**
  * 邮件服务实现类
  * 
- * @author dorm
+ * @author 王新瑜
  * @date 2025-09-08
  */
 @Service

@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 智能派单集成服务实现类
  * 整合所有派单相关功能，提供统一的派单入口
  * 
- * @author AI助手
+ * @author 王新瑜
  * @date 2025-06-18
  */
 @Service

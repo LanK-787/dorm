@@ -10,7 +10,7 @@ import java.util.List;
  * 类型转换工具类
  * 主要用于处理前端传递的数据类型转换问题
  * 
- * @author AI助手
+ * @author 王新瑜
  * @date 2025-06-19
  */
 public class TypeConvertUtils {

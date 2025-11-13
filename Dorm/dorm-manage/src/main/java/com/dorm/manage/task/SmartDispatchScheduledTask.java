@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 /**
  * 智能派单定时任务
  * 
- * @author AI助手
+ * @author 王新瑜
  * @date 2025-06-19
  */
 @Component
