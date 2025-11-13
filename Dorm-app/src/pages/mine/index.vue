@@ -257,8 +257,18 @@ const loadRepairerStats = async () => {
 // 加载学生统计数据
 const loadStudentStats = async () => {
   try {
+    // 从studentStore获取学生信息
+    const currentStudent = studentStore.currentStudent
+    const queryParams = { pageNum: 1, pageSize: 1 }
+
+    // 如果有学号，添加到查询参数中
+    if (currentStudent && currentStudent.studentNo) {
+      queryParams.studentNo = currentStudent.studentNo
+      console.log('使用学号查询统计数据:', currentStudent.studentNo)
+    }
+
     // 获取离校申请数（进行中的申请：待审批 + 已批准未返校）
-    const leaveResponse = await getLeaveApplicationList({ pageNum: 1, pageSize: 1 })
+    const leaveResponse = await getLeaveApplicationList(queryParams)
     leaveCount.value = leaveResponse.total || 0
     console.log('学生-离校申请数:', leaveCount.value)
 

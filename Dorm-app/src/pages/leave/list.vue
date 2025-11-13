@@ -185,13 +185,17 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { 
-  getLeaveApplicationList, 
+import {
+  getLeaveApplicationList,
   cancelLeaveApplication,
-  confirmReturn 
+  confirmReturn
 } from '@/api/leave/registration'
+import useStudentStore from '@/store/modules/student'
 
 // ==================== 状态管理 ====================
+// 获取学生store
+const studentStore = useStudentStore()
+
 // 页面基础数据
 const statusBarHeight = ref(0)
 const contentHeight = ref(600)
@@ -297,7 +301,7 @@ const initPage = () => {
 // ==================== 数据加载 ====================
 const loadData = async (refresh = false) => {
   if (loading.value && !refresh) return
-  
+
   try {
     if (refresh) {
       loading.value = true
@@ -308,14 +312,33 @@ const loadData = async (refresh = false) => {
       loadingMore.value = true
     }
 
-    const response = await getLeaveApplicationList({
+    // 从studentStore获取学生信息
+    let studentNo = null
+    const currentStudent = studentStore.currentStudent
+
+    if (currentStudent && currentStudent.studentNo) {
+      studentNo = currentStudent.studentNo
+      console.log('从缓存获取到学号:', studentNo)
+    } else {
+      console.warn('未能从缓存获取学号，将查询所有记录')
+    }
+
+    // 构建查询参数，包含学号
+    const queryParams = {
       pageNum: pageNum.value,
       pageSize: pageSize
-    })
+    }
+
+    // 如果有学号，添加到查询参数中
+    if (studentNo) {
+      queryParams.studentNo = studentNo
+    }
+
+    const response = await getLeaveApplicationList(queryParams)
 
     if (response.code === 200) {
       const newData = response.rows || []
-      
+
       if (refresh || pageNum.value === 1) {
         leaveList.value = newData
       } else {
