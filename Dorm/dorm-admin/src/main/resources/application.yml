@@ -220,7 +220,7 @@ mqtt:
   # 是否启用MQTT服务
   enabled: true
   # MQTT Broker 地址
-  broker-url: tcp://localhost:1883
+  broker-url: tcp://localhost:1883·
   # 客户端ID
   client-id: dorm-smoke-client
   # MQTT 用户名（可选）

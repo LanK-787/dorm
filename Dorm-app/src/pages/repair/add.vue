@@ -179,6 +179,7 @@
 <script setup>
 import { ref, reactive, onMounted, getCurrentInstance } from 'vue'
 import { addRequest, dormTreeSelect } from '@/api/dorm/request'
+import { getStudentInfo } from '@/api/dorm/student'
 import upload from '@/utils/upload'
 
 // 获取当前实例以访问全局属性
@@ -192,6 +193,7 @@ const dormTreeData = ref([])
 const currentTreeData = ref([])
 const breadcrumbs = ref([])
 const selectedDormText = ref('')
+const studentId = ref(null) // 存储当前学生ID
 
 // 表单数据
 const form = reactive({
@@ -252,10 +254,45 @@ const specialtyPopup = ref()
 const initPage = () => {
   const systemInfo = uni.getSystemInfoSync()
   statusBarHeight.value = systemInfo.statusBarHeight || 0
-  
-  // 用户可以手动填写报修人信息
-  
+
+  // 加载学生信息
+  loadStudentInfo()
+
+  // 加载宿舍树
   loadDormTree()
+}
+
+// 加载当前学生信息
+const loadStudentInfo = async () => {
+  try {
+    const response = await getStudentInfo()
+    if (response.code === 200 && response.data) {
+      // 保存学生ID
+      studentId.value = response.data.studentId
+
+      // 可选：自动填充报修人信息
+      if (response.data.name) {
+        form.reporterName = response.data.name
+      }
+      if (response.data.phone) {
+        form.contactPhone = response.data.phone
+      }
+
+      console.log('学生信息加载成功，studentId:', studentId.value)
+    } else {
+      console.error('获取学生信息失败:', response.msg)
+      uni.showToast({
+        title: '获取学生信息失败',
+        icon: 'none'
+      })
+    }
+  } catch (error) {
+    console.error('加载学生信息失败:', error)
+    uni.showToast({
+      title: '加载学生信息失败，请重新登录',
+      icon: 'none'
+    })
+  }
 }
 
 const loadDormTree = async () => {
@@ -467,7 +504,18 @@ const submitForm = async () => {
     const imagesStr = uploadedImageUrls.length > 0 ? uploadedImageUrls.join(',') : ''
     console.log('最终图片字符串:', imagesStr)
 
+    // 检查studentId是否存在
+    if (!studentId.value) {
+      uni.showToast({
+        title: '获取学生信息失败，请重新登录',
+        icon: 'none'
+      })
+      submitting.value = false
+      return
+    }
+
     const submitData = {
+      studentId: studentId.value, // 添加学生ID
       dormId: form.dormId,
       specialty: form.specialty, // 现在是单个值，直接使用
       description: form.description,
