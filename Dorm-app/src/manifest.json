@@ -64,7 +64,7 @@
     },
     "quickapp" : {},
     "mp-weixin" : {
-        "appid" : "wx79e4f0f97eeb9346",
+        "appid" : "",
         "setting" : {
             "urlCheck" : false
         },
